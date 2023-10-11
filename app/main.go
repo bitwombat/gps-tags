@@ -3,21 +3,22 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/bitwombat/tag/sub"
 )
 
 type TagData struct {
-	SerNo   int       `json:"SerNo"`
-	Imei    string    `json:"IMEI"`
-	Iccid   string    `json:"ICCID"`
-	ProdID  int       `json:"ProdId"`
-	Fw      string    `json:"FW"`
-	Records []Records `json:"Records"`
+	SerNo   int      `json:"SerNo"`
+	Imei    string   `json:"IMEI"`
+	Iccid   string   `json:"ICCID"`
+	ProdID  int      `json:"ProdId"`
+	Fw      string   `json:"FW"`
+	Records []Record `json:"Records"`
 }
 
 type AnalogueData struct {
@@ -27,7 +28,7 @@ type AnalogueData struct {
 	Num5 int `json:"5"`
 }
 
-type Fields struct {
+type Field struct {
 	GpsUTC       string       `json:"GpsUTC,omitempty"`
 	Lat          float64      `json:"Lat,omitempty"`
 	Long         float64      `json:"Long,omitempty"`
@@ -45,157 +46,161 @@ type Fields struct {
 	AnalogueData AnalogueData `json:"AnalogueData,omitempty"`
 }
 
-type Records struct {
-	SeqNo   int      `json:"SeqNo"`
-	Reason  int      `json:"Reason"`
-	DateUTC string   `json:"DateUTC"`
-	Fields  []Fields `json:"Fields"`
+type Record struct {
+	SeqNo   int     `json:"SeqNo"`
+	Reason  int     `json:"Reason"`
+	DateUTC string  `json:"DateUTC"`
+	Fields  []Field `json:"Fields"`
 }
 
-var lastWasHealthCheck bool
+var lastWasHealthCheck bool // Used to clean up the log output
+
+func handleHealth(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusOK)
+	fmt.Fprintf(w, "OK")
+	if !lastWasHealthCheck {
+		log.Println("Got a health check [repeats will be hidden].")
+	}
+
+	lastWasHealthCheck = true
+}
+
+func readDataFromDisk(filename string) ([]string, error) {
+	body, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("error reading file: %v", err)
+	}
+
+	fields := strings.Split(string(body), " ")
+	if len(fields) != 2 {
+		return nil, fmt.Errorf("error in format of file. Length of fields is %d, expected 2", len(fields))
+	}
+
+	return fields, nil
+}
+
+func handleMapPage(w http.ResponseWriter, r *http.Request) {
+	log.Println("Got a map page request.")
+	lastWasHealthCheck = false
+
+	subs := make(map[string]string)
+
+	//------
+	fields, err := readDataFromDisk("810095")
+	if err != nil {
+		log.Printf("Error reading %s file: %v\n", "810095", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	subs["ruegerPositions"] = fmt.Sprintf("{lat: %s, lng: %s}", fields[0], fields[1])
+
+	//------
+	fields, err = readDataFromDisk("810243")
+	if err != nil {
+		log.Printf("Error reading %s file: %v\n", "810243", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	subs["tuckerPositions"] = fmt.Sprintf("{lat: %s, lng: %s}", fields[0], fields[1])
+
+	mapPage, err := sub.GetContents("public_html/index.html", subs)
+
+	if err != nil {
+		log.Printf("Error getting contents: %v\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	_, err = w.Write([]byte(mapPage))
+	if err != nil {
+		log.Printf("Error writing response: %v\n", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	// Don't need this - it's taken care of by w.Write:  w.WriteHeader(http.StatusOK)
+}
+
+func handleDataPost(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		log.Println("Got a request to /upload that was not a POST")
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	authKey := r.Header[http.CanonicalHeaderKey("auth")][0]
+
+	if authKey == "" {
+		log.Printf("Got an empty auth key: %v\n", authKey)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	if authKey != "6ebaa65ed27455fd6d32bfd4c01303cd" {
+		log.Printf("Got a bad auth key: %v\n", authKey)
+		w.WriteHeader(http.StatusUnauthorized)
+		return
+	}
+
+	log.Println("Got a data post!")
+	lastWasHealthCheck = false
+
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		log.Printf("Error reading body: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	log.Println(string(body))
+
+	var tagData TagData
+
+	err = json.Unmarshal(body, &tagData)
+	if err != nil {
+		log.Printf("Error unmarshalling JSON: %v", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	log.Printf("Got %d Records, keeping last one\n", len(tagData.Records))
+
+	for i, r := range tagData.Records {
+		gpsField := r.Fields[0]
+		log.Printf("%v  %s  %v  %0.7f, %0.7f\n", tagData.SerNo, r.DateUTC, r.Reason, gpsField.Lat, gpsField.Long)
+
+		if i == len(tagData.Records)-1 {
+			err = os.WriteFile(fmt.Sprintf("%d", tagData.SerNo), []byte(fmt.Sprintf("%0.7f %0.7f", gpsField.Lat, gpsField.Long)), 0644)
+		}
+
+		if err != nil {
+			log.Printf("Error writing to file: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
 
 func main() {
 
 	lastWasHealthCheck = false
 
+	// Set up handlers
 	httpMux := http.NewServeMux()
-	httpMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "OK")
-		if !lastWasHealthCheck {
-			log.Println("Got a health check [repeats will be hidden].")
-		}
-
-		lastWasHealthCheck = true
-	})
+	httpMux.HandleFunc("/health", handleHealth)
 
 	httpsMux := http.NewServeMux()
-	httpsMux.HandleFunc("/map", func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Got a map page request.")
-		lastWasHealthCheck = false
-
-		//------
-		body, err := ioutil.ReadFile("810095")
-		if err != nil {
-			log.Printf("Error reading 810095 (Rueger) file: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		subs := make(map[string]string)
-
-		fields := strings.Split(string(body), " ")
-		if len(fields) != 2 {
-			log.Printf("Error in format of 810095 file. Length of fields is %d, expected 2", len(fields))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		subs["ruegerPositions"] = fmt.Sprintf("{lat: %s, lng: %s}", fields[0], fields[1])
-
-		//------
-		body, err = ioutil.ReadFile("810243")
-		if err != nil {
-			log.Printf("Error reading 810243 (Tucker) file: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		fields = strings.Split(string(body), " ")
-		if len(fields) != 2 {
-			log.Printf("Error in format of 810243 file. Length of fields is %d, expected 2", len(fields))
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		subs["tuckerPositions"] = fmt.Sprintf("{lat: %s, lng: %s}", fields[0], fields[1])
-
-		mapPage, err := sub.GetContents("public_html/index.html", subs)
-
-		if err != nil {
-			log.Printf("Error getting contents: %v\n", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-
-		_, err = w.Write([]byte(mapPage))
-		if err != nil {
-			log.Printf("Error writing response: %v\n", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-	})
-
-	httpsMux.HandleFunc("/upload", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodPost {
-			log.Println("Got a request to /upload that was not a POST")
-			w.WriteHeader(http.StatusMethodNotAllowed)
-			return
-		}
-
-		authKey := r.Header[http.CanonicalHeaderKey("auth")][0]
-
-		if authKey == "" {
-			log.Printf("Got an empty auth key: %v\n", authKey)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		if authKey != "6ebaa65ed27455fd6d32bfd4c01303cd" {
-			log.Printf("Got a bad auth key: %v\n", authKey)
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
-
-		log.Println("Got a data post!")
-		lastWasHealthCheck = false
-
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			log.Printf("Error reading body: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		log.Println(string(body))
-
-		var result TagData
-
-		err = json.Unmarshal(body, &result)
-		if err != nil {
-			log.Printf("Error unmarshalling JSON: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		log.Println(result.SerNo)
-		log.Printf("Got %d Records, keeping last one\n", len(result.Records))
-
-		for i, r := range result.Records {
-			log.Println(r.DateUTC)
-			gpsField := r.Fields[0]
-			log.Printf("   %0.7f, %0.7f\n", gpsField.Lat, gpsField.Long)
-
-			if i == len(result.Records)-1 {
-				err = ioutil.WriteFile(fmt.Sprintf("%d", result.SerNo), []byte(fmt.Sprintf("%0.7f %0.7f", gpsField.Lat, gpsField.Long)), 0644)
-			}
-
-			if err != nil {
-				log.Printf("Error writing to file: %v", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
-		}
-
-		w.WriteHeader(http.StatusOK)
-	})
+	httpsMux.HandleFunc("/map", handleMapPage)
+	httpsMux.HandleFunc("/upload", handleDataPost)
 
 	fs := http.FileServer(http.Dir("./public_html"))
 	httpsMux.Handle("/", fs)
 
+	// Start two servers
 	go func() {
 		server1 := &http.Server{
 			Addr:    ":80",
@@ -214,5 +219,6 @@ func main() {
 		log.Fatal(server2.ListenAndServe())
 	}()
 
-	select {} // Block forever
+	// Block forever
+	select {}
 }
