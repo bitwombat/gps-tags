@@ -1,0 +1,16 @@
+[Unit]
+Description=Dog tag tracking
+After=network.target
+
+[Service]
+ExecStart=/root/main
+Restart=always
+User=root
+Group=root
+Environment=ENV_VAR=value
+WorkingDirectory=/root
+StandardOutput=file:/root/dog-tags_stdout.log
+StandardError=file:/root/dog-tags_stderr.log
+
+[Install]
+WantedBy=multi-user.target
