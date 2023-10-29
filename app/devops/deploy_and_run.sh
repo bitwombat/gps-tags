@@ -1,4 +1,20 @@
 #!/bin/bash
 
-ssh proxy 'killall -9 main'
-go build main.go && scp main proxy:. && ssh proxy ./main
+set -e
+echo "Stopping service"
+ssh -q proxy 'systemctl stop dog-tracking.service'
+
+echo "Building app"
+go build main.go
+
+echo "Transferring service definition"
+scp -C devops/dog-tracking.service proxy:/etc/systemd/system/dog-tracking.service
+
+echo "Transferring application binary"
+scp -C main proxy:.
+
+echo "Reloading systemctl daemon"
+ssh -q proxy systemctl daemon-reload
+
+echo "Starting service"
+ssh -q proxy 'systemctl start dog-tracking.service'
