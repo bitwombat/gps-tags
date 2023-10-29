@@ -5,7 +5,7 @@ echo "Stopping service"
 ssh -q proxy 'systemctl stop dog-tracking.service'
 
 echo "Building app"
-go build main.go
+go build -ldflags="-s -w" main.go
 
 echo "Transferring service definition"
 scp -C devops/dog-tracking.service proxy:/etc/systemd/system/dog-tracking.service
