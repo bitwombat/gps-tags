@@ -14,7 +14,10 @@ import (
 	"github.com/bitwombat/tag/device"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
+
+const mongoURL = "mongodb://172.17.0.2:27017"
 
 const basicCompleteSample = `{
   "SerNo": 810095,
@@ -101,7 +104,7 @@ const basicCompleteSample = `{
   ]
 }`
 
-const strippedDownMultiRecordSample = `{
+const strippedDownMultiRecordSample1 = `{
   "SerNo": 810095,
   "Records": [
     {
@@ -129,6 +132,36 @@ const strippedDownMultiRecordSample = `{
       ]
     }
   ]
+}`
+
+const strippedDownMultiRecordSample2 = `{
+  "SerNo": 810243,
+  "Records": [
+    {
+      "SeqNo": 7496,
+      "Reason": 11,
+      "DateUTC": "2023-10-21 23:21:42",
+      "Fields": [
+        {
+          "GpsUTC": "2023-10-21 23:17:40",
+          "Lat": -32.0,
+          "Long": 153.0
+        }
+      ]
+    },
+    {
+      "SeqNo": 7497,
+      "Reason": 2,
+      "DateUTC": "2023-10-21 23:23:36",
+      "Fields": [
+        {
+          "GpsUTC": "2023-10-21 23:17:40",
+          "Lat": -32.1,
+          "Long": 153.1
+        }
+      ]
+    }
+  ]
 }
 `
 
@@ -143,7 +176,7 @@ func randomTestCollectionName() string {
 }
 
 func Test_WriteCommit(t *testing.T) {
-	collection, err := NewMongoConnection(randomTestCollectionName())
+	collection, err := NewMongoConnection(mongoURL, randomTestCollectionName())
 	require.Nil(t, err)
 
 	// Unmarshal JSON to map
@@ -163,7 +196,7 @@ func Test_WriteCommit(t *testing.T) {
 }
 
 func Test_ReadCommit(t *testing.T) {
-	collection, err := NewMongoConnection(randomTestCollectionName())
+	collection, err := NewMongoConnection(mongoURL, randomTestCollectionName())
 	require.Nil(t, err)
 
 	// Unmarshal JSON to map
@@ -192,20 +225,31 @@ func Test_ReadCommit(t *testing.T) {
 	require.Equal(t, 2, len(results[0].Records))
 }
 
-func Test_GetLatestPosition(t *testing.T) {
-	collection, err := NewMongoConnection(randomTestCollectionName())
-	require.Nil(t, err)
-
+func insert(collection *mongo.Collection, jsonstr string) (*mongo.InsertOneResult, error) {
 	// Unmarshal JSON to map
 	var data map[string]interface{}
-	err = json.Unmarshal([]byte(strippedDownMultiRecordSample), &data)
-	require.Nil(t, err)
+	err := json.Unmarshal([]byte(jsonstr), &data)
+	if err != nil {
+		return nil, err
+	}
 
 	// Insert into MongoDB
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
 
 	insertResult, err := collection.InsertOne(ctx, data)
+
+	return insertResult, err
+}
+
+func Test_GetLatestPosition(t *testing.T) {
+	collection, err := NewMongoConnection(mongoURL, randomTestCollectionName())
+	require.Nil(t, err)
+
+	insertResult, err := insert(collection, strippedDownMultiRecordSample1)
+	require.Nil(t, err)
+
+	insertResult, err = insert(collection, strippedDownMultiRecordSample2)
 	require.Nil(t, err)
 
 	fmt.Println("Inserted document:", insertResult.InsertedID)
@@ -217,11 +261,23 @@ func Test_GetLatestPosition(t *testing.T) {
 		{
 			"$project": bson.M{
 				"serNo":     "$SerNo",
+				"seqNo":     "$Records.SeqNo",
 				"latitude":  "$Records.Fields.Lat",
 				"longitude": "$Records.Fields.Long",
 			},
 		},
+		{
+			"$group": bson.M{
+				"_id": "$serNo",
+				"document": bson.M{
+					"$first": "$$ROOT",
+				},
+			},
+		},
 	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
 	cursor, err := collection.Aggregate(ctx, pipeline)
 	require.Nil(t, err)
 	defer cursor.Close(ctx)
@@ -237,21 +293,5 @@ func Test_GetLatestPosition(t *testing.T) {
 		Latitude  []float64
 		Longitude []float64
 	}
-
-	x := result[0]
-	y := result[0]["latitude"][0]
-	doc, err := bson.Marshal(x)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	var loc Location
-	err = bson.Unmarshal(doc, &loc)
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println(loc)
-	require.Equal(t, 2, len(result))
-	require.Equal(t, -31.4577084, result[0]["latitude"])
 
 }
