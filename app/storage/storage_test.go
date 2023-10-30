@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
-	"log"
 	"time"
 
 	"encoding/json"
@@ -138,18 +137,6 @@ const strippedDownMultiRecordSample2 = `{
   "SerNo": 810243,
   "Records": [
     {
-      "SeqNo": 7496,
-      "Reason": 11,
-      "DateUTC": "2023-10-21 23:21:42",
-      "Fields": [
-        {
-          "GpsUTC": "2023-10-21 23:17:40",
-          "Lat": -32.0,
-          "Long": 153.0
-        }
-      ]
-    },
-    {
       "SeqNo": 7497,
       "Reason": 2,
       "DateUTC": "2023-10-21 23:23:36",
@@ -158,6 +145,18 @@ const strippedDownMultiRecordSample2 = `{
           "GpsUTC": "2023-10-21 23:17:40",
           "Lat": -32.1,
           "Long": 153.1
+        }
+      ]
+    },
+    {
+      "SeqNo": 7496,
+      "Reason": 11,
+      "DateUTC": "2023-10-21 23:21:42",
+      "Fields": [
+        {
+          "GpsUTC": "2023-10-21 23:17:40",
+          "Lat": -32.0,
+          "Long": 153.0
         }
       ]
     }
@@ -270,7 +269,10 @@ func Test_GetLatestPosition(t *testing.T) {
 			"$group": bson.M{
 				"_id": "$serNo",
 				"document": bson.M{
-					"$first": "$$ROOT",
+					"$top": bson.M{
+						"sortBy": bson.M{"seqNo": -1},
+						"output": "$$ROOT",
+					},
 				},
 			},
 		},
@@ -282,16 +284,68 @@ func Test_GetLatestPosition(t *testing.T) {
 	require.Nil(t, err)
 	defer cursor.Close(ctx)
 
-	var result []bson.M
+	type recordtype struct {
+		Document struct {
+			SerNo     float64
+			SeqNo     float64
+			Latitude  []float64
+			Longitude []float64
+		}
+	}
+	var result []recordtype
+	//var result []bson.M
 	err = cursor.All(ctx, &result)
-	if err != nil {
-		log.Fatal(err)
+	require.Nil(t, err)
+
+	for _, record := range result {
+		switch record.Document.SerNo {
+		case 810095:
+			require.Equal(t, 7495.0, record.Document.SeqNo)
+			require.Equal(t, -31.4577084, record.Document.Latitude[0])
+			require.Equal(t, 152.64215, record.Document.Longitude[0])
+		case 810243:
+			require.Equal(t, 7497.0, record.Document.SeqNo)
+			require.Equal(t, -32.1, record.Document.Latitude[0])
+			require.Equal(t, 153.1, record.Document.Longitude[0])
+		default:
+			t.Fatalf("Unmatched serNo: %v", record.Document.SerNo)
+		}
 	}
 
-	type Location struct {
-		SerNo     float64
-		Latitude  []float64
-		Longitude []float64
-	}
+	// for cursor.Next(context.Background()) {
+	// 	// result := struct{
+	// 	//   Foo string
+	// 	//   Bar int32
+	// 	// }{}
+	// 	var result bson.D
+
+	// 	err = cursor.Decode(&result)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+
+	// 	x := result[1].Value
+	// 	log.Printf("Type of x: %T\n", x)
+	// 	log.Println(x)
+	// 	doc, ok := x.(bson.D) // Assert 'x' to 'primitive.D'
+	// 	if !ok {
+	// 		log.Fatal("Couldn't type assert")
+	// 	}
+	// 	y := doc[0].Value
+	// 	log.Print(y)
+	// 	for _, elem := range result {
+	// 		key := elem.Key
+	// 		value := elem.Value
+
+	// 		fmt.Println(key, value)
+
+	// do something with result...
+	// }
+	// To get the raw bson bytes use cursor.Current
+	//raw := cur.Current
+	// do something with raw...
+	// }
+	// err = cursor.Err()
+	// require.Nil(t, err)
 
 }
