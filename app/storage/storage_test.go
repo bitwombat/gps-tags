@@ -245,13 +245,13 @@ func Test_GetLatestPosition(t *testing.T) {
 	collection, err := NewMongoConnection(mongoURL, randomTestCollectionName())
 	require.Nil(t, err)
 
-	insertResult, err := insert(collection, strippedDownMultiRecordSample1)
+	storer := NewMongoStorer(collection)
+
+	err = storer.WriteCommit(context.Background(), strippedDownMultiRecordSample1)
 	require.Nil(t, err)
 
-	insertResult, err = insert(collection, strippedDownMultiRecordSample2)
+	err = storer.WriteCommit(context.Background(), strippedDownMultiRecordSample2)
 	require.Nil(t, err)
-
-	fmt.Println("Inserted document:", insertResult.InsertedID)
 
 	pipeline := []bson.M{
 		{
@@ -261,6 +261,9 @@ func Test_GetLatestPosition(t *testing.T) {
 			"$project": bson.M{
 				"serNo":     "$SerNo",
 				"seqNo":     "$Records.SeqNo",
+				"reason":    "$Records.Reason",
+				"dateUTC":   "$Records.DateUTC",
+				"gpcUTC":    "$Records.Fields.GpsUTC",
 				"latitude":  "$Records.Fields.Lat",
 				"longitude": "$Records.Fields.Long",
 			},
@@ -284,15 +287,7 @@ func Test_GetLatestPosition(t *testing.T) {
 	require.Nil(t, err)
 	defer cursor.Close(ctx)
 
-	type recordtype struct {
-		Document struct {
-			SerNo     float64
-			SeqNo     float64
-			Latitude  []float64
-			Longitude []float64
-		}
-	}
-	var result []recordtype
+	var result []PositionRecord
 	//var result []bson.M
 	err = cursor.All(ctx, &result)
 	require.Nil(t, err)

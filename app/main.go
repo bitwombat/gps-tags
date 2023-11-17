@@ -14,7 +14,6 @@ import (
 	//	"go.mongodb.org/mongo-driver/bson"
 	"github.com/bitwombat/tag/storage"
 	"github.com/bitwombat/tag/sub"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type TagData struct {
@@ -128,9 +127,9 @@ func handleMapPage(w http.ResponseWriter, r *http.Request) {
 	// Don't need this - it's taken care of by w.Write:  w.WriteHeader(http.StatusOK)
 }
 
-func NewDataPostHandler(collection *mongo.Collection) func(http.ResponseWriter, *http.Request) {
+func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
 
-	coll := collection // TODO: Understand if this is necessary. Yes because pointer coming in?
+	strer := storer // TODO: Is this necessary for a closure?
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -191,30 +190,17 @@ func NewDataPostHandler(collection *mongo.Collection) func(http.ResponseWriter, 
 			}
 		}
 
-		_ = coll
-
-		// Unmarshal JSON to map
-		var data map[string]interface{}
-		err = json.Unmarshal([]byte(body), &data)
-		if err != nil {
-			log.Printf("Error unmarshaling: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		// Insert into MongoDB
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
 
-		insertResult, err := coll.InsertOne(ctx, data)
+		err = strer.WriteCommit(ctx, string(body))
 		if err != nil {
 			log.Printf("Error inserting document: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		log.Println("Inserted document: ", insertResult.InsertedID)
-
+		log.Printf("Successfully inserted document")
 		w.WriteHeader(http.StatusOK)
 	}
 }
@@ -234,6 +220,8 @@ func main() {
 		log.Fatal(fmt.Errorf("getting a Mongo connection: %w", err))
 	}
 
+	storer := storage.NewMongoStorer(collection)
+
 	log.Println("Connected to MongoDB!")
 
 	log.Println("Setting up handlers.")
@@ -245,7 +233,7 @@ func main() {
 	// HTTPS endpoints
 	httpsMux := http.NewServeMux()
 	httpsMux.HandleFunc("/map", handleMapPage)
-	dataPostHandler := NewDataPostHandler(collection)
+	dataPostHandler := NewDataPostHandler(storer)
 	httpsMux.HandleFunc("/upload", dataPostHandler)
 
 	// Static file serving

@@ -2,33 +2,20 @@ package storage
 
 import (
 	"context"
-	"time"
-
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type Storage interface {
-	WriteCommit(string) error
+	WriteCommit(context.Context, string) error
+	GetLastPositions() ([]PositionRecord, error)
 }
 
-func NewMongoConnection(mongoURL, collectionName string) (*mongo.Collection, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-
-	client, err := mongo.Connect(ctx, options.Client().ApplyURI(mongoURL))
-	if err != nil {
-		return nil, err
+// This is based on what Mongo returns, not what it should be.  For example,
+// sub-document, and lat/long as arrays (only [0] is ever populated)
+type PositionRecord struct {
+	Document struct {
+		SerNo     float64
+		SeqNo     float64
+		Latitude  []float64
+		Longitude []float64
 	}
-
-	// Check the connection
-	err = client.Ping(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	collection := client.Database("tags").Collection(collectionName)
-
-	return collection, nil
-
 }
