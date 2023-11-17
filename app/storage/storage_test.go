@@ -304,30 +304,31 @@ func Test_GetLatestPosition(t *testing.T) {
 	require.Nil(t, err)
 	defer cursor.Close(ctx)
 
-	var result []PositionRecord
+	var result []MongoPositionRecord
 	//var result []bson.M
 	err = cursor.All(ctx, &result)
 	require.Nil(t, err)
 
 	for _, record := range result {
+		r := MarshalPositionRecord(record)
 		switch record.Document.SerNo {
 		case 810095:
-			require.Equal(t, 7495.0, record.Document.SeqNo)
-			require.Equal(t, -31.4577084, record.Document.Latitude[0])
-			require.Equal(t, 152.64215, record.Document.Longitude[0])
-			require.Equal(t, 35.0, record.Document.Altitude[0])
-			require.Equal(t, 1.0, record.Document.Speed[0])
-			require.Equal(t, 2.0, record.Document.SpeedAcc[0])
-			require.Equal(t, 3.0, record.Document.Heading[0])
-			require.Equal(t, 17.0, record.Document.PDOP[0])
-			require.Equal(t, 10.0, record.Document.PosAcc[0])
-			require.Equal(t, 7.0, record.Document.GpsStatus[0])
+			require.Equal(t, 7495.0, r.SeqNo)
+			require.Equal(t, -31.4577084, r.Latitude)
+			require.Equal(t, 152.64215, r.Longitude)
+			require.Equal(t, 35.0, r.Altitude)
+			require.Equal(t, 1.0, r.Speed)
+			require.Equal(t, 2.0, r.SpeedAcc)
+			require.Equal(t, 3.0, r.Heading)
+			require.Equal(t, 17.0, r.PDOP)
+			require.Equal(t, 10.0, r.PosAcc)
+			require.Equal(t, 7.0, r.GpsStatus)
 		case 810243:
-			require.Equal(t, 7497.0, record.Document.SeqNo)
-			require.Equal(t, -32.1, record.Document.Latitude[0])
-			require.Equal(t, 153.1, record.Document.Longitude[0])
+			require.Equal(t, 7497.0, r.SeqNo)
+			require.Equal(t, -32.1, r.Latitude)
+			require.Equal(t, 153.1, r.Longitude)
 		default:
-			t.Fatalf("Unmatched serNo: %v", record.Document.SerNo)
+			t.Fatalf("Unmatched serNo: %v", r.SerNo)
 		}
 	}
 
