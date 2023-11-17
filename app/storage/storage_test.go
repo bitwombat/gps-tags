@@ -126,7 +126,16 @@ const strippedDownMultiRecordSample1 = `{
         {
           "GpsUTC": "2023-10-21 23:17:40",
           "Lat": -31.4577084,
-          "Long": 152.64215
+          "Long": 152.64215,
+          "Alt": 35,
+          "Spd": 1,
+          "SpdAcc": 2,
+          "Head": 3,
+          "PDOP": 17,
+          "PosAcc": 10,
+          "GpsStat": 7,
+          "FType": 0
+
         }
       ]
     }
@@ -139,7 +148,7 @@ const strippedDownMultiRecordSample2 = `{
     {
       "SeqNo": 7497,
       "Reason": 2,
-      "DateUTC": "2023-10-21 23:23:36",
+      "DateUTC": "2023-10-21 23:23:37",
       "Fields": [
         {
           "GpsUTC": "2023-10-21 23:17:40",
@@ -253,6 +262,7 @@ func Test_GetLatestPosition(t *testing.T) {
 	err = storer.WriteCommit(context.Background(), strippedDownMultiRecordSample2)
 	require.Nil(t, err)
 
+	// A field present in the projection but not in the struct decoded to does not break anything.
 	pipeline := []bson.M{
 		{
 			"$unwind": "$Records",
@@ -266,6 +276,13 @@ func Test_GetLatestPosition(t *testing.T) {
 				"gpcUTC":    "$Records.Fields.GpsUTC",
 				"latitude":  "$Records.Fields.Lat",
 				"longitude": "$Records.Fields.Long",
+				"altitude":  "$Records.Fields.Alt",
+				"speed":     "$Records.Fields.Spd",
+				"speedAcc":  "$Records.Fields.SpdAcc",
+				"heading":   "$Records.Fields.Head",
+				"PDOP":      "$Records.Fields.PDOP",
+				"posAcc":    "$Records.Fields.PosAcc",
+				"gpsStatus": "$Records.Fields.GpsStat",
 			},
 		},
 		{
@@ -298,6 +315,13 @@ func Test_GetLatestPosition(t *testing.T) {
 			require.Equal(t, 7495.0, record.Document.SeqNo)
 			require.Equal(t, -31.4577084, record.Document.Latitude[0])
 			require.Equal(t, 152.64215, record.Document.Longitude[0])
+			require.Equal(t, 35.0, record.Document.Altitude[0])
+			require.Equal(t, 1.0, record.Document.Speed[0])
+			require.Equal(t, 2.0, record.Document.SpeedAcc[0])
+			require.Equal(t, 3.0, record.Document.Heading[0])
+			require.Equal(t, 17.0, record.Document.PDOP[0])
+			require.Equal(t, 10.0, record.Document.PosAcc[0])
+			require.Equal(t, 7.0, record.Document.GpsStatus[0])
 		case 810243:
 			require.Equal(t, 7497.0, record.Document.SeqNo)
 			require.Equal(t, -32.1, record.Document.Latitude[0])
