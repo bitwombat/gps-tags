@@ -70,7 +70,7 @@ func (s storer) GetLastPositions() ([]PositionRecord, error) {
 				"seqNo":     "$Records.SeqNo",
 				"reason":    "$Records.Reason",
 				"dateUTC":   "$Records.DateUTC",
-				"gpcUTC":    "$Records.Fields.GpsUTC",
+				"gpsUTC":    "$Records.Fields.GpsUTC",
 				"latitude":  "$Records.Fields.Lat",
 				"longitude": "$Records.Fields.Long",
 				"altitude":  "$Records.Fields.Alt",

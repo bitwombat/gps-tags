@@ -23,7 +23,7 @@ type MongoPositionRecord struct {
 		Altitude  []float64
 		Speed     []float64
 		// DateUTC   float64
-		// GpsUTC    string
+		GpsUTC    []string
 		Battery   []float64
 		SpeedAcc  []float64
 		Heading   []float64
@@ -42,7 +42,7 @@ type PositionRecord struct {
 	Altitude  float64
 	Speed     float64
 	// DateUTC   float64
-	// GpsUTC    string
+	GpsUTC    string
 	Battery   float64
 	SpeedAcc  float64
 	Heading   float64
@@ -58,12 +58,32 @@ func MarshalPositionRecord(m MongoPositionRecord) *PositionRecord {
 		Reason: m.Document.Reason,
 		// DateUTC:   m.Document.DateUTC,
 		// GpsUTC:    m.Document.GpsUTC,
+func TimeAgo(timeStr string, Now func() time.Time) string {
+	// Parse the given time string
+	t, err := time.Parse(time.DateTime, timeStr)
+	if err != nil {
+		return "<time parsing error>"
 	}
 
 	// These are probably only ever absent because of tests which intentionally
 	// have incomplete records...
 	if len(m.Document.Latitude) > 0 {
 		pr.Latitude = m.Document.Latitude[0]
+	// Calculate the difference
+	diff := Now().Sub(t)
+
+	// Format
+	if diff < time.Hour {
+		return fmt.Sprintf("%d minutes", int(diff.Minutes()))
+	} else if diff < 24*time.Hour {
+		hours := int(diff.Hours())
+		minutes := int(diff.Minutes()) % 60
+		return fmt.Sprintf("%d hours, %d minutes", hours, minutes)
+	} else {
+		days := int(diff.Hours()) / 24
+		hours := int(diff.Hours()) % 24
+		minutes := int(diff.Minutes()) % 60
+		return fmt.Sprintf("%d days, %d hours, %d minutes", days, hours, minutes)
 	}
 
 	if len(m.Document.Longitude) > 0 {

@@ -58,6 +58,11 @@ type Record struct {
 
 var lastWasHealthCheck bool // Used to clean up the log output
 
+// Just to clean up the call - we always use time.Now in a non-test environment.
+func timeAgo(timeStr string) string {
+	return storage.TimeAgo(timeStr, time.Now)
+}
+
 func handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "OK")
@@ -87,8 +92,10 @@ func NewMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.R
 			switch tag.SerNo {
 			case 810095:
 				subs["ruegerPositions"] = fmt.Sprintf("{lat: %.7f, lng: %.7f}", tag.Latitude, tag.Longitude)
+				subs["ruegerData"] = timeAgo(tag.GpsUTC) + " ago"
 			case 810243:
 				subs["tuckerPositions"] = fmt.Sprintf("{lat: %.7f, lng: %.7f}", tag.Latitude, tag.Longitude)
+				subs["tuckerData"] = timeAgo(tag.GpsUTC) + " ago"
 			}
 		}
 
@@ -162,7 +169,7 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 		// Log the records, for debugging
 		for _, r := range tagData.Records {
 			gpsField := r.Fields[0]
-			log.Printf("%v  %s  %v  %s  %0.7f,%0.7f\n", tagData.SerNo, r.DateUTC, r.Reason, gpsField.GpsUTC, gpsField.Lat, gpsField.Long)
+			log.Printf("%v  %s (%s ago) %v  %s (%s ago) %0.7f,%0.7f\n", tagData.SerNo, r.DateUTC, timeAgo(r.DateUTC), r.Reason, gpsField.GpsUTC, timeAgo(gpsField.GpsUTC), gpsField.Lat, gpsField.Long)
 		}
 
 		// Insert the document into storage
