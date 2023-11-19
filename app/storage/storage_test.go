@@ -265,57 +265,12 @@ func Test_GetLatestPosition(t *testing.T) {
 	require.Nil(t, err)
 
 	// WHEN we get the latest position for all tags.
-	// (A field present in the projection but not in the struct decoded to does not break anything.)
-	pipeline := []bson.M{
-		{
-			"$unwind": "$Records",
-		},
-		{
-			"$project": bson.M{
-				"serNo":     "$SerNo",
-				"seqNo":     "$Records.SeqNo",
-				"reason":    "$Records.Reason",
-				"dateUTC":   "$Records.DateUTC",
-				"gpcUTC":    "$Records.Fields.GpsUTC",
-				"latitude":  "$Records.Fields.Lat",
-				"longitude": "$Records.Fields.Long",
-				"altitude":  "$Records.Fields.Alt",
-				"speed":     "$Records.Fields.Spd",
-				"speedAcc":  "$Records.Fields.SpdAcc",
-				"heading":   "$Records.Fields.Head",
-				"PDOP":      "$Records.Fields.PDOP",
-				"posAcc":    "$Records.Fields.PosAcc",
-				"gpsStatus": "$Records.Fields.GpsStat",
-			},
-		},
-		{
-			"$group": bson.M{
-				"_id": "$serNo",
-				"document": bson.M{
-					"$top": bson.M{
-						"sortBy": bson.M{"seqNo": -1},
-						"output": "$$ROOT",
-					},
-				},
-			},
-		},
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-	cursor, err := collection.Aggregate(ctx, pipeline)
-	require.Nil(t, err)
-	defer cursor.Close(ctx)
-
-	var result []MongoPositionRecord
-	//var result []bson.M
-	err = cursor.All(ctx, &result)
+	result, err := storer.GetLastPositions()
 	require.Nil(t, err)
 
 	// THEN we get the latest position's values for both known tags.
-	for _, record := range result {
-		r := MarshalPositionRecord(record)
-		switch record.Document.SerNo {
+	for _, r := range result {
+		switch r.SerNo {
 		case 810095:
 			require.Equal(t, 7495.0, r.SeqNo)
 			require.Equal(t, -31.4577084, r.Latitude)

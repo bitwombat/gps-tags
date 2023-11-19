@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	//	"go.mongodb.org/mongo-driver/bson"
@@ -69,62 +68,47 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 	lastWasHealthCheck = true
 }
 
-func readDataFromDisk(filename string) ([]string, error) {
-	body, err := os.ReadFile(filename)
-	if err != nil {
-		return nil, fmt.Errorf("error reading file: %v", err)
+func NewMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Println("Got a map page request.")
+		lastWasHealthCheck = false
+
+		tags, err := storer.GetLastPositions()
+		if err != nil {
+			log.Printf("Error getting last position from storage: %v\n", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		subs := make(map[string]string)
+
+		for _, tag := range tags {
+			switch tag.SerNo {
+			case 810095:
+				subs["ruegerPositions"] = fmt.Sprintf("{lat: %.7f, lng: %.7f}", tag.Latitude, tag.Longitude)
+			case 810243:
+				subs["tuckerPositions"] = fmt.Sprintf("{lat: %.7f, lng: %.7f}", tag.Latitude, tag.Longitude)
+			}
+		}
+
+		mapPage, err := sub.GetContents("public_html/index.html", subs)
+
+		if err != nil {
+			log.Printf("Error getting contents of index.html: %v\n", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		_, err = w.Write([]byte(mapPage))
+		if err != nil {
+			log.Printf("Error writing response: %v\n", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// Don't need this - it's taken care of by w.Write:  w.WriteHeader(http.StatusOK)
 	}
-
-	fields := strings.Split(string(body), " ")
-	if len(fields) != 2 {
-		return nil, fmt.Errorf("error in format of file. Length of fields is %d, expected 2", len(fields))
-	}
-
-	return fields, nil
-}
-
-func handleMapPage(w http.ResponseWriter, r *http.Request) {
-	log.Println("Got a map page request.")
-	lastWasHealthCheck = false
-
-	subs := make(map[string]string)
-
-	//------
-	fields, err := readDataFromDisk("810095")
-	if err != nil {
-		log.Printf("Error reading %s file: %v\n", "810095", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	subs["ruegerPositions"] = fmt.Sprintf("{lat: %s, lng: %s}", fields[0], fields[1])
-
-	//------
-	fields, err = readDataFromDisk("810243")
-	if err != nil {
-		log.Printf("Error reading %s file: %v\n", "810243", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	subs["tuckerPositions"] = fmt.Sprintf("{lat: %s, lng: %s}", fields[0], fields[1])
-
-	mapPage, err := sub.GetContents("public_html/index.html", subs)
-
-	if err != nil {
-		log.Printf("Error getting contents: %v\n", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	_, err = w.Write([]byte(mapPage))
-	if err != nil {
-		log.Printf("Error writing response: %v\n", err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	// Don't need this - it's taken care of by w.Write:  w.WriteHeader(http.StatusOK)
 }
 
 func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
@@ -225,7 +209,7 @@ func main() {
 
 	// HTTPS endpoints
 	httpsMux := http.NewServeMux()
-	httpsMux.HandleFunc("/map", handleMapPage)
+	httpsMux.HandleFunc("/map", NewMapPageHandler(storer))
 	dataPostHandler := NewDataPostHandler(storer)
 	httpsMux.HandleFunc("/upload", dataPostHandler)
 

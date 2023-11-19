@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"time"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -58,5 +59,62 @@ func (s storer) WriteCommit(ctx context.Context, jsonStr string) error {
 }
 
 func (s storer) GetLastPositions() ([]PositionRecord, error) {
-	return nil, nil // TODO
+	// (A field present in the projection but not in the struct decoded to does not break anything.)
+	pipeline := []bson.M{
+		{
+			"$unwind": "$Records",
+		},
+		{
+			"$project": bson.M{
+				"serNo":     "$SerNo",
+				"seqNo":     "$Records.SeqNo",
+				"reason":    "$Records.Reason",
+				"dateUTC":   "$Records.DateUTC",
+				"gpcUTC":    "$Records.Fields.GpsUTC",
+				"latitude":  "$Records.Fields.Lat",
+				"longitude": "$Records.Fields.Long",
+				"altitude":  "$Records.Fields.Alt",
+				"speed":     "$Records.Fields.Spd",
+				"speedAcc":  "$Records.Fields.SpdAcc",
+				"heading":   "$Records.Fields.Head",
+				"PDOP":      "$Records.Fields.PDOP",
+				"posAcc":    "$Records.Fields.PosAcc",
+				"gpsStatus": "$Records.Fields.GpsStat",
+			},
+		},
+		{
+			"$group": bson.M{
+				"_id": "$serNo",
+				"document": bson.M{
+					"$top": bson.M{
+						"sortBy": bson.M{"seqNo": -1},
+						"output": "$$ROOT",
+					},
+				},
+			},
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	cursor, err := s.collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("calling collection.Aggregate: %v", err)
+	}
+	defer cursor.Close(ctx)
+
+	var result []MongoPositionRecord
+	//var result []bson.M
+
+	err = cursor.All(ctx, &result)
+	if err != nil {
+		return nil, fmt.Errorf("calling cursor.All: %v", err)
+	}
+
+	var records []PositionRecord
+	for _, r := range result {
+		records = append(records, *MarshalPositionRecord(r))
+	}
+
+	return records, nil
 }
