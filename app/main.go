@@ -173,21 +173,10 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 			return
 		}
 
-		log.Printf("Got %d Records, keeping last one\n", len(tagData.Records))
-
-		for i, r := range tagData.Records {
+		// Log the records, for debugging
+		for _, r := range tagData.Records {
 			gpsField := r.Fields[0]
 			log.Printf("%v  %s  %v  %s  %0.7f,%0.7f\n", tagData.SerNo, r.DateUTC, r.Reason, gpsField.GpsUTC, gpsField.Lat, gpsField.Long)
-
-			if i == len(tagData.Records)-1 {
-				err = os.WriteFile(fmt.Sprintf("%d", tagData.SerNo), []byte(fmt.Sprintf("%0.7f %0.7f", gpsField.Lat, gpsField.Long)), 0644)
-			}
-
-			if err != nil {
-				log.Printf("Error writing to file: %v", err)
-				w.WriteHeader(http.StatusInternalServerError)
-				return
-			}
 		}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
