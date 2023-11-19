@@ -251,6 +251,8 @@ func insert(collection *mongo.Collection, jsonstr string) (*mongo.InsertOneResul
 }
 
 func Test_GetLatestPosition(t *testing.T) {
+
+	// GIVEN two commits with multiple records and for multiple tags.
 	collection, err := NewMongoConnection(mongoURL, randomTestCollectionName())
 	require.Nil(t, err)
 
@@ -262,7 +264,8 @@ func Test_GetLatestPosition(t *testing.T) {
 	err = storer.WriteCommit(context.Background(), strippedDownMultiRecordSample2)
 	require.Nil(t, err)
 
-	// A field present in the projection but not in the struct decoded to does not break anything.
+	// WHEN we get the latest position for all tags.
+	// (A field present in the projection but not in the struct decoded to does not break anything.)
 	pipeline := []bson.M{
 		{
 			"$unwind": "$Records",
@@ -309,6 +312,7 @@ func Test_GetLatestPosition(t *testing.T) {
 	err = cursor.All(ctx, &result)
 	require.Nil(t, err)
 
+	// THEN we get the latest position's values for both known tags.
 	for _, record := range result {
 		r := MarshalPositionRecord(record)
 		switch record.Document.SerNo {

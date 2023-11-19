@@ -132,6 +132,7 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 	strer := storer // TODO: Is this necessary for a closure?
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		// Validate the request
 		if r.Method != http.MethodPost {
 			log.Println("Got a request to /upload that was not a POST")
 			w.WriteHeader(http.StatusMethodNotAllowed)
@@ -155,6 +156,7 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 		log.Println("Got a data post!")
 		lastWasHealthCheck = false
 
+		// Read and decode the request body
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			log.Printf("Error reading body: %v", err)
@@ -179,6 +181,7 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 			log.Printf("%v  %s  %v  %s  %0.7f,%0.7f\n", tagData.SerNo, r.DateUTC, r.Reason, gpsField.GpsUTC, gpsField.Lat, gpsField.Long)
 		}
 
+		// Insert the document into storage
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
 
@@ -189,6 +192,7 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 			return
 		}
 
+		// All happy
 		log.Printf("Successfully inserted document")
 		w.WriteHeader(http.StatusOK)
 	}
