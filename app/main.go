@@ -88,15 +88,16 @@ func NewMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.R
 
 		subs := make(map[string]string)
 
+		var idToName = map[float64]string{
+			810095: "rueger",
+			810243: "tucker",
+		}
+
 		for _, tag := range tags {
-			switch tag.SerNo {
-			case 810095:
-				subs["ruegerPositions"] = fmt.Sprintf("{lat: %.7f, lng: %.7f}", tag.Latitude, tag.Longitude)
-				subs["ruegerData"] = timeAgo(tag.GpsUTC) + " ago"
-			case 810243:
-				subs["tuckerPositions"] = fmt.Sprintf("{lat: %.7f, lng: %.7f}", tag.Latitude, tag.Longitude)
-				subs["tuckerData"] = timeAgo(tag.GpsUTC) + " ago"
-			}
+			name := idToName[tag.SerNo]
+			subs[name+"Lat"] = fmt.Sprintf("%.7f", tag.Latitude)
+			subs[name+"Long"] = fmt.Sprintf("%.7f", tag.Longitude)
+			subs[name+"Note"] = timeAgo(tag.GpsUTC) + " ago"
 		}
 
 		mapPage, err := sub.GetContents("public_html/index.html", subs)

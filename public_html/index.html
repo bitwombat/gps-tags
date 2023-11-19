@@ -20,13 +20,37 @@
 
         const home = { lat: -31.457605903965163, lng: 152.64217334946048 };
 
-		function makeMaker(title, lat, long, note) {
-		}
-
         async function initMap() {
             const { Map } = await google.maps.importLibrary("maps");
             const { Marker, AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker");
 
+			function makeMarker(map, title, latVal, longVal, note) {
+				const marker = new Marker({
+					map: map,
+					position: {
+						lat: latVal,
+						lng: longVal
+					},
+					title: title,
+					label: {
+						color: 'white', text: title[0], fontSize: '16px', fontWeight: 'bold'
+					},
+				});
+	
+				const infoWindow = new google.maps.InfoWindow({
+					content: note,
+				});
+		
+				marker.addListener("click", () => {
+					infoWindow.open({
+						anchor: marker,
+						map,
+					});
+				});
+	
+			}
+
+			// Put together the map and markers
             map = new Map(document.getElementById("map"), {
                 center: home,
                 zoom: 18,
@@ -42,45 +66,9 @@
                 });
             */
 
-            const markerTucker = new Marker({
-                map: map,
-                position: {{.tuckerPositions }},
-                title: "Tucker",
-                label: {
-                    color: 'white', text: 'T', fontSize: '16px', fontWeight: 'bold'
-                },
-            });
-
-            const markerRueger = new Marker({
-                map: map,
-                position: {{.ruegerPositions }}, //prettier_ignore
-                title: "Rueger",
-                label: {
-                    color: 'white', text: 'R', fontSize: '16px', fontWeight: 'bold'
-                },
-            });
-
-            const ruegerInfoWindow = new google.maps.InfoWindow({
-                content: "{{.ruegerData}}",
-            });
+			makeMarker(map, "Rueger", {{.ruegerLat}}, {{.ruegerLong}}, "{{.ruegerNote}}")
+			makeMarker(map, "Tucker", {{.tuckerLat}}, {{.tuckerLong}}, "{{.tuckerNote}}")
     
-            markerRueger.addListener("click", () => {
-                ruegerInfoWindow.open({
-                    anchor: markerRueger,
-                    map,
-                });
-            });
-    
-            const tuckerInfoWindow = new google.maps.InfoWindow({
-                content: "{{.tuckerData}}",
-            });
-    
-            markerTucker.addListener("click", () => {
-                tuckerInfoWindow.open({
-                    anchor: markerTucker,
-                    map,
-                });
-            });
         }
 
         initMap();
