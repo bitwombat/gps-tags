@@ -10,6 +10,8 @@ go build -ldflags="-s -w" main.go
 echo "Transferring service definition"
 scp -C devops/dog-tracking.service proxy:/etc/systemd/system/dog-tracking.service
 
+echo "Transferring web pages"
+scp -C ../public_html/* proxy:public_html
 echo "Transferring application binary"
 scp -C main proxy:.
 
