@@ -2,6 +2,8 @@ package storage
 
 import (
 	"context"
+	"fmt"
+	"time"
 )
 
 type Storage interface {
@@ -51,13 +53,6 @@ type PositionRecord struct {
 	GpsStatus float64
 }
 
-func MarshalPositionRecord(m MongoPositionRecord) *PositionRecord {
-	pr := &PositionRecord{
-		SerNo:  m.Document.SerNo,
-		SeqNo:  m.Document.SeqNo,
-		Reason: m.Document.Reason,
-		// DateUTC:   m.Document.DateUTC,
-		// GpsUTC:    m.Document.GpsUTC,
 func TimeAgo(timeStr string, Now func() time.Time) string {
 	// Parse the given time string
 	t, err := time.Parse(time.DateTime, timeStr)
@@ -65,10 +60,6 @@ func TimeAgo(timeStr string, Now func() time.Time) string {
 		return "<time parsing error>"
 	}
 
-	// These are probably only ever absent because of tests which intentionally
-	// have incomplete records...
-	if len(m.Document.Latitude) > 0 {
-		pr.Latitude = m.Document.Latitude[0]
 	// Calculate the difference
 	diff := Now().Sub(t)
 
@@ -85,42 +76,4 @@ func TimeAgo(timeStr string, Now func() time.Time) string {
 		minutes := int(diff.Minutes()) % 60
 		return fmt.Sprintf("%d days, %d hours, %d minutes", days, hours, minutes)
 	}
-
-	if len(m.Document.Longitude) > 0 {
-		pr.Longitude = m.Document.Longitude[0]
-	}
-
-	if len(m.Document.Altitude) > 0 {
-		pr.Altitude = m.Document.Altitude[0]
-	}
-
-	if len(m.Document.Speed) > 0 {
-		pr.Speed = m.Document.Speed[0]
-	}
-
-	if len(m.Document.Battery) > 0 {
-		pr.Battery = m.Document.Battery[0]
-	}
-
-	if len(m.Document.SpeedAcc) > 0 {
-		pr.SpeedAcc = m.Document.SpeedAcc[0]
-	}
-
-	if len(m.Document.Heading) > 0 {
-		pr.Heading = m.Document.Heading[0]
-	}
-
-	if len(m.Document.PDOP) > 0 {
-		pr.PDOP = m.Document.PDOP[0]
-	}
-
-	if len(m.Document.PosAcc) > 0 {
-		pr.PosAcc = m.Document.PosAcc[0]
-	}
-
-	if len(m.Document.GpsStatus) > 0 {
-		pr.GpsStatus = m.Document.GpsStatus[0]
-	}
-
-	return pr
 }
