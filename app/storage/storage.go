@@ -106,7 +106,7 @@ func TimeAgoInColour(timeStr string, Now func() time.Time) string {
 	if diff < heartBeatTimeInMinutes+1 { // if it's reported in properly, recently
 		return "red"
 	} else if diff < time.Hour { // somewhat recently, probably working
-		return "#ff6969"
+		return "#a23535"
 	} else { // not good
 		return "#8d8d8d"
 	}
