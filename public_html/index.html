@@ -30,14 +30,20 @@
                 ele.style.color = "white"
                 ele.style.fontSize = "16px"
                 ele.style.fontWeight = "bold"
-                const pe = new PinElement({ glyphColor: "white", background: colour, glyph: ele})
+
+                const pe = new PinElement({ 
+                    glyphColor: "white", 
+                    borderColor: colour, 
+                    background: colour, 
+                    glyph: ele
+                })
+
                 const marker = new AdvancedMarkerElement({
                     map: map,
 					position: {
 						lat: lat,
 						lng: lng
 					},
-					title: title,
                     content:  pe.element,
                 });
 
