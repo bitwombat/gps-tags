@@ -20,11 +20,11 @@ type MongoPositionRecord struct {
 		SerNo     float64
 		SeqNo     float64
 		Reason    int64
+		DateUTC   string
 		Latitude  []float64
 		Longitude []float64
 		Altitude  []float64
 		Speed     []float64
-		// DateUTC   float64
 		GpsUTC    []string
 		Battery   []float64
 		SpeedAcc  []float64
@@ -43,7 +43,7 @@ type PositionRecord struct {
 	Longitude float64
 	Altitude  float64
 	Speed     float64
-	// DateUTC   float64
+	DateUTC   string
 	GpsUTC    string
 	Battery   float64
 	SpeedAcc  float64

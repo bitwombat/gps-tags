@@ -97,11 +97,24 @@ func NewMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.R
 			810243: "tucker",
 		}
 
+		var reasonToText = map[int64]string{
+			1:  "Start of trip",
+			2:  "End of trip",
+			3:  "Elapsed time",
+			6:  "Distance travelled",
+			11: "Heartbeat",
+		}
+
 		for _, tag := range tags {
 			name := idToName[tag.SerNo]
+			reason, ok := reasonToText[tag.Reason]
+			if !ok {
+				log.Printf("Error: Unknown reason code: %v\n", tag.Reason)
+				reason = "Unknown reason"
+			}
 			subs[name+"Lat"] = fmt.Sprintf("%.7f", tag.Latitude)
 			subs[name+"Lng"] = fmt.Sprintf("%.7f", tag.Longitude)
-			subs[name+"Note"] = timeAgoAsText(tag.GpsUTC) + " ago"
+			subs[name+"Note"] = "Last GPS: " + timeAgoAsText(tag.GpsUTC) + " ago<br>Last Checkin: " + timeAgoAsText(tag.DateUTC) + " ago<br>Reason: " + reason
 			subs[name+"Colour"] = timeAgoInColour(tag.GpsUTC)
 		}
 

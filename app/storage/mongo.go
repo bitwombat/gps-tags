@@ -121,11 +121,10 @@ func (s storer) GetLastPositions() ([]PositionRecord, error) {
 
 func MarshalPositionRecord(m MongoPositionRecord) *PositionRecord {
 	pr := &PositionRecord{
-		SerNo:  m.Document.SerNo,
-		SeqNo:  m.Document.SeqNo,
-		Reason: m.Document.Reason,
-		// DateUTC:   m.Document.DateUTC,
-		// GpsUTC:    m.Document.GpsUTC,
+		SerNo:   m.Document.SerNo,
+		SeqNo:   m.Document.SeqNo,
+		Reason:  m.Document.Reason,
+		DateUTC: m.Document.DateUTC,
 	}
 
 	// These are probably only ever absent because of tests which intentionally
