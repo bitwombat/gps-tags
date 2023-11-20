@@ -80,6 +80,7 @@ func (s storer) GetLastPositions() ([]PositionRecord, error) {
 				"PDOP":      "$Records.Fields.PDOP",
 				"posAcc":    "$Records.Fields.PosAcc",
 				"gpsStatus": "$Records.Fields.GpsStat",
+				"battery":   "$Records.Fields.AnalogueData.1",
 			},
 		},
 		{
@@ -149,10 +150,6 @@ func MarshalPositionRecord(m MongoPositionRecord) *PositionRecord {
 		pr.GpsUTC = m.Document.GpsUTC[0]
 	}
 
-	if len(m.Document.Battery) > 0 {
-		pr.Battery = m.Document.Battery[0]
-	}
-
 	if len(m.Document.SpeedAcc) > 0 {
 		pr.SpeedAcc = m.Document.SpeedAcc[0]
 	}
@@ -171,6 +168,10 @@ func MarshalPositionRecord(m MongoPositionRecord) *PositionRecord {
 
 	if len(m.Document.GpsStatus) > 0 {
 		pr.GpsStatus = m.Document.GpsStatus[0]
+	}
+
+	if len(m.Document.Battery) > 0 {
+		pr.Battery = m.Document.Battery[0]
 	}
 
 	return pr

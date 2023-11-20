@@ -26,12 +26,12 @@ type MongoPositionRecord struct {
 		Altitude  []float64
 		Speed     []float64
 		GpsUTC    []string
-		Battery   []float64
 		SpeedAcc  []float64
 		Heading   []float64
 		PDOP      []float64
 		PosAcc    []float64
 		GpsStatus []float64
+		Battery   []float64
 	}
 }
 
@@ -45,12 +45,12 @@ type PositionRecord struct {
 	Speed     float64
 	DateUTC   string
 	GpsUTC    string
-	Battery   float64
 	SpeedAcc  float64
 	Heading   float64
 	PDOP      float64
 	PosAcc    float64
 	GpsStatus float64
+	Battery   float64
 }
 
 func TimeAgoAsText(timeStr string, Now func() time.Time) string {
