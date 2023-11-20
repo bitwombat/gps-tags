@@ -53,7 +53,7 @@ type PositionRecord struct {
 	GpsStatus float64
 }
 
-func TimeAgo(timeStr string, Now func() time.Time) string {
+func TimeAgoAsText(timeStr string, Now func() time.Time) string {
 	// Parse the given time string
 	t, err := time.Parse(time.DateTime, timeStr)
 	if err != nil {
@@ -75,5 +75,39 @@ func TimeAgo(timeStr string, Now func() time.Time) string {
 		hours := int(diff.Hours()) % 24
 		minutes := int(diff.Minutes()) % 60
 		return fmt.Sprintf("%d days, %d hours, %d minutes", days, hours, minutes)
+	}
+}
+
+func TimeAgoInMinutes(timeStr string, Now func() time.Time) int {
+	// Parse the given time string
+	t, err := time.Parse(time.DateTime, timeStr)
+	if err != nil {
+		return 9999
+	}
+
+	// Calculate the difference
+	diff := Now().Sub(t)
+
+	return int(diff.Minutes())
+}
+
+func TimeAgoInColour(timeStr string, Now func() time.Time) string {
+	const heartBeatTimeInMinutes = 10
+
+	// Parse the given time string
+	t, err := time.Parse(time.DateTime, timeStr)
+	if err != nil {
+		return "black"
+	}
+
+	// Calculate the difference
+	diff := Now().Sub(t)
+
+	if diff < heartBeatTimeInMinutes+1 { // if it's reported in properly, recently
+		return "red"
+	} else if diff < time.Hour { // somewhat recently, probably working
+		return "#ff6969"
+	} else { // not good
+		return "#8d8d8d"
 	}
 }

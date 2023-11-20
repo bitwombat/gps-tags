@@ -59,8 +59,12 @@ type Record struct {
 var lastWasHealthCheck bool // Used to clean up the log output
 
 // Just to clean up the call - we always use time.Now in a non-test environment.
-func timeAgo(timeStr string) string {
-	return storage.TimeAgo(timeStr, time.Now)
+func timeAgoAsText(timeStr string) string {
+	return storage.TimeAgoAsText(timeStr, time.Now)
+}
+
+func timeAgoInColour(timeStr string) string {
+	return storage.TimeAgoInColour(timeStr, time.Now)
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
@@ -96,8 +100,9 @@ func NewMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.R
 		for _, tag := range tags {
 			name := idToName[tag.SerNo]
 			subs[name+"Lat"] = fmt.Sprintf("%.7f", tag.Latitude)
-			subs[name+"Long"] = fmt.Sprintf("%.7f", tag.Longitude)
-			subs[name+"Note"] = timeAgo(tag.GpsUTC) + " ago"
+			subs[name+"Lng"] = fmt.Sprintf("%.7f", tag.Longitude)
+			subs[name+"Note"] = timeAgoAsText(tag.GpsUTC) + " ago"
+			subs[name+"Colour"] = timeAgoInColour(tag.GpsUTC)
 		}
 
 		mapPage, err := sub.GetContents("public_html/index.html", subs)
@@ -170,7 +175,7 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 		// Log the records, for debugging
 		for _, r := range tagData.Records {
 			gpsField := r.Fields[0]
-			log.Printf("%v  %s (%s ago) %v  %s (%s ago) %0.7f,%0.7f\n", tagData.SerNo, r.DateUTC, timeAgo(r.DateUTC), r.Reason, gpsField.GpsUTC, timeAgo(gpsField.GpsUTC), gpsField.Lat, gpsField.Long)
+			log.Printf("%v  %s (%s ago) %v  %s (%s ago) %0.7f,%0.7f\n", tagData.SerNo, r.DateUTC, timeAgoAsText(r.DateUTC), r.Reason, gpsField.GpsUTC, timeAgoAsText(gpsField.GpsUTC), gpsField.Lat, gpsField.Long)
 		}
 
 		// Insert the document into storage

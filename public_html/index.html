@@ -24,19 +24,23 @@
             const { Map } = await google.maps.importLibrary("maps");
             const { Marker, AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker");
 
-			function makeMarker(map, title, latVal, longVal, note) {
-				const marker = new Marker({
-					map: map,
+			function makeMarker(map, title, colour, lat, lng, note) {
+                var ele = document.createElement('div')
+                ele.innerHTML = title[0]
+                ele.style.color = "white"
+                ele.style.fontSize = "16px"
+                ele.style.fontWeight = "bold"
+                const pe = new PinElement({ glyphColor: "white", background: colour, glyph: ele})
+                const marker = new AdvancedMarkerElement({
+                    map: map,
 					position: {
-						lat: latVal,
-						lng: longVal
+						lat: lat,
+						lng: lng
 					},
 					title: title,
-					label: {
-						color: 'white', text: title[0], fontSize: '16px', fontWeight: 'bold'
-					},
-				});
-	
+                    content:  pe.element,
+                });
+
 				const infoWindow = new google.maps.InfoWindow({
 					content: note,
 				});
@@ -58,16 +62,8 @@
                 mapTypeId: 'satellite'
             });
 
-            /*
-                const marker = new AdvancedMarkerElement({
-                    map: map,
-                    position: home,
-                    title: "Home",
-                });
-            */
-
-			makeMarker(map, "Rueger", {{.ruegerLat}}, {{.ruegerLong}}, "{{.ruegerNote}}")
-			makeMarker(map, "Tucker", {{.tuckerLat}}, {{.tuckerLong}}, "{{.tuckerNote}}")
+			makeMarker(map, "Rueger", "{{.ruegerColour}}", {{.ruegerLat}}, {{.ruegerLng}}, "{{.ruegerNote}}")
+			makeMarker(map, "Tucker", "{{.tuckerColour}}", {{.tuckerLat}}, {{.tuckerLng}}, "{{.tuckerNote}}")
     
         }
 
