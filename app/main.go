@@ -77,10 +77,10 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 	lastWasHealthCheck = true
 }
 
-func NewMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
+func NewCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Got a map page request.")
+		log.Println("Got a current map page request.")
 		lastWasHealthCheck = false
 
 		tags, err := storer.GetLastPositions()
@@ -118,7 +118,7 @@ func NewMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.R
 			subs[name+"Colour"] = timeAgoInColour(tag.GpsUTC)
 		}
 
-		mapPage, err := sub.GetContents("public_html/index.html", subs)
+		mapPage, err := sub.GetContents("public_html/current-map.html", subs)
 
 		if err != nil {
 			log.Printf("Error getting contents of index.html: %v\n", err)
@@ -235,7 +235,7 @@ func main() {
 
 	// HTTPS endpoints
 	httpsMux := http.NewServeMux()
-	httpsMux.HandleFunc("/map", NewMapPageHandler(storer))
+	httpsMux.HandleFunc("/current", NewCurrentMapPageHandler(storer))
 	dataPostHandler := NewDataPostHandler(storer)
 	httpsMux.HandleFunc("/upload", dataPostHandler)
 
