@@ -92,7 +92,7 @@ func TimeAgoInMinutes(timeStr string, Now func() time.Time) int {
 }
 
 func TimeAgoInColour(timeStr string, Now func() time.Time) string {
-	const heartBeatTimeInMinutes = 10
+	const heartBeatTimeInMinutes = 10 * time.Minute
 
 	// Parse the given time string
 	t, err := time.Parse(time.DateTime, timeStr)
@@ -103,7 +103,7 @@ func TimeAgoInColour(timeStr string, Now func() time.Time) string {
 	// Calculate the difference
 	diff := Now().Sub(t)
 
-	if diff < heartBeatTimeInMinutes+1 { // if it's reported in properly, recently
+	if diff < heartBeatTimeInMinutes+1*time.Minute { // if it's reported in properly, recently
 		return "red"
 	} else if diff < time.Hour { // somewhat recently, probably working
 		return "#a23535"
