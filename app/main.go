@@ -11,8 +11,10 @@ import (
 	"time"
 
 	//	"go.mongodb.org/mongo-driver/bson"
+	"github.com/bitwombat/tag/poly"
 	"github.com/bitwombat/tag/storage"
 	"github.com/bitwombat/tag/sub"
+	zonespkg "github.com/bitwombat/tag/zones"
 )
 
 type TagData struct {
@@ -56,6 +58,23 @@ type Record struct {
 	Fields  []Field `json:"Fields"`
 }
 
+var geoProperty = []poly.Point{
+	{X: -31.4586212322512, Y: 152.6422124774594},
+	{X: -31.4595509701308, Y: 152.6438560831193},
+	{X: -31.45812972583087, Y: 152.6451090582995},
+	{X: -31.45580841978974, Y: 152.6409669973841},
+	{X: -31.45613159545191, Y: 152.6404602174576},
+	{X: -31.4586212322512, Y: 152.6422124774594},
+}
+
+var reasonToText = map[int64]string{
+	1:  "Start of trip",
+	2:  "End of trip",
+	3:  "Elapsed time",
+	6:  "Distance travelled",
+	11: "Heartbeat",
+}
+
 var lastWasHealthCheck bool // Used to clean up the log output
 
 // Just to clean up the call - we always use time.Now in a non-test environment.
@@ -95,14 +114,6 @@ func NewCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 		var idToName = map[float64]string{
 			810095: "rueger",
 			810243: "tucker",
-		}
-
-		var reasonToText = map[int64]string{
-			1:  "Start of trip",
-			2:  "End of trip",
-			3:  "Elapsed time",
-			6:  "Distance travelled",
-			11: "Heartbeat",
 		}
 
 		for _, tag := range tags {
@@ -185,10 +196,37 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 			return
 		}
 
+		var region string
+		var zoneName string
+
+		zones, err := zonespkg.ReadKMLDir("zones")
+		if err != nil {
+			log.Printf("Error reading KML files: %v", err)
+			// not a critical error, keep going
+			return
+		}
+
 		// Log the records, for debugging
 		for _, r := range tagData.Records {
 			gpsField := r.Fields[0]
-			log.Printf("%v  %s (%s ago) %v  %s (%s ago) %0.7f,%0.7f\n", tagData.SerNo, r.DateUTC, timeAgoAsText(r.DateUTC), r.Reason, gpsField.GpsUTC, timeAgoAsText(gpsField.GpsUTC), gpsField.Lat, gpsField.Long)
+			if poly.IsInside(geoProperty, poly.Point{X: gpsField.Lat, Y: gpsField.Long}) {
+				region = "Within property boundary"
+			} else {
+				region = "Outside property boundary"
+			}
+
+			if zones != nil {
+				zoneName = zonespkg.NameThatZone(zones, zonespkg.Point{Latitude: gpsField.Lat, Longitude: gpsField.Long})
+			} else {
+				zoneName = "No zones loaded"
+			}
+
+			reason, ok := reasonToText[int64(r.Reason)]
+			if !ok {
+				log.Printf("Error: Unknown reason code: %v\n", r.Reason)
+				reason = "Unknown reason"
+			}
+			log.Printf("%v  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\" \"%s\"\n", tagData.SerNo, r.DateUTC, timeAgoAsText(r.DateUTC), reason, gpsField.GpsUTC, timeAgoAsText(gpsField.GpsUTC), gpsField.Lat, gpsField.Long, region, zoneName)
 		}
 
 		// Insert the document into storage
