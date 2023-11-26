@@ -1,8 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
 <Document>
-	<name>Lower Swales.kml</name>
-	<Style id="sh_ylw-pushpin">
+	<name>in the south gully paddock.kml</name>
+	<StyleMap id="msn_ylw-pushpin5">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin4</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin4</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="sh_ylw-pushpin4">
 		<IconStyle>
 			<scale>1.3</scale>
 			<Icon>
@@ -19,7 +29,7 @@
 			<outline>0</outline>
 		</PolyStyle>
 	</Style>
-	<Style id="sn_ylw-pushpin">
+	<Style id="sn_ylw-pushpin4">
 		<IconStyle>
 			<scale>1.1</scale>
 			<Icon>
@@ -36,25 +46,15 @@
 			<outline>0</outline>
 		</PolyStyle>
 	</Style>
-	<StyleMap id="msn_ylw-pushpin">
-		<Pair>
-			<key>normal</key>
-			<styleUrl>#sn_ylw-pushpin</styleUrl>
-		</Pair>
-		<Pair>
-			<key>highlight</key>
-			<styleUrl>#sh_ylw-pushpin</styleUrl>
-		</Pair>
-	</StyleMap>
 	<Placemark>
-		<name>Lower Swales</name>
-		<styleUrl>#msn_ylw-pushpin</styleUrl>
+		<name>in the south gully paddock</name>
+		<styleUrl>#msn_ylw-pushpin5</styleUrl>
 		<Polygon>
 			<tessellate>1</tessellate>
 			<outerBoundaryIs>
 				<LinearRing>
 					<coordinates>
-						152.6421656409472,-31.45654109036676,0 152.6416220333341,-31.45687903352979,0 152.6414159698191,-31.45700930912699,0 152.6418322956161,-31.4573628919362,0 152.6421209245384,-31.45740536193325,0 152.6424109028362,-31.45738522609592,0 152.6421462267841,-31.45687599491461,0 152.6422809599842,-31.45673080831554,0 152.6421656409472,-31.45654109036676,0 
+						152.6425461259279,-31.4585770481152,0 152.6425501065942,-31.45886093502508,0 152.6432953248847,-31.45928141615311,0 152.6433966463305,-31.45884934552492,0 152.6425461259279,-31.4585770481152,0 
 					</coordinates>
 				</LinearRing>
 			</outerBoundaryIs>

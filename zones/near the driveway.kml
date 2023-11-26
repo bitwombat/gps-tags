@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
 <Document>
-	<name>Paddock paddock.kml</name>
-	<StyleMap id="msn_ylw-pushpin2">
+	<name>near the driveway.kml</name>
+	<StyleMap id="msn_ylw-pushpin1">
 		<Pair>
 			<key>normal</key>
-			<styleUrl>#sn_ylw-pushpin0</styleUrl>
+			<styleUrl>#sn_ylw-pushpin1</styleUrl>
 		</Pair>
 		<Pair>
 			<key>highlight</key>
-			<styleUrl>#sh_ylw-pushpin1</styleUrl>
+			<styleUrl>#sh_ylw-pushpin0</styleUrl>
 		</Pair>
 	</StyleMap>
-	<Style id="sh_ylw-pushpin1">
+	<Style id="sh_ylw-pushpin0">
 		<IconStyle>
 			<scale>1.3</scale>
 			<Icon>
@@ -29,7 +29,7 @@
 			<outline>0</outline>
 		</PolyStyle>
 	</Style>
-	<Style id="sn_ylw-pushpin0">
+	<Style id="sn_ylw-pushpin1">
 		<IconStyle>
 			<scale>1.1</scale>
 			<Icon>
@@ -47,14 +47,14 @@
 		</PolyStyle>
 	</Style>
 	<Placemark>
-		<name>Paddock paddock</name>
-		<styleUrl>#msn_ylw-pushpin2</styleUrl>
+		<name>near the driveway</name>
+		<styleUrl>#msn_ylw-pushpin1</styleUrl>
 		<Polygon>
 			<tessellate>1</tessellate>
 			<outerBoundaryIs>
 				<LinearRing>
 					<coordinates>
-						152.642555993018,-31.45741317384159,0 152.6425119076301,-31.45824449457622,0 152.6433325051938,-31.45848756081043,0 152.6434603827257,-31.45744407200447,0 152.642555993018,-31.45741317384159,0 
+						152.641327200215,-31.4572950229521,0 152.6414441752883,-31.45725683257267,0 152.6416318693927,-31.45738119367307,0 152.6417874296602,-31.45734656323894,0 152.6413070459936,-31.45687089424975,0 152.6411251085695,-31.45697875807937,0 152.641327200215,-31.4572950229521,0 
 					</coordinates>
 				</LinearRing>
 			</outerBoundaryIs>

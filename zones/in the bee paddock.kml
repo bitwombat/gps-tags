@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
 <Document>
-	<name>Down by the river.kml</name>
-	<StyleMap id="msn_ylw-pushpin">
+	<name>in the bee paddock.kml</name>
+	<StyleMap id="msn_ylw-pushpin3">
 		<Pair>
 			<key>normal</key>
 			<styleUrl>#sn_ylw-pushpin</styleUrl>
 		</Pair>
 		<Pair>
 			<key>highlight</key>
-			<styleUrl>#sh_ylw-pushpin</styleUrl>
+			<styleUrl>#sh_ylw-pushpin2</styleUrl>
 		</Pair>
 	</StyleMap>
-	<Style id="sh_ylw-pushpin">
+	<Style id="sh_ylw-pushpin2">
 		<IconStyle>
 			<scale>1.3</scale>
 			<Icon>
@@ -20,15 +20,11 @@
 			</Icon>
 			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
 		</IconStyle>
-		<BalloonStyle>
-		</BalloonStyle>
 		<LineStyle>
 			<color>ff0055ff</color>
-			<width>3</width>
 		</LineStyle>
 		<PolyStyle>
-			<color>800000ff</color>
-			<outline>0</outline>
+			<color>7d0000aa</color>
 		</PolyStyle>
 	</Style>
 	<Style id="sn_ylw-pushpin">
@@ -39,26 +35,22 @@
 			</Icon>
 			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
 		</IconStyle>
-		<BalloonStyle>
-		</BalloonStyle>
 		<LineStyle>
 			<color>ff0055ff</color>
-			<width>3</width>
 		</LineStyle>
 		<PolyStyle>
-			<color>800000ff</color>
-			<outline>0</outline>
+			<color>7d0000aa</color>
 		</PolyStyle>
 	</Style>
 	<Placemark>
-		<name>Down by the river</name>
-		<styleUrl>#msn_ylw-pushpin</styleUrl>
+		<name>in the bee paddock</name>
+		<styleUrl>#msn_ylw-pushpin3</styleUrl>
 		<Polygon>
 			<tessellate>1</tessellate>
 			<outerBoundaryIs>
 				<LinearRing>
 					<coordinates>
-						152.6449461346318,-31.45797974415581,0 152.6446783896915,-31.45828591787875,0 152.6442717301238,-31.45829177435157,0 152.6444562072157,-31.45889951237434,0 152.6437321920259,-31.45951969596248,0 152.6444586923324,-31.45987340158758,0 152.6453355177164,-31.45832410414977,0 152.6449461346318,-31.45797974415581,0 
+						152.6416712315805,-31.45778813071607,0 152.6418445945781,-31.45805662921885,0 152.6420061174761,-31.45789762569781,0 152.6419664192838,-31.45766968990111,0 152.6418813908951,-31.4576659614606,0 152.6416712315805,-31.45778813071607,0 
 					</coordinates>
 				</LinearRing>
 			</outerBoundaryIs>

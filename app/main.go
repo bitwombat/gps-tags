@@ -268,7 +268,7 @@ func NewDataPostHandler(s storage.Storage) func(http.ResponseWriter, *http.Reque
 		latestGPSRecord := latestRecord.Fields[0]
 
 		if NamedZones != nil {
-			thisZoneText = "Last seen zone: " + zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: latestGPSRecord.Lat, Longitude: latestGPSRecord.Long})
+			thisZoneText = "Last seen " + zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: latestGPSRecord.Lat, Longitude: latestGPSRecord.Long})
 		} else {
 			thisZoneText = "<No zones loaded>"
 		}

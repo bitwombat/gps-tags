@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
 <Document>
-	<name>Northern badlands.kml</name>
+	<name>near the flat.kml</name>
 	<StyleMap id="msn_ylw-pushpin">
 		<Pair>
 			<key>normal</key>
@@ -27,7 +27,7 @@
 			<width>3</width>
 		</LineStyle>
 		<PolyStyle>
-			<color>800000ff</color>
+			<color>800400ff</color>
 			<outline>0</outline>
 		</PolyStyle>
 	</Style>
@@ -46,19 +46,19 @@
 			<width>3</width>
 		</LineStyle>
 		<PolyStyle>
-			<color>800000ff</color>
+			<color>800400ff</color>
 			<outline>0</outline>
 		</PolyStyle>
 	</Style>
 	<Placemark>
-		<name>Northern badlands</name>
+		<name>near the flat</name>
 		<styleUrl>#msn_ylw-pushpin</styleUrl>
 		<Polygon>
 			<tessellate>1</tessellate>
 			<outerBoundaryIs>
 				<LinearRing>
 					<coordinates>
-						152.6437238280606,-31.4572859920836,0 152.6434991075111,-31.45744562896329,0 152.6435674034156,-31.45766987752475,0 152.6437980655477,-31.45767877693592,0 152.6442120471645,-31.45826314122619,0 152.6447440409648,-31.45821801216827,0 152.6449461329878,-31.45796084858994,0 152.6437238280606,-31.4572859920836,0 
+						152.641669039568,-31.45778053094584,0 152.641881298536,-31.45765926027708,0 152.6417543795218,-31.45752274346649,0 152.6417370012955,-31.45750015827376,0 152.6417083683218,-31.45745812716429,0 152.6416825401944,-31.45743564287825,0 152.6414417618851,-31.45726347897669,0 152.6413346253229,-31.45730084102929,0 152.641669039568,-31.45778053094584,0 
 					</coordinates>
 				</LinearRing>
 			</outerBoundaryIs>

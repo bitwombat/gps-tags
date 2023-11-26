@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
 <Document>
-	<name>No mans band.kml</name>
-	<StyleMap id="msn_ylw-pushpin1">
+	<name>in Paddock Paddock.kml</name>
+	<StyleMap id="msn_ylw-pushpin2">
 		<Pair>
 			<key>normal</key>
-			<styleUrl>#sn_ylw-pushpin1</styleUrl>
+			<styleUrl>#sn_ylw-pushpin0</styleUrl>
 		</Pair>
 		<Pair>
 			<key>highlight</key>
-			<styleUrl>#sh_ylw-pushpin0</styleUrl>
+			<styleUrl>#sh_ylw-pushpin1</styleUrl>
 		</Pair>
 	</StyleMap>
-	<Style id="sh_ylw-pushpin0">
+	<Style id="sh_ylw-pushpin1">
 		<IconStyle>
 			<scale>1.3</scale>
 			<Icon>
@@ -29,7 +29,7 @@
 			<outline>0</outline>
 		</PolyStyle>
 	</Style>
-	<Style id="sn_ylw-pushpin1">
+	<Style id="sn_ylw-pushpin0">
 		<IconStyle>
 			<scale>1.1</scale>
 			<Icon>
@@ -47,14 +47,14 @@
 		</PolyStyle>
 	</Style>
 	<Placemark>
-		<name>No mans band</name>
-		<styleUrl>#msn_ylw-pushpin1</styleUrl>
+		<name>in Paddock Paddock</name>
+		<styleUrl>#msn_ylw-pushpin2</styleUrl>
 		<Polygon>
 			<tessellate>1</tessellate>
 			<outerBoundaryIs>
 				<LinearRing>
 					<coordinates>
-						152.6414383651901,-31.45698941644868,0 152.6414349342366,-31.45699079955762,0 152.6414314341942,-31.45698483234853,0 152.6414279704303,-31.4569825415116,0 152.6414297550427,-31.45698919868767,0 152.6414323794809,-31.45699367383988,0 152.6414297197893,-31.45698552415618,0 152.6414357039551,-31.45698126433407,0 152.6422716435756,-31.45647136901406,0 152.6420882631608,-31.45636500203645,0 152.6413131046683,-31.45686935454529,0 152.6414383651901,-31.45698941644868,0 
+						152.642555993018,-31.45741317384159,0 152.6425119076301,-31.45824449457622,0 152.6433325051938,-31.45848756081043,0 152.6434603827257,-31.45744407200447,0 152.642555993018,-31.45741317384159,0 
 					</coordinates>
 				</LinearRing>
 			</outerBoundaryIs>
