@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	//	"go.mongodb.org/mongo-driver/bson"
@@ -93,7 +94,13 @@ var idToName = map[float64]string{
 	810243: "tucker",
 }
 
-var lastWasHealthCheck bool // Used to clean up the log output
+var lastWasHealthCheck bool // Used to clean up the log output. TODO: Same persistence problem here.
+
+func logIfErr(err error, msg string) {
+	if err != nil {
+		log.Printf(msg+" %w", err)
+	}
+}
 
 // Just to clean up the call - we always use time.Now in a non-test environment.
 func timeAgoAsText(timeStr string) string {
@@ -164,6 +171,9 @@ func NewCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
 	strer := storer // TODO: Is this necessary for a closure?
 
+	var lastInsideSafeZoneBoundary bool // TODO: These fire on every startup if the dogs are close to home, because they default to false.
+	var lastInsidePropertyBoundary bool // Also, this saved state won't work if on CloudRun, since the process comes and goes!
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
@@ -211,7 +221,6 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 			return
 		}
 
-		var boundarySummary string
 		var thisZone string
 
 		NamedZones, err := zonespkg.ReadKMLDir("zones")
@@ -225,26 +234,19 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 		if !ok {
 			log.Printf("Unknown tag number: %v", tagData.SerNo)
 		}
+		dogName = strings.ToUpper(dogName) // Just looks better and stands out in notifications
+
+		var latestRecord Record
 
 		// Process the records
 		for _, r := range tagData.Records {
-			gpsField := r.Fields[0]
 
-			if poly.IsInside(propertyOutline, poly.Point{X: gpsField.Lat, Y: gpsField.Long}) {
-				boundarySummary = "Within property boundary"
-				if !poly.IsInside(safeZoneOutline, poly.Point{X: gpsField.Lat, Y: gpsField.Long}) {
-					err = notify.Notify(ctx, fmt.Sprintf("%s is getting a bit far from home base", dogName))
-					if err != nil {
-						log.Printf("Error sending notification: %v", err)
-					}
-				}
-			} else {
-				boundarySummary = "Off the property"
-				err = notify.Notify(ctx, fmt.Sprintf("%s is off the property", dogName))
-				if err != nil {
-					log.Printf("Error sending notification: %v", err)
-				}
+			// Figure out the most recent record for notifications later
+			if r.SeqNo > latestRecord.SeqNo {
+				latestRecord = r
 			}
+
+			gpsField := r.Fields[0]
 
 			if NamedZones != nil {
 				thisZone = zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: gpsField.Lat, Longitude: gpsField.Long})
@@ -258,9 +260,46 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 				reason = "Unknown reason"
 			}
 
-			log.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\" \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC), reason, gpsField.GpsUTC, timeAgoAsText(gpsField.GpsUTC), gpsField.Lat, gpsField.Long, boundarySummary, thisZone)
+			log.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC), reason, gpsField.GpsUTC, timeAgoAsText(gpsField.GpsUTC), gpsField.Lat, gpsField.Long, thisZone)
 
 		}
+
+		// Notify based on most recent record in the set just sent
+		latestGPSRecord := latestRecord.Fields[0]
+		currentLocationPoint := poly.Point{X: latestGPSRecord.Lat, Y: latestGPSRecord.Long}
+
+		if NamedZones != nil {
+			thisZone = "Last seen zone: " + zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: latestGPSRecord.Lat, Longitude: latestGPSRecord.Long})
+		} else {
+			thisZone = "No zones loaded"
+		}
+
+		currentInsidePropertyBoundary := poly.IsInside(propertyOutline, currentLocationPoint)
+		currentInsideSafeZoneBoundary := poly.IsInside(safeZoneOutline, currentLocationPoint)
+
+		// Notify on changes
+		if lastInsidePropertyBoundary && !currentInsidePropertyBoundary {
+			err = notify.Notify(ctx, fmt.Sprintf("%s is off the property", dogName), thisZone)
+			logIfErr(err, "Error sending notification")
+		}
+
+		if !lastInsidePropertyBoundary && currentInsidePropertyBoundary {
+			err = notify.Notify(ctx, fmt.Sprintf("%s is now back on property", dogName), thisZone)
+			logIfErr(err, "Error sending notification")
+		}
+
+		if lastInsideSafeZoneBoundary && !currentInsideSafeZoneBoundary {
+			err = notify.Notify(ctx, fmt.Sprintf("%s is getting a bit far from home base", dogName), thisZone)
+			logIfErr(err, "Error sending notification")
+		}
+
+		if !lastInsideSafeZoneBoundary && currentInsideSafeZoneBoundary {
+			err = notify.Notify(ctx, fmt.Sprintf("%s is now back closer to home base", dogName), thisZone)
+			logIfErr(err, "Error sending notification")
+		}
+
+		lastInsidePropertyBoundary = currentInsidePropertyBoundary
+		lastInsideSafeZoneBoundary = currentInsideSafeZoneBoundary
 
 		// Insert the document into storage
 		err = strer.WriteCommit(ctx, string(body))

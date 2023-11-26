@@ -9,7 +9,7 @@ import (
 
 const ntfyURL = "http://ntfy.sh/ahShaikee"
 
-func Notify(ctx context.Context, message string) error {
+func Notify(ctx context.Context, title, message string) error {
 	// Set up client and crap
 	client := &http.Client{}
 	buf := strings.NewReader(message)
@@ -19,8 +19,7 @@ func Notify(ctx context.Context, message string) error {
 	if err != nil {
 		return fmt.Errorf("error while making http POST request to ntfy.sh: %w", err)
 	}
-	req.Header.Set("Title", "Dog tag notification")
-	req.Header.Set("Priority", "urgent")
+	req.Header.Set("Title", title)
 	req.Header.Set("Actions", `[{ "action": "view", "label": "Show me", "url": "https://tags.bitwombat.com.au/current" }]`)
 
 	// Now actually send the request
