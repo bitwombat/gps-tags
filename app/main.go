@@ -164,8 +164,6 @@ func NewCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
 	strer := storer // TODO: Is this necessary for a closure?
 
-	var lastZone string
-
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
@@ -252,14 +250,6 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 				thisZone = zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: gpsField.Lat, Longitude: gpsField.Long})
 			} else {
 				thisZone = "No zones loaded"
-			}
-
-			if thisZone != lastZone {
-				lastZone = thisZone
-				err = notify.Notify(ctx, fmt.Sprintf("%s is now in %s", dogName, thisZone))
-				if err != nil {
-					log.Printf("Error sending notification: %v", err)
-				}
 			}
 
 			reason, ok := reasonToText[int64(r.Reason)]
