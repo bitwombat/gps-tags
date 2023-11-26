@@ -13,7 +13,7 @@ import (
 	//	"go.mongodb.org/mongo-driver/bson"
 	"github.com/bitwombat/tag/poly"
 	"github.com/bitwombat/tag/storage"
-	"github.com/bitwombat/tag/sub"
+	"github.com/bitwombat/tag/substitute"
 	zonespkg "github.com/bitwombat/tag/zones"
 )
 
@@ -129,7 +129,7 @@ func NewCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 			subs[name+"Colour"] = timeAgoInColour(tag.GpsUTC)
 		}
 
-		mapPage, err := sub.GetContents("public_html/current-map.html", subs)
+		mapPage, err := substitute.ContentsOf("public_html/current-map.html", subs)
 
 		if err != nil {
 			log.Printf("Error getting contents of index.html: %v\n", err)

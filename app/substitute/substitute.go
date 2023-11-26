@@ -1,4 +1,4 @@
-package sub
+package substitute
 
 import (
 	"bytes"
@@ -7,7 +7,8 @@ import (
 	"text/template"
 )
 
-func GetContents(path string, subs map[string]string) (string, error) {
+// ContentsOf substitutes contents of the file at the filename with the substitutions.
+func ContentsOf(path string, subs map[string]string) (string, error) {
 	asBytes, err := os.ReadFile(path)
 	if err != nil {
 		return "", err

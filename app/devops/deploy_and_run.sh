@@ -2,14 +2,16 @@
 
 set -e
 
+RSYNC='rsync -r --compress --itemize-changes '
+
 echo "Building app"
 go build -ldflags="-s -w" main.go
 
-echo "Transferring web pages"
-scp -C ../public_html/* proxy:public_html
+echo "Transferring assets"
+$RSYNC ../{zones,public_html} proxy:
 
 echo "Transferring service definition"
-scp -C devops/dog-tracking.service proxy:/etc/systemd/system/dog-tracking.service
+$RSYNC devops/dog-tracking.service proxy:/etc/systemd/system/dog-tracking.service
 
 echo "Reloading systemctl daemon"
 ssh -q proxy systemctl daemon-reload

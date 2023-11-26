@@ -6,12 +6,12 @@ type Point struct {
 	X, Y float64
 }
 
-type Line struct {
+type line struct {
 	p1, p2 Point
 }
 
 // onLine checks if a point is on a line
-func onLine(l Line, p Point) bool {
+func onLine(l line, p Point) bool {
 	return p.X <= max(l.p1.X, l.p2.X) &&
 		p.X >= min(l.p1.X, l.p2.X) &&
 		p.Y <= max(l.p1.Y, l.p2.Y) &&
@@ -30,7 +30,7 @@ func direction(a, b, c Point) int {
 }
 
 // isIntersect checks if two lines intersect
-func isIntersect(l1, l2 Line) bool {
+func isIntersect(l1, l2 line) bool {
 	dir1 := direction(l1.p1, l1.p2, l2.p1)
 	dir2 := direction(l1.p1, l1.p2, l2.p2)
 	dir3 := direction(l2.p1, l2.p2, l1.p1)
@@ -59,12 +59,12 @@ func IsInside(poly []Point, p Point) bool {
 	}
 
 	// Create a point at infinity, y is same as point p
-	exline := Line{p, Point{9999, p.Y}}
+	exline := line{p, Point{9999, p.Y}}
 	count := 0
 	i := 0
 	for {
 		// Forming a line/side from two consecutive points of poly
-		side := Line{poly[i], poly[(i+1)%n]}
+		side := line{poly[i], poly[(i+1)%n]}
 		if isIntersect(side, exline) {
 			if direction(side.p1, p, side.p2) == 0 {
 				return onLine(side, p)
