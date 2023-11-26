@@ -96,5 +96,5 @@ func NameThatZone(zones []Zone, p Point) string {
 		}
 	}
 
-	return "Outside all zones"
+	return "Not in any known zone."
 }

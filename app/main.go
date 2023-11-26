@@ -239,7 +239,7 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 					}
 				}
 			} else {
-				boundarySummary = "Outside property boundary"
+				boundarySummary = "Off the property"
 				err = notify.Notify(ctx, fmt.Sprintf("%s is off the property", dogName))
 				if err != nil {
 					log.Printf("Error sending notification: %v", err)
