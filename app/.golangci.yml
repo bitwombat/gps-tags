@@ -1,0 +1,70 @@
+run:
+    deadline: 3m
+    tests: false
+    skip-files:
+        - .*\.pb\.go
+    skip-dirs:
+      - mocks
+      - unit_test
+      - tmp
+
+linters:
+  presets:
+    - unused
+    - bugs
+  enable:
+    - gocognit
+    - gocyclo
+    - gosimple
+    - stylecheck
+    - exportloopref
+    - goimports
+    - gosec
+    - misspell
+    - nolintlint
+    - revive
+    - unparam
+    - unused
+  disable:
+  # Those which are deprecated and replaced by ones we have enabled
+  # Basically, we have these to suppress the warning.
+    - depguard
+    - wsl
+    - godox
+    - varcheck
+    - deadcode
+    - scopelint
+    - structcheck
+
+linters-settings:
+  exhaustive:
+    # Without this setting, you have to list all values, which makes a default
+    # redundant. This might be fine if this linter was part of the PMITC standard
+    # set, so that it would catch with lint what would otherwise be caught by `default`.
+    # Instead, we'll keep using `default` statements - it's safer. The docs say turning
+    # this on defeats the purpose, but it will still find switch statements that are
+    # not exhaustive AND do not have default statements.
+    default-signifies-exhaustive: true
+  unparam:
+    check-exported: true
+  govet:
+    enable:
+      - nillness
+      - shadow
+  stylecheck:
+    # STxxxx checks in https://staticcheck.io/docs/configuration/options/#checks
+    # ST1000 - Incorrect or missing package comment
+    checks: ["all", "-ST1000"]
+    # Default adding "CSV", excluding ones detailed in the 'revive' section below.
+    initialisms: ["ACL", "API", "ASCII", "CPU", "CSS", "CSV", "DNS", "EOF", "GUID", "HTML", "IP", "JSON", "QPS", "RAM", "RPC", "SLA", "SMTP", "SQL", "SSH", "TCP", "TLS", "TTL", "UDP", "UI", "GID", "UID", "UUID", "URI", "UTF8", "VM", "XML", "XMPP", "XSRF", "XSS", "SIP", "RTP", "AMQP", "DB", "TS"]
+  revive:
+    rules:
+      - name: var-naming
+        severity: error
+        disabled: false
+        arguments:
+          # What does the 'D' stand for in "ID"? It's not an acronym.
+          # Also, URL and HTTP are commonly lowercase or titlecase in PMITC,
+          # so allow them.
+          - ["ID", "URL", "HTTP"] # AllowList
+          - [] # DisallowList
