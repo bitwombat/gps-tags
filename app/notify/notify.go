@@ -17,14 +17,16 @@ func Notify(ctx context.Context, message string) error {
 	// Make the request object
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, ntfyURL, buf)
 	if err != nil {
-		return fmt.Errorf("error while making http POST request to ntfy.sh: %v", err)
+		return fmt.Errorf("error while making http POST request to ntfy.sh: %w", err)
 	}
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Title", "Dog tag notification")
+	req.Header.Set("Priority", "urgent")
+	req.Header.Set("Actions", `[{ "action": "view", "label": "Show me", "url": "https://tags.bitwombat.com.au/current" }]`)
 
 	// Now actually send the request
 	resp, err := client.Do(req)
 	if err != nil {
-		return fmt.Errorf("error while sending request to ntfy.sh: %v", err)
+		return fmt.Errorf("error while sending request to ntfy.sh: %w", err)
 	}
 	defer resp.Body.Close()
 

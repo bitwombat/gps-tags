@@ -59,13 +59,25 @@ type Record struct {
 	Fields  []Field `json:"Fields"`
 }
 
-var geoProperty = []poly.Point{
+var propertyOutline = []poly.Point{
 	{X: -31.4586212322512, Y: 152.6422124774594},
 	{X: -31.4595509701308, Y: 152.6438560831193},
 	{X: -31.45812972583087, Y: 152.6451090582995},
 	{X: -31.45580841978974, Y: 152.6409669973841},
 	{X: -31.45613159545191, Y: 152.6404602174576},
 	{X: -31.4586212322512, Y: 152.6422124774594},
+}
+
+var safeZoneOutline = []poly.Point{
+	{X: -31.45682907060356, Y: 152.6423896947185},
+	{X: -31.4566607599576, Y: 152.6418404324234},
+	{X: -31.45698678814134, Y: 152.641332228427},
+	{X: -31.45717818300943, Y: 152.6413883863712},
+	{X: -31.45785626006774, Y: 152.6418268829714},
+	{X: -31.4583193861515, Y: 152.6422250491253},
+	{X: -31.45863308808003, Y: 152.6432598845506},
+	{X: -31.45757700831948, Y: 152.6435985457414},
+	{X: -31.45682907060356, Y: 152.6423896947185},
 }
 
 var reasonToText = map[int64]string{
@@ -152,6 +164,8 @@ func NewCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
 	strer := storer // TODO: Is this necessary for a closure?
 
+	var lastZone string
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
@@ -199,10 +213,10 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 			return
 		}
 
-		var region string
-		var zoneName string
+		var boundarySummary string
+		var thisZone string
 
-		zones, err := zonespkg.ReadKMLDir("zones")
+		NamedZones, err := zonespkg.ReadKMLDir("zones")
 		if err != nil {
 			log.Printf("Error reading KML files: %v", err)
 			// not a critical error, keep going
@@ -214,23 +228,38 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 			log.Printf("Unknown tag number: %v", tagData.SerNo)
 		}
 
-		// Log the records, for debugging
+		// Process the records
 		for _, r := range tagData.Records {
 			gpsField := r.Fields[0]
-			if poly.IsInside(geoProperty, poly.Point{X: gpsField.Lat, Y: gpsField.Long}) {
-				region = "Within property boundary"
+
+			if poly.IsInside(propertyOutline, poly.Point{X: gpsField.Lat, Y: gpsField.Long}) {
+				boundarySummary = "Within property boundary"
+				if !poly.IsInside(safeZoneOutline, poly.Point{X: gpsField.Lat, Y: gpsField.Long}) {
+					err = notify.Notify(ctx, fmt.Sprintf("%s is getting a bit far from home base", dogName))
+					if err != nil {
+						log.Printf("Error sending notification: %v", err)
+					}
+				}
 			} else {
-				region = "Outside property boundary"
+				boundarySummary = "Outside property boundary"
 				err = notify.Notify(ctx, fmt.Sprintf("%s is off the property", dogName))
 				if err != nil {
 					log.Printf("Error sending notification: %v", err)
 				}
 			}
 
-			if zones != nil {
-				zoneName = zonespkg.NameThatZone(zones, zonespkg.Point{Latitude: gpsField.Lat, Longitude: gpsField.Long})
+			if NamedZones != nil {
+				thisZone = zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: gpsField.Lat, Longitude: gpsField.Long})
 			} else {
-				zoneName = "No zones loaded"
+				thisZone = "No zones loaded"
+			}
+
+			if thisZone != lastZone {
+				lastZone = thisZone
+				err = notify.Notify(ctx, fmt.Sprintf("%s is now in %s", dogName, thisZone))
+				if err != nil {
+					log.Printf("Error sending notification: %v", err)
+				}
 			}
 
 			reason, ok := reasonToText[int64(r.Reason)]
@@ -239,7 +268,7 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 				reason = "Unknown reason"
 			}
 
-			log.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\" \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC), reason, gpsField.GpsUTC, timeAgoAsText(gpsField.GpsUTC), gpsField.Lat, gpsField.Long, region, zoneName)
+			log.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\" \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC), reason, gpsField.GpsUTC, timeAgoAsText(gpsField.GpsUTC), gpsField.Lat, gpsField.Long, boundarySummary, thisZone)
 
 		}
 
