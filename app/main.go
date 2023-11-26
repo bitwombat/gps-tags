@@ -11,6 +11,7 @@ import (
 	"time"
 
 	//	"go.mongodb.org/mongo-driver/bson"
+	"github.com/bitwombat/tag/notify"
 	"github.com/bitwombat/tag/poly"
 	"github.com/bitwombat/tag/storage"
 	"github.com/bitwombat/tag/substitute"
@@ -75,6 +76,11 @@ var reasonToText = map[int64]string{
 	11: "Heartbeat",
 }
 
+var idToName = map[float64]string{
+	810095: "rueger",
+	810243: "tucker",
+}
+
 var lastWasHealthCheck bool // Used to clean up the log output
 
 // Just to clean up the call - we always use time.Now in a non-test environment.
@@ -111,11 +117,6 @@ func NewCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 
 		subs := make(map[string]string)
 
-		var idToName = map[float64]string{
-			810095: "rueger",
-			810243: "tucker",
-		}
-
 		for _, tag := range tags {
 			name := idToName[tag.SerNo]
 			reason, ok := reasonToText[tag.Reason]
@@ -149,10 +150,12 @@ func NewCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 }
 
 func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
-
 	strer := storer // TODO: Is this necessary for a closure?
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		defer cancel()
+
 		// Validate the request
 		if r.Method != http.MethodPost {
 			log.Println("Got a request to /upload that was not a POST")
@@ -206,6 +209,11 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 			return
 		}
 
+		dogName, ok := idToName[float64(tagData.SerNo)]
+		if !ok {
+			log.Printf("Unknown tag number: %v", tagData.SerNo)
+		}
+
 		// Log the records, for debugging
 		for _, r := range tagData.Records {
 			gpsField := r.Fields[0]
@@ -213,6 +221,10 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 				region = "Within property boundary"
 			} else {
 				region = "Outside property boundary"
+				err = notify.Notify(ctx, fmt.Sprintf("%s is off the property", dogName))
+				if err != nil {
+					log.Printf("Error sending notification: %v", err)
+				}
 			}
 
 			if zones != nil {
@@ -226,13 +238,12 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 				log.Printf("Error: Unknown reason code: %v\n", r.Reason)
 				reason = "Unknown reason"
 			}
-			log.Printf("%v  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\" \"%s\"\n", tagData.SerNo, r.DateUTC, timeAgoAsText(r.DateUTC), reason, gpsField.GpsUTC, timeAgoAsText(gpsField.GpsUTC), gpsField.Lat, gpsField.Long, region, zoneName)
+
+			log.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\" \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC), reason, gpsField.GpsUTC, timeAgoAsText(gpsField.GpsUTC), gpsField.Lat, gpsField.Long, region, zoneName)
+
 		}
 
 		// Insert the document into storage
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-		defer cancel()
-
 		err = strer.WriteCommit(ctx, string(body))
 		if err != nil {
 			log.Printf("Error inserting document: %v", err)
