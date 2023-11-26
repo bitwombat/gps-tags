@@ -100,7 +100,7 @@ func (s storer) GetLastPositions() ([]PositionRecord, error) {
 	defer cancel()
 	cursor, err := s.collection.Aggregate(ctx, pipeline)
 	if err != nil {
-		return nil, fmt.Errorf("calling collection.Aggregate: %v", err)
+		return nil, fmt.Errorf("calling collection.Aggregate: %w", err)
 	}
 	defer cursor.Close(ctx)
 
@@ -109,7 +109,7 @@ func (s storer) GetLastPositions() ([]PositionRecord, error) {
 
 	err = cursor.All(ctx, &result)
 	if err != nil {
-		return nil, fmt.Errorf("calling cursor.All: %v", err)
+		return nil, fmt.Errorf("calling cursor.All: %w", err)
 	}
 
 	var records []PositionRecord

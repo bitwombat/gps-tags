@@ -3,9 +3,10 @@ package zones
 import (
 	"encoding/xml"
 	"fmt"
-	polypkg "github.com/bitwombat/tag/poly"
 	"os"
 	"strings"
+
+	polypkg "github.com/bitwombat/tag/poly"
 )
 
 type Zone struct {
