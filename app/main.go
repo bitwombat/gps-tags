@@ -96,9 +96,9 @@ var idToName = map[float64]string{
 
 var lastWasHealthCheck bool // Used to clean up the log output. TODO: Same persistence problem here.
 
-func logIfErr(err error, msg string) {
+func logIfErr(err error) {
 	if err != nil {
-		log.Printf(msg+" %w", err)
+		log.Printf("error sending notification: %w", err)
 	}
 }
 
@@ -168,11 +168,11 @@ func NewCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 	}
 }
 
-func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
-	strer := storer // TODO: Is this necessary for a closure?
+func NewDataPostHandler(s storage.Storage) func(http.ResponseWriter, *http.Request) {
+	storer := s // TODO: Is this necessary for a closure?
 
-	var lastInsideSafeZoneBoundary bool // TODO: These fire on every startup if the dogs are close to home, because they default to false.
-	var lastInsidePropertyBoundary bool // Also, this saved state won't work if on CloudRun, since the process comes and goes!
+	prevInsideSafeZoneBoundary := true // TODO: this saved state won't work if on CloudRun, since the process comes and goes!
+	prevInsidePropertyBoundary := true
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -221,7 +221,7 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 			return
 		}
 
-		var thisZone string
+		var thisZoneText string
 
 		NamedZones, err := zonespkg.ReadKMLDir("zones")
 		if err != nil {
@@ -249,9 +249,9 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 			gpsField := r.Fields[0]
 
 			if NamedZones != nil {
-				thisZone = zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: gpsField.Lat, Longitude: gpsField.Long})
+				thisZoneText = zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: gpsField.Lat, Longitude: gpsField.Long})
 			} else {
-				thisZone = "No zones loaded"
+				thisZoneText = "No zones loaded"
 			}
 
 			reason, ok := reasonToText[int64(r.Reason)]
@@ -260,49 +260,49 @@ func NewDataPostHandler(storer storage.Storage) func(http.ResponseWriter, *http.
 				reason = "Unknown reason"
 			}
 
-			log.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC), reason, gpsField.GpsUTC, timeAgoAsText(gpsField.GpsUTC), gpsField.Lat, gpsField.Long, thisZone)
+			log.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC), reason, gpsField.GpsUTC, timeAgoAsText(gpsField.GpsUTC), gpsField.Lat, gpsField.Long, thisZoneText)
 
 		}
 
 		// Notify based on most recent record in the set just sent
 		latestGPSRecord := latestRecord.Fields[0]
-		currentLocationPoint := poly.Point{X: latestGPSRecord.Lat, Y: latestGPSRecord.Long}
 
 		if NamedZones != nil {
-			thisZone = "Last seen zone: " + zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: latestGPSRecord.Lat, Longitude: latestGPSRecord.Long})
+			thisZoneText = "Last seen zone: " + zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: latestGPSRecord.Lat, Longitude: latestGPSRecord.Long})
 		} else {
-			thisZone = "No zones loaded"
+			thisZoneText = "<No zones loaded>"
 		}
 
-		currentInsidePropertyBoundary := poly.IsInside(propertyOutline, currentLocationPoint)
-		currentInsideSafeZoneBoundary := poly.IsInside(safeZoneOutline, currentLocationPoint)
+		currLocationPoint := poly.Point{X: latestGPSRecord.Lat, Y: latestGPSRecord.Long}
+		currInsidePropertyBoundary := poly.IsInside(propertyOutline, currLocationPoint)
+		currInsideSafeZoneBoundary := poly.IsInside(safeZoneOutline, currLocationPoint)
 
 		// Notify on changes
-		if lastInsidePropertyBoundary && !currentInsidePropertyBoundary {
-			err = notify.Notify(ctx, fmt.Sprintf("%s is off the property", dogName), thisZone)
-			logIfErr(err, "Error sending notification")
+		if prevInsidePropertyBoundary && !currInsidePropertyBoundary {
+			err = notify.Notify(ctx, fmt.Sprintf("%s is off the property", dogName), thisZoneText)
+			logIfErr(err)
 		}
 
-		if !lastInsidePropertyBoundary && currentInsidePropertyBoundary {
-			err = notify.Notify(ctx, fmt.Sprintf("%s is now back on property", dogName), thisZone)
-			logIfErr(err, "Error sending notification")
+		if !prevInsidePropertyBoundary && currInsidePropertyBoundary {
+			err = notify.Notify(ctx, fmt.Sprintf("%s is now back on property", dogName), thisZoneText)
+			logIfErr(err)
 		}
 
-		if lastInsideSafeZoneBoundary && !currentInsideSafeZoneBoundary {
-			err = notify.Notify(ctx, fmt.Sprintf("%s is getting a bit far from home base", dogName), thisZone)
-			logIfErr(err, "Error sending notification")
+		if prevInsideSafeZoneBoundary && !currInsideSafeZoneBoundary {
+			err = notify.Notify(ctx, fmt.Sprintf("%s is getting far from home base", dogName), thisZoneText)
+			logIfErr(err)
 		}
 
-		if !lastInsideSafeZoneBoundary && currentInsideSafeZoneBoundary {
-			err = notify.Notify(ctx, fmt.Sprintf("%s is now back closer to home base", dogName), thisZone)
-			logIfErr(err, "Error sending notification")
+		if !prevInsideSafeZoneBoundary && currInsideSafeZoneBoundary {
+			err = notify.Notify(ctx, fmt.Sprintf("%s is now back close to home base", dogName), thisZoneText)
+			logIfErr(err)
 		}
 
-		lastInsidePropertyBoundary = currentInsidePropertyBoundary
-		lastInsideSafeZoneBoundary = currentInsideSafeZoneBoundary
+		prevInsidePropertyBoundary = currInsidePropertyBoundary
+		prevInsideSafeZoneBoundary = currInsideSafeZoneBoundary
 
 		// Insert the document into storage
-		err = strer.WriteCommit(ctx, string(body))
+		err = storer.WriteCommit(ctx, string(body))
 		if err != nil {
 			log.Printf("Error inserting document: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -330,8 +330,6 @@ func main() {
 		log.Fatal(fmt.Errorf("getting a Mongo connection: %w", err))
 	}
 
-	storer := storage.NewMongoStorer(collection)
-
 	log.Println("Connected to MongoDB!")
 
 	log.Println("Setting up handlers.")
@@ -342,6 +340,7 @@ func main() {
 
 	// HTTPS endpoints
 	httpsMux := http.NewServeMux()
+	storer := storage.NewMongoStorer(collection)
 	httpsMux.HandleFunc("/current", NewCurrentMapPageHandler(storer))
 	dataPostHandler := NewDataPostHandler(storer)
 	httpsMux.HandleFunc("/upload", dataPostHandler)
