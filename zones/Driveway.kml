@@ -2,7 +2,17 @@
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
 <Document>
 	<name>Driveway.kml</name>
-	<Style id="sh_ylw-pushpin">
+	<StyleMap id="msn_ylw-pushpin1">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin1</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin0</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="sh_ylw-pushpin0">
 		<IconStyle>
 			<scale>1.3</scale>
 			<Icon>
@@ -19,7 +29,7 @@
 			<outline>0</outline>
 		</PolyStyle>
 	</Style>
-	<Style id="sn_ylw-pushpin">
+	<Style id="sn_ylw-pushpin1">
 		<IconStyle>
 			<scale>1.1</scale>
 			<Icon>
@@ -36,25 +46,15 @@
 			<outline>0</outline>
 		</PolyStyle>
 	</Style>
-	<StyleMap id="msn_ylw-pushpin">
-		<Pair>
-			<key>normal</key>
-			<styleUrl>#sn_ylw-pushpin</styleUrl>
-		</Pair>
-		<Pair>
-			<key>highlight</key>
-			<styleUrl>#sh_ylw-pushpin</styleUrl>
-		</Pair>
-	</StyleMap>
 	<Placemark>
 		<name>Driveway</name>
-		<styleUrl>#msn_ylw-pushpin</styleUrl>
+		<styleUrl>#msn_ylw-pushpin1</styleUrl>
 		<Polygon>
 			<tessellate>1</tessellate>
 			<outerBoundaryIs>
 				<LinearRing>
 					<coordinates>
-						152.641195767937,-31.45693718655337,0 152.6416647602362,-31.45742648396292,0 152.6417673190988,-31.45734783161293,0 152.6413070459936,-31.45687089424975,0 152.641195767937,-31.45693718655337,0 
+						152.641327200215,-31.4572950229521,0 152.6414441752883,-31.45725683257267,0 152.6416318693927,-31.45738119367307,0 152.6417874296602,-31.45734656323894,0 152.6413070459936,-31.45687089424975,0 152.6411251085695,-31.45697875807937,0 152.641327200215,-31.4572950229521,0 
 					</coordinates>
 				</LinearRing>
 			</outerBoundaryIs>

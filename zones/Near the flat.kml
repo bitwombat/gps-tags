@@ -2,32 +2,6 @@
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
 <Document>
 	<name>Near the flat.kml</name>
-	<Style id="sh_ylw-pushpin">
-		<IconStyle>
-			<scale>1.3</scale>
-			<Icon>
-				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
-			</Icon>
-			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
-		</IconStyle>
-		<LineStyle>
-			<color>ff0055ff</color>
-			<width>3</width>
-		</LineStyle>
-	</Style>
-	<Style id="sn_ylw-pushpin">
-		<IconStyle>
-			<scale>1.1</scale>
-			<Icon>
-				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
-			</Icon>
-			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
-		</IconStyle>
-		<LineStyle>
-			<color>ff0055ff</color>
-			<width>3</width>
-		</LineStyle>
-	</Style>
 	<StyleMap id="msn_ylw-pushpin">
 		<Pair>
 			<key>normal</key>
@@ -38,6 +12,44 @@
 			<styleUrl>#sh_ylw-pushpin</styleUrl>
 		</Pair>
 	</StyleMap>
+	<Style id="sh_ylw-pushpin">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<BalloonStyle>
+		</BalloonStyle>
+		<LineStyle>
+			<color>ff0055ff</color>
+			<width>3</width>
+		</LineStyle>
+		<PolyStyle>
+			<color>b3ffffff</color>
+			<outline>0</outline>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<BalloonStyle>
+		</BalloonStyle>
+		<LineStyle>
+			<color>ff0055ff</color>
+			<width>3</width>
+		</LineStyle>
+		<PolyStyle>
+			<color>b3ffffff</color>
+			<outline>0</outline>
+		</PolyStyle>
+	</Style>
 	<Placemark>
 		<name>Near the flat</name>
 		<styleUrl>#msn_ylw-pushpin</styleUrl>
@@ -46,7 +58,7 @@
 			<outerBoundaryIs>
 				<LinearRing>
 					<coordinates>
-						152.6415886096328,-31.4577426919758,0 152.6417610677571,-31.45755396126155,0 152.6415059882581,-31.45724630243619,0 152.6413042511785,-31.45730124442296,0 152.6415886096328,-31.4577426919758,0 
+						152.641669039568,-31.45778053094584,0 152.641881298536,-31.45765926027708,0 152.6417543795218,-31.45752274346649,0 152.6417370012955,-31.45750015827376,0 152.6417083683218,-31.45745812716429,0 152.6416825401944,-31.45743564287825,0 152.6414417618851,-31.45726347897669,0 152.6413346253229,-31.45730084102929,0 152.641669039568,-31.45778053094584,0 
 					</coordinates>
 				</LinearRing>
 			</outerBoundaryIs>

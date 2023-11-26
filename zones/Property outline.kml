@@ -12,19 +12,6 @@
 			<styleUrl>#sh_ylw-pushpin</styleUrl>
 		</Pair>
 	</StyleMap>
-	<Style id="sn_ylw-pushpin">
-		<IconStyle>
-			<scale>1.1</scale>
-			<Icon>
-				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
-			</Icon>
-			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
-		</IconStyle>
-		<LineStyle>
-			<color>ff0055ff</color>
-			<width>3</width>
-		</LineStyle>
-	</Style>
 	<Style id="sh_ylw-pushpin">
 		<IconStyle>
 			<scale>1.3</scale>
@@ -33,10 +20,33 @@
 			</Icon>
 			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
 		</IconStyle>
+		<BalloonStyle>
+		</BalloonStyle>
 		<LineStyle>
-			<color>ff0055ff</color>
+			<color>ff7fff55</color>
 			<width>3</width>
 		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
+	</Style>
+	<Style id="sn_ylw-pushpin">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+		<BalloonStyle>
+		</BalloonStyle>
+		<LineStyle>
+			<color>ff7fff55</color>
+			<width>3</width>
+		</LineStyle>
+		<PolyStyle>
+			<fill>0</fill>
+		</PolyStyle>
 	</Style>
 	<Placemark>
 		<name>Property outline</name>
@@ -55,7 +65,7 @@
 			<outerBoundaryIs>
 				<LinearRing>
 					<coordinates>
-						152.6422124774594,-31.4586212322512,0 152.6438560831193,-31.4595509701308,0 152.6451090582995,-31.45812972583087,0 152.6409669973841,-31.45580841978974,0 152.6404602174576,-31.45613159545191,0 152.6422124774594,-31.4586212322512,0 
+						152.6422345475221,-31.45861859955926,0 152.6425017482588,-31.45885321658751,0 152.6444620950003,-31.45988554469873,0 152.6451200307813,-31.45806090281521,0 152.6410748996496,-31.45580381636615,0 152.6405514095231,-31.45613174123432,0 152.6422345475221,-31.45861859955926,0 
 					</coordinates>
 				</LinearRing>
 			</outerBoundaryIs>

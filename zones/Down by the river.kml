@@ -2,6 +2,16 @@
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
 <Document>
 	<name>Down by the river.kml</name>
+	<StyleMap id="msn_ylw-pushpin">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin</styleUrl>
+		</Pair>
+	</StyleMap>
 	<Style id="sh_ylw-pushpin">
 		<IconStyle>
 			<scale>1.3</scale>
@@ -10,6 +20,8 @@
 			</Icon>
 			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
 		</IconStyle>
+		<BalloonStyle>
+		</BalloonStyle>
 		<LineStyle>
 			<color>ff0055ff</color>
 			<width>3</width>
@@ -27,6 +39,8 @@
 			</Icon>
 			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
 		</IconStyle>
+		<BalloonStyle>
+		</BalloonStyle>
 		<LineStyle>
 			<color>ff0055ff</color>
 			<width>3</width>
@@ -36,16 +50,6 @@
 			<outline>0</outline>
 		</PolyStyle>
 	</Style>
-	<StyleMap id="msn_ylw-pushpin">
-		<Pair>
-			<key>normal</key>
-			<styleUrl>#sn_ylw-pushpin</styleUrl>
-		</Pair>
-		<Pair>
-			<key>highlight</key>
-			<styleUrl>#sh_ylw-pushpin</styleUrl>
-		</Pair>
-	</StyleMap>
 	<Placemark>
 		<name>Down by the river</name>
 		<styleUrl>#msn_ylw-pushpin</styleUrl>
@@ -54,7 +58,7 @@
 			<outerBoundaryIs>
 				<LinearRing>
 					<coordinates>
-						152.6451391175162,-31.45816775417979,0 152.6439439182425,-31.4595815678722,0 152.6444493465839,-31.45974339278247,0 152.6453355177164,-31.45832410414977,0 152.6451391175162,-31.45816775417979,0 
+						152.6449461346318,-31.45797974415581,0 152.6446783896915,-31.45828591787875,0 152.6442717301238,-31.45829177435157,0 152.6444562072157,-31.45889951237434,0 152.6437321920259,-31.45951969596248,0 152.6444586923324,-31.45987340158758,0 152.6453355177164,-31.45832410414977,0 152.6449461346318,-31.45797974415581,0 
 					</coordinates>
 				</LinearRing>
 			</outerBoundaryIs>

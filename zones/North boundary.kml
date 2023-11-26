@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
 <Document>
-	<name>Upper slopes.kml</name>
+	<name>North boundary.kml</name>
 	<StyleMap id="msn_ylw-pushpin1">
 		<Pair>
 			<key>normal</key>
@@ -47,14 +47,14 @@
 		</PolyStyle>
 	</Style>
 	<Placemark>
-		<name>Upper slopes</name>
+		<name>North boundary</name>
 		<styleUrl>#msn_ylw-pushpin1</styleUrl>
 		<Polygon>
 			<tessellate>1</tessellate>
 			<outerBoundaryIs>
 				<LinearRing>
 					<coordinates>
-						152.6407275915174,-31.45640835212449,0 152.6409730079635,-31.45678314141345,0 152.6418702019187,-31.45621836945569,0 152.6414260796443,-31.45599364604417,0 152.6407275915174,-31.45640835212449,0 
+						152.6422813142935,-31.45672485197115,0 152.642362569663,-31.45667358454994,0 152.6425557790731,-31.45678657568188,0 152.6425729535635,-31.45664304410693,0 152.6422729481621,-31.45647576884038,0 152.6421784681813,-31.45654412317464,0 152.6422813142935,-31.45672485197115,0 
 					</coordinates>
 				</LinearRing>
 			</outerBoundaryIs>

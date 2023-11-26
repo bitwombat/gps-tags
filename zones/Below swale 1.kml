@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
 <Document>
-	<name>Upper slopes.kml</name>
+	<name>Below swale 1.kml</name>
 	<StyleMap id="msn_ylw-pushpin1">
 		<Pair>
 			<key>normal</key>
@@ -47,14 +47,14 @@
 		</PolyStyle>
 	</Style>
 	<Placemark>
-		<name>Upper slopes</name>
+		<name>Below swale 1</name>
 		<styleUrl>#msn_ylw-pushpin1</styleUrl>
 		<Polygon>
 			<tessellate>1</tessellate>
 			<outerBoundaryIs>
 				<LinearRing>
 					<coordinates>
-						152.6407275915174,-31.45640835212449,0 152.6409730079635,-31.45678314141345,0 152.6418702019187,-31.45621836945569,0 152.6414260796443,-31.45599364604417,0 152.6407275915174,-31.45640835212449,0 
+						152.6422107583598,-31.45681553274539,0 152.6421510805852,-31.45687814696568,0 152.6424243730654,-31.45737904528121,0 152.6425354414743,-31.45738530615689,0 152.6425578661753,-31.45701873136342,0 152.6422107583598,-31.45681553274539,0 
 					</coordinates>
 				</LinearRing>
 			</outerBoundaryIs>

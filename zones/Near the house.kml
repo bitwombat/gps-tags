@@ -2,6 +2,16 @@
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
 <Document>
 	<name>Near the house.kml</name>
+	<StyleMap id="msn_ylw-pushpin">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#sn_ylw-pushpin</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#sh_ylw-pushpin</styleUrl>
+		</Pair>
+	</StyleMap>
 	<Style id="sh_ylw-pushpin">
 		<IconStyle>
 			<scale>1.3</scale>
@@ -10,6 +20,8 @@
 			</Icon>
 			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
 		</IconStyle>
+		<BalloonStyle>
+		</BalloonStyle>
 		<LineStyle>
 			<color>ff0055ff</color>
 			<width>3</width>
@@ -27,6 +39,8 @@
 			</Icon>
 			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
 		</IconStyle>
+		<BalloonStyle>
+		</BalloonStyle>
 		<LineStyle>
 			<color>ff0055ff</color>
 			<width>3</width>
@@ -36,16 +50,6 @@
 			<outline>0</outline>
 		</PolyStyle>
 	</Style>
-	<StyleMap id="msn_ylw-pushpin">
-		<Pair>
-			<key>normal</key>
-			<styleUrl>#sn_ylw-pushpin</styleUrl>
-		</Pair>
-		<Pair>
-			<key>highlight</key>
-			<styleUrl>#sh_ylw-pushpin</styleUrl>
-		</Pair>
-	</StyleMap>
 	<Placemark>
 		<name>Near the house</name>
 		<styleUrl>#msn_ylw-pushpin</styleUrl>
@@ -54,7 +58,7 @@
 			<outerBoundaryIs>
 				<LinearRing>
 					<coordinates>
-						152.641970467094,-31.4576686429683,0 152.6420180205889,-31.45789984462006,0 152.6424155808409,-31.45801744333758,0 152.6425323419118,-31.45761744809114,0 152.6423323306222,-31.45740645361422,0 152.6420286271522,-31.45744169299732,0 152.641970467094,-31.4576686429683,0 
+						152.641970467094,-31.4576686429683,0 152.6420180205889,-31.45789984462006,0 152.6425073435496,-31.45805439113018,0 152.6425526643646,-31.45739215356789,0 152.6423221261783,-31.45739889542989,0 152.6420286271522,-31.45744169299732,0 152.641970467094,-31.4576686429683,0 
 					</coordinates>
 				</LinearRing>
 			</outerBoundaryIs>
