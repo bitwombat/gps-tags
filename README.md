@@ -4,29 +4,39 @@ This service provides an endpoint for the Digital Matters Yabby3 GPS tracking
 devices to send data to, as well as web pages of maps with pins showing current
 tag locations.
 
+Notifications indicate when the tag has left boundaries.
+
 [<img src="screenshot.png">]()
+
+[<img src="ntfy-screenshot.png">]()
 
 ## Theory of operation
 
-Devices are configured to post their JSON payloads to `/upload`, which is an
-endpoint. The payload is
+A service written in Go listens to endpoints.
+
+`/upload` is for devices to post their JSON payloads The payload is
 dumped as-is into a MongoDB database.
 
 If the tag is outside the Safe Zone or Property boundaries, notifications are
-sent (see below).
+sent (currently only [ntfy.sh](https://ntfy.sh) is supported).
 
-When users visit `/current`, the database is queried, and users are presented with a map showing current tag positions.
+A boundary can be divided up into named zones for more useful notifications.
+These zones are defined in .kml files created with Google Earth.
+
+When web users visit `/current` with a browser, a Google Map is returned, with
+markers showing current tag positions. The markers have other data about the
+tag, including data freshness and battery level.
 
 
 ## Installation and setup
 
 1. You'll need a VPS and a Google Maps API key. The VPS needs to have MongoDB
    installed.
-2. Notifications are currently supported using [ntfh.sh](https://ntfy.sh). No
-   signup or API key is required to use this service. Just choose a random
-   subscription name.
+2. Notifications are currently supported using the incredibly easy
+   [ntfy.sh](https://ntfy.sh). No signup or API key is required to use it. Just
+   install the app on your phone and choose a random subscription name.
 3. Customize environment variables in devops/dog-tracking.service
-4. Customize the deployment script in devops/deploy_and_run.sh
+4. Set your VPS name in the deployment script in devops/deploy_and_run.sh
 5. Delete the example zone and boundary files from `boundary_zones/` and `named_zones/`.
 6. Generate .kml zone and boundary files using Google Earth and save those files
    individually to `boundary_zones/` and `named_zones/`.
