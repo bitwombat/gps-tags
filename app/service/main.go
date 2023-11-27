@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	//	"go.mongodb.org/mongo-driver/bson"
 	"github.com/bitwombat/tag/notify"
 	"github.com/bitwombat/tag/poly"
 	"github.com/bitwombat/tag/storage"
@@ -168,8 +167,9 @@ func NewCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 	}
 }
 
-func NewDataPostHandler(s storage.Storage) func(http.ResponseWriter, *http.Request) {
+func NewDataPostHandler(s storage.Storage, n notify.Notifier) func(http.ResponseWriter, *http.Request) {
 	storer := s // TODO: Is this necessary for a closure?
+	notifier := n
 
 	prevInsideSafeZoneBoundary := true // TODO: this saved state won't work if on CloudRun, since the process comes and goes!
 	prevInsidePropertyBoundary := true
@@ -279,22 +279,22 @@ func NewDataPostHandler(s storage.Storage) func(http.ResponseWriter, *http.Reque
 
 		// Notify on changes
 		if prevInsidePropertyBoundary && !currInsidePropertyBoundary {
-			err = notify.Notify(ctx, fmt.Sprintf("%s is off the property", dogName), thisZoneText)
+			err = notifier.Notify(ctx, fmt.Sprintf("%s is off the property", dogName), thisZoneText)
 			logIfErr(err)
 		}
 
 		if !prevInsidePropertyBoundary && currInsidePropertyBoundary {
-			err = notify.Notify(ctx, fmt.Sprintf("%s is now back on property", dogName), thisZoneText)
+			err = notifier.Notify(ctx, fmt.Sprintf("%s is now back on property", dogName), thisZoneText)
 			logIfErr(err)
 		}
 
 		if prevInsideSafeZoneBoundary && !currInsideSafeZoneBoundary {
-			err = notify.Notify(ctx, fmt.Sprintf("%s is getting far from home base", dogName), thisZoneText)
+			err = notifier.Notify(ctx, fmt.Sprintf("%s is getting far from home base", dogName), thisZoneText)
 			logIfErr(err)
 		}
 
 		if !prevInsideSafeZoneBoundary && currInsideSafeZoneBoundary {
-			err = notify.Notify(ctx, fmt.Sprintf("%s is now back close to home base", dogName), thisZoneText)
+			err = notifier.Notify(ctx, fmt.Sprintf("%s is now back close to home base", dogName), thisZoneText)
 			logIfErr(err)
 		}
 
@@ -332,6 +332,11 @@ func main() {
 
 	log.Println("Connected to MongoDB!")
 
+	ntfy_subscription_id := os.Getenv("NTFY_SUBSCRIPTION_ID")
+	if ntfy_subscription_id == "" {
+		log.Print("WARNING: NTFY_SUBSCRIPTION_ID not set. Notifications will not be sent.")
+	}
+
 	log.Println("Setting up handlers.")
 
 	// HTTP endpoints
@@ -341,8 +346,9 @@ func main() {
 	// HTTPS endpoints
 	httpsMux := http.NewServeMux()
 	storer := storage.NewMongoStorer(collection)
+	notifier := notify.NewNtfyNotifier(ntfy_subscription_id)
 	httpsMux.HandleFunc("/current", NewCurrentMapPageHandler(storer))
-	dataPostHandler := NewDataPostHandler(storer)
+	dataPostHandler := NewDataPostHandler(storer, notifier)
 	httpsMux.HandleFunc("/upload", dataPostHandler)
 
 	// Static file serving
