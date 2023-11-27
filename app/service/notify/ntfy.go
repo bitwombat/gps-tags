@@ -2,6 +2,8 @@ package notify
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"strings"
@@ -19,6 +21,15 @@ func NewNtfyNotifier(subscriptionId string) Notifier {
 	}
 }
 
+func cacheBustingString() string {
+	bytes := make([]byte, 8)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		return "failure-with-rand" // It'll be OK... just a cache buster string
+	}
+	return hex.EncodeToString(bytes)
+}
+
 func (n Ntfy) Notify(ctx context.Context, title, message string) error {
 	// Set up client and crap
 	client := &http.Client{}
@@ -29,8 +40,9 @@ func (n Ntfy) Notify(ctx context.Context, title, message string) error {
 	if err != nil {
 		return fmt.Errorf("error while making http POST request to ntfy.sh: %w", err)
 	}
+
 	req.Header.Set("Title", title)
-	req.Header.Set("Actions", `[{ "action": "view", "label": "Show me", "url": "https://tags.bitwombat.com.au/current" }]`)
+	req.Header.Set("Actions", `[{ "action": "view", "label": "Show me", "url": "https://tags.bitwombat.com.au/current/q=`+cacheBustingString()+`"}]`)
 
 	// Now actually send the request
 	resp, err := client.Do(req)
