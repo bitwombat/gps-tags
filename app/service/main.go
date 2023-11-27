@@ -355,6 +355,22 @@ func main() {
 	fs := http.FileServer(http.Dir("./public_html"))
 	httpsMux.Handle("/", fs)
 
+	// Notification testing
+	httpsMux.HandleFunc("/testnotify",
+		func(w http.ResponseWriter, r *http.Request) {
+			ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+			defer cancel()
+
+			err := notifier.Notify(ctx, "Test notification", "This is a test notification.")
+			if err != nil {
+				log.Printf("Error sending test notification: %v", err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			w.WriteHeader(http.StatusOK)
+		})
+
 	log.Println("Starting servers")
 	go func() {
 		server1 := &http.Server{
