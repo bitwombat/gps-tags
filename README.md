@@ -4,11 +4,12 @@ This service provides an endpoint for the Digital Matters Yabby3 GPS tracking
 devices to send data to, as well as web pages of maps with pins showing current
 tag locations.
 
-Notifications indicate when the tag has left boundaries.
-
 [<img src="screenshot.png">]()
 
+Notifications indicate when the tag has left boundaries.
+
 [<img src="ntfy-screenshot.png">]()
+
 
 ## Theory of operation
 
