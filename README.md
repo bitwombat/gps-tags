@@ -1,8 +1,9 @@
 # Web app for Digital Matters Yabby3 tracking devices
 
-This service provides an endpoint for the Digital Matters Yabby3 GPS tracking
-devices to send data to, as well as web pages of maps with pins showing current
-tag locations.
+This project is an HTTP server that provides an endpoint for the [Digital
+Matters Yabby3](https://support.digitalmatter.com/en_US/yabby3-cellular) GPS
+tracking devices to send data to. It also serves web pages of maps with pins
+showing current tag locations.
 
 [<img src="screenshot.png">]()
 
