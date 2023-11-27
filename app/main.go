@@ -98,7 +98,7 @@ var lastWasHealthCheck bool // Used to clean up the log output. TODO: Same persi
 
 func logIfErr(err error) {
 	if err != nil {
-		log.Printf("error sending notification: %w", err)
+		log.Printf("error sending notification: %v", err)
 	}
 }
 
@@ -327,7 +327,7 @@ func main() {
 
 	collection, err := storage.NewMongoConnection(mongoURL, "dogs")
 	if err != nil {
-		log.Fatal(fmt.Errorf("getting a Mongo connection: %w", err))
+		log.Fatal(fmt.Errorf("getting a Mongo connection: %v", err))
 	}
 
 	log.Println("Connected to MongoDB!")
