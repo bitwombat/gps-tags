@@ -223,7 +223,7 @@ func NewDataPostHandler(s storage.Storage) func(http.ResponseWriter, *http.Reque
 
 		var thisZoneText string
 
-		NamedZones, err := zonespkg.ReadKMLDir("zones")
+		NamedZones, err := zonespkg.ReadKMLDir("named_zones")
 		if err != nil {
 			log.Printf("Error reading KML files: %v", err)
 			// not a critical error, keep going
