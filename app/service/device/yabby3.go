@@ -40,3 +40,11 @@ type Field struct {
 	DevStat      int          `json:"DevStat,omitempty"`
 	AnalogueData AnalogueData `json:"AnalogueData,omitempty"`
 }
+
+var ReasonToText = map[int64]string{
+	1:  "Start of trip",
+	2:  "End of trip",
+	3:  "Elapsed time",
+	6:  "Distance travelled",
+	11: "Heartbeat",
+}
