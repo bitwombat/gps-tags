@@ -17,29 +17,25 @@ var warningLogger = log.New(os.Stdout, "<4>", log.LstdFlags)
 var infoLogger = log.New(os.Stdout, "<6>", log.LstdFlags)
 var debugLogger = log.New(os.Stdout, "<7>", log.LstdFlags)
 
+// Start the service - connect to Mongo, set up notification, set up endpoints, and start the HTTP servers.
 func main() {
-	infoLogger.Println("Starting Dog Tag application.")
-
-	lastWasHealthCheck = false
+	infoLogger.Println("Starting Dog Tag service.")
 
 	mongoURL := os.Getenv("MONGO_URL")
 	if mongoURL == "" {
 		fatalLogger.Fatal("MONGO_URL not set")
 	}
 
+	infoLogger.Println("Connecting to MongoDB.")
 	collection, err := storage.NewMongoConnection(mongoURL, "dogs")
 	if err != nil {
 		fatalLogger.Fatal(fmt.Errorf("getting a Mongo connection: %v", err))
 	}
 
-	infoLogger.Println("Connected to MongoDB.")
-
 	ntfySubscriptionId := os.Getenv("NTFY_SUBSCRIPTION_ID")
 	if ntfySubscriptionId == "" {
 		warningLogger.Print("WARNING: NTFY_SUBSCRIPTION_ID not set. Notifications will not be sent.")
 	}
-
-	infoLogger.Println("Setting up handlers.")
 
 	// Web page endpoints
 	httpsMux := http.NewServeMux()
@@ -62,8 +58,8 @@ func main() {
 	fs := http.FileServer(http.Dir("./public_html"))
 	httpsMux.Handle("/", fs)
 
-	// Servers
-	infoLogger.Println("Starting servers")
+	// Start servers
+	infoLogger.Println("Starting servers.")
 
 	go func() {
 		server1 := &http.Server{

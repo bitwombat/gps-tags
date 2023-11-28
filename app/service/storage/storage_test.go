@@ -258,10 +258,10 @@ func Test_GetLatestPosition(t *testing.T) {
 
 	storer := NewMongoStorer(collection)
 
-	err = storer.WriteCommit(context.Background(), strippedDownMultiRecordSample1)
+	_, err = storer.WriteCommit(context.Background(), strippedDownMultiRecordSample1)
 	require.Nil(t, err)
 
-	err = storer.WriteCommit(context.Background(), strippedDownMultiRecordSample2)
+	_, err = storer.WriteCommit(context.Background(), strippedDownMultiRecordSample2)
 	require.Nil(t, err)
 
 	// WHEN we get the latest position for all tags.
