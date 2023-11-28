@@ -7,7 +7,7 @@ import (
 )
 
 type Storage interface {
-	WriteCommit(context.Context, string) error
+	WriteCommit(context.Context, string) (string, error)
 	GetLastPositions() ([]PositionRecord, error)
 }
 

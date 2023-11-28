@@ -40,22 +40,20 @@ func NewMongoStorer(collection *mongo.Collection) storer {
 	return storer{collection: collection}
 }
 
-func (s storer) WriteCommit(ctx context.Context, jsonStr string) error {
+func (s storer) WriteCommit(ctx context.Context, jsonStr string) (string, error) {
 	// Unmarshal JSON to map
 	var data map[string]interface{}
 	if err := json.Unmarshal([]byte(jsonStr), &data); err != nil {
-		return err
+		return "", err
 	}
 
 	// Insert into MongoDB
 	insertResult, err := s.collection.InsertOne(ctx, data)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	fmt.Println("Inserted document:", insertResult.InsertedID)
-
-	return nil
+	return fmt.Sprint(insertResult.InsertedID), nil
 }
 
 func (s storer) GetLastPositions() ([]PositionRecord, error) {

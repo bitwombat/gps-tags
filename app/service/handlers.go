@@ -71,7 +71,7 @@ type dogBoundaryStatesType map[string]boundaryStatesType
 func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		infoLogger.Println("Got a current map page request.")
+		debugLogger.Println("Got a current map page request.")
 		lastWasHealthCheck = false
 
 		tags, err := storer.GetLastPositions()
@@ -146,7 +146,7 @@ func newDataPostHandler(s storage.Storage, n notify.Notifier) func(http.Response
 			return
 		}
 
-		infoLogger.Println("Got a data post.")
+		debugLogger.Println("Got a data post.")
 		lastWasHealthCheck = false
 
 		// Read and decode the request body
@@ -253,7 +253,7 @@ func newDataPostHandler(s storage.Storage, n notify.Notifier) func(http.Response
 		prevDogBoundaryState[dogName]["safeZoneBoundary"] = currInsideSafeZoneBoundary
 
 		// Insert the document into storage
-		err = storer.WriteCommit(ctx, string(body))
+		id, err := storer.WriteCommit(ctx, string(body))
 		if err != nil {
 			errorLogger.Printf("Error inserting document: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -261,7 +261,7 @@ func newDataPostHandler(s storage.Storage, n notify.Notifier) func(http.Response
 		}
 
 		// All happy
-		infoLogger.Printf("Successfully inserted document")
+		debugLogger.Print("Successfully inserted document, id: ", id)
 		w.WriteHeader(http.StatusOK)
 	}
 }
@@ -270,7 +270,7 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "OK")
 	if !lastWasHealthCheck {
-		infoLogger.Println("Got a health check [repeats will be hidden].")
+		debugLogger.Println("Got a health check [repeats will be hidden].")
 	}
 
 	lastWasHealthCheck = true
