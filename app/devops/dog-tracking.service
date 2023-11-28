@@ -3,7 +3,7 @@ Description=Dog tag tracking
 After=network.target
 
 [Service]
-ExecStart=/root/main
+ExecStart=/root/gps-tags
 Restart=always
 User=root
 Group=root

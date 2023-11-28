@@ -4,7 +4,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/bitwombat/tag/storage"
+	"github.com/bitwombat/gps-tags/storage"
 )
 
 func logIfErr(err error) {
