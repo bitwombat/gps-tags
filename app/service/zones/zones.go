@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	polypkg "github.com/bitwombat/tag/poly"
+	polypkg "github.com/bitwombat/gps-tags/poly"
 )
 
 type Zone struct {

@@ -1,6 +1,6 @@
 package main
 
-import "github.com/bitwombat/tag/poly"
+import "github.com/bitwombat/gps-tags/poly"
 
 var propertyOutline = []poly.Point{
 	{X: -31.4586212322512, Y: 152.6422124774594},

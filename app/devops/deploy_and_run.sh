@@ -5,11 +5,11 @@ VPS_FQDN=proxy
 set -e
 export RSYNC_RSH="ssh -q"
 
-export RSYNC_OPTS="-r --times --no-owner --delete --compress --itemize-changes "
+export RSYNC_OPTS="-r --times --no-owner --exclude="public_html/log.html" --delete --compress --itemize-changes "
 
 echo "Building app"
 pushd service
-go build -ldflags="-s -w" main.go
+go build -ldflags="-s -w" .
 popd
 
 echo "Transferring assets"
@@ -25,7 +25,7 @@ echo "Stopping service"
 ssh -q "$VPS_FQDN" 'systemctl stop dog-tracking.service'
 
 echo "Transferring application binary"
-scp -C service/main "$VPS_FQDN":.
+scp -C service/gps-tags "$VPS_FQDN":.
 
 echo "Starting service"
 ssh -q "$VPS_FQDN" 'systemctl start dog-tracking.service'

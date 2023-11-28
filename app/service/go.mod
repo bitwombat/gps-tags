@@ -1,4 +1,4 @@
-module github.com/bitwombat/tag
+module github.com/bitwombat/gps-tags
 
 go 1.20
 

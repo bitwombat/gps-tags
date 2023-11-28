@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	ppkg "github.com/bitwombat/tag/poly"
+	ppkg "github.com/bitwombat/gps-tags/poly"
 )
 
 // main function to test the code
