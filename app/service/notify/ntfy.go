@@ -31,7 +31,7 @@ func cacheBustingString() string {
 }
 
 func (n Ntfy) Notify(ctx context.Context, title, message string) error {
-	// Set up client and crap
+	// Set up
 	client := &http.Client{}
 	buf := strings.NewReader(message)
 
@@ -44,7 +44,7 @@ func (n Ntfy) Notify(ctx context.Context, title, message string) error {
 	req.Header.Set("Title", title)
 	req.Header.Set("Actions", `[{ "action": "view", "label": "Show me", "url": "https://tags.bitwombat.com.au/current?q=`+cacheBustingString()+`"}]`)
 
-	// Now actually send the request
+	// Send the request
 	resp, err := client.Do(req)
 	if err != nil {
 		return fmt.Errorf("error while sending request to ntfy.sh: %w", err)
