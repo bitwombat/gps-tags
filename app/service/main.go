@@ -95,6 +95,9 @@ var idToName = map[float64]string{
 
 var lastWasHealthCheck bool // Used to clean up the log output. TODO: Same persistence problem here.
 
+type boundaryStatesType map[string]bool
+type dogBoundaryStatesType map[string]boundaryStatesType
+
 func logIfErr(err error) {
 	if err != nil {
 		log.Printf("error sending notification: %v", err)
@@ -171,8 +174,7 @@ func NewDataPostHandler(s storage.Storage, n notify.Notifier) func(http.Response
 	storer := s // TODO: Is this necessary for a closure?
 	notifier := n
 
-	prevInsideSafeZoneBoundary := true // TODO: this saved state won't work if on CloudRun, since the process comes and goes!
-	prevInsidePropertyBoundary := true
+	prevDogBoundaryState := make(dogBoundaryStatesType)
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -277,29 +279,33 @@ func NewDataPostHandler(s storage.Storage, n notify.Notifier) func(http.Response
 		currInsidePropertyBoundary := poly.IsInside(propertyOutline, currLocationPoint)
 		currInsideSafeZoneBoundary := poly.IsInside(safeZoneOutline, currLocationPoint)
 
+		if prevDogBoundaryState[dogName] == nil {
+			prevDogBoundaryState[dogName] = make(boundaryStatesType)
+		}
+
 		// Notify on changes
-		if prevInsidePropertyBoundary && !currInsidePropertyBoundary {
+		if prevDogBoundaryState[dogName]["propertyBoundary"] && !currInsidePropertyBoundary {
 			err = notifier.Notify(ctx, fmt.Sprintf("%s is off the property", dogName), thisZoneText)
 			logIfErr(err)
 		}
 
-		if !prevInsidePropertyBoundary && currInsidePropertyBoundary {
+		if !prevDogBoundaryState[dogName]["propertyBoundary"] && currInsidePropertyBoundary {
 			err = notifier.Notify(ctx, fmt.Sprintf("%s is now back on property", dogName), thisZoneText)
 			logIfErr(err)
 		}
 
-		if prevInsideSafeZoneBoundary && !currInsideSafeZoneBoundary {
+		if prevDogBoundaryState[dogName]["safeZoneBoundary"] && !currInsideSafeZoneBoundary {
 			err = notifier.Notify(ctx, fmt.Sprintf("%s is getting far from home base", dogName), thisZoneText)
 			logIfErr(err)
 		}
 
-		if !prevInsideSafeZoneBoundary && currInsideSafeZoneBoundary {
+		if !prevDogBoundaryState[dogName]["safeZoneBoundary"] && currInsideSafeZoneBoundary {
 			err = notifier.Notify(ctx, fmt.Sprintf("%s is now back close to home base", dogName), thisZoneText)
 			logIfErr(err)
 		}
 
-		prevInsidePropertyBoundary = currInsidePropertyBoundary
-		prevInsideSafeZoneBoundary = currInsideSafeZoneBoundary
+		prevDogBoundaryState[dogName]["propertyBoundary"] = currInsidePropertyBoundary
+		prevDogBoundaryState[dogName]["safeZoneBoundary"] = currInsideSafeZoneBoundary
 
 		// Insert the document into storage
 		err = storer.WriteCommit(ctx, string(body))
