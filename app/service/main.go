@@ -10,29 +10,36 @@ import (
 	"github.com/bitwombat/gps-tags/storage"
 )
 
+// systemd recognises these prefixes and colors accordingly. Also allows filtering priorities with journalctl.
+var fatalLogger = log.New(os.Stdout, "<2>", log.LstdFlags)
+var errorLogger = log.New(os.Stdout, "<3>", log.LstdFlags)
+var warningLogger = log.New(os.Stdout, "<4>", log.LstdFlags)
+var infoLogger = log.New(os.Stdout, "<6>", log.LstdFlags)
+var debugLogger = log.New(os.Stdout, "<7>", log.LstdFlags)
+
 func main() {
-	log.Println("Starting Dog Tag application.")
+	infoLogger.Println("Starting Dog Tag application.")
 
 	lastWasHealthCheck = false
 
 	mongoURL := os.Getenv("MONGO_URL")
 	if mongoURL == "" {
-		log.Fatal("MONGO_URL not set")
+		fatalLogger.Fatal("MONGO_URL not set")
 	}
 
 	collection, err := storage.NewMongoConnection(mongoURL, "dogs")
 	if err != nil {
-		log.Fatal(fmt.Errorf("getting a Mongo connection: %v", err))
+		fatalLogger.Fatal(fmt.Errorf("getting a Mongo connection: %v", err))
 	}
 
-	log.Println("Connected to MongoDB.")
+	infoLogger.Println("Connected to MongoDB.")
 
 	ntfySubscriptionId := os.Getenv("NTFY_SUBSCRIPTION_ID")
 	if ntfySubscriptionId == "" {
-		log.Print("WARNING: NTFY_SUBSCRIPTION_ID not set. Notifications will not be sent.")
+		warningLogger.Print("WARNING: NTFY_SUBSCRIPTION_ID not set. Notifications will not be sent.")
 	}
 
-	log.Println("Setting up handlers.")
+	infoLogger.Println("Setting up handlers.")
 
 	// Web page endpoints
 	httpsMux := http.NewServeMux()
@@ -56,14 +63,15 @@ func main() {
 	httpsMux.Handle("/", fs)
 
 	// Servers
-	log.Println("Starting servers")
+	infoLogger.Println("Starting servers")
+
 	go func() {
 		server1 := &http.Server{
 			Addr:    ":80",
 			Handler: httpMux,
 		}
-		log.Println("Server running on :80")
-		log.Fatal(server1.ListenAndServe())
+		infoLogger.Println("Server running on :80")
+		fatalLogger.Fatal(server1.ListenAndServe())
 	}()
 
 	go func() {
@@ -71,8 +79,8 @@ func main() {
 			Addr:    ":443",
 			Handler: httpsMux,
 		}
-		log.Println("Server running on :443")
-		log.Fatal(server2.ListenAndServe())
+		infoLogger.Println("Server running on :443")
+		fatalLogger.Fatal(server2.ListenAndServe())
 	}()
 
 	// Block forever
