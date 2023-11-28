@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"time"
 
 	"github.com/bitwombat/gps-tags/storage"
@@ -9,7 +8,7 @@ import (
 
 func logIfErr(err error) {
 	if err != nil {
-		log.Printf("error sending notification: %v", err)
+		errorLogger.Printf("error sending notification: %v", err)
 	}
 }
 

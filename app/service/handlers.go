@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -72,12 +71,12 @@ type dogBoundaryStatesType map[string]boundaryStatesType
 func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		log.Println("Got a current map page request.")
+		infoLogger.Println("Got a current map page request.")
 		lastWasHealthCheck = false
 
 		tags, err := storer.GetLastPositions()
 		if err != nil {
-			log.Printf("Error getting last position from storage: %v\n", err)
+			errorLogger.Printf("Error getting last position from storage: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -88,7 +87,7 @@ func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 			name := idToName[tag.SerNo]
 			reason, ok := device.ReasonToText[tag.Reason]
 			if !ok {
-				log.Printf("Error: Unknown reason code: %v\n", tag.Reason)
+				errorLogger.Printf("Error: Unknown reason code: %v\n", tag.Reason)
 				reason = "Unknown reason"
 			}
 			subs[name+"Lat"] = fmt.Sprintf("%.7f", tag.Latitude)
@@ -100,14 +99,14 @@ func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 		mapPage, err := substitute.ContentsOf("public_html/current-map.html", subs)
 
 		if err != nil {
-			log.Printf("Error getting contents of index.html: %v\n", err)
+			errorLogger.Printf("Error getting contents of index.html: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		_, err = w.Write([]byte(mapPage))
 		if err != nil {
-			log.Printf("Error writing response: %v\n", err)
+			errorLogger.Printf("Error writing response: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -128,7 +127,7 @@ func newDataPostHandler(s storage.Storage, n notify.Notifier) func(http.Response
 
 		// Validate the request
 		if r.Method != http.MethodPost {
-			log.Println("Got a request to /upload that was not a POST")
+			errorLogger.Println("Got a request to /upload that was not a POST")
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
 		}
@@ -136,35 +135,35 @@ func newDataPostHandler(s storage.Storage, n notify.Notifier) func(http.Response
 		authKey := r.Header[http.CanonicalHeaderKey("auth")][0]
 
 		if authKey == "" {
-			log.Printf("Got an empty auth key: %v\n", authKey)
+			errorLogger.Printf("Got an empty auth key: %v\n", authKey)
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
 		if authKey != "6ebaa65ed27455fd6d32bfd4c01303cd" {
-			log.Printf("Got a bad auth key: %v\n", authKey)
+			errorLogger.Printf("Got a bad auth key: %v\n", authKey)
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
 
-		log.Println("Got a data post.")
+		infoLogger.Println("Got a data post.")
 		lastWasHealthCheck = false
 
 		// Read and decode the request body
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			log.Printf("Error reading body: %v", err)
+			errorLogger.Printf("Error reading body: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		log.Println(string(body))
+		debugLogger.Println(string(body))
 
 		var tagData TagData
 
 		err = json.Unmarshal(body, &tagData)
 		if err != nil {
-			log.Printf("Error unmarshalling JSON: %v", err)
+			errorLogger.Printf("Error unmarshalling JSON: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -173,14 +172,14 @@ func newDataPostHandler(s storage.Storage, n notify.Notifier) func(http.Response
 
 		NamedZones, err := zonespkg.ReadKMLDir("named_zones")
 		if err != nil {
-			log.Printf("Error reading KML files: %v", err)
+			errorLogger.Printf("Error reading KML files: %v", err)
 			// not a critical error, keep going
 			return
 		}
 
 		dogName, ok := idToName[float64(tagData.SerNo)]
 		if !ok {
-			log.Printf("Unknown tag number: %v", tagData.SerNo)
+			errorLogger.Printf("Unknown tag number: %v", tagData.SerNo)
 		}
 		dogName = strings.ToUpper(dogName) // Just looks better and stands out in notifications
 
@@ -204,11 +203,11 @@ func newDataPostHandler(s storage.Storage, n notify.Notifier) func(http.Response
 
 			reason, ok := device.ReasonToText[int64(r.Reason)]
 			if !ok {
-				log.Printf("Error: Unknown reason code: %v\n", r.Reason)
+				errorLogger.Printf("Error: Unknown reason code: %v\n", r.Reason)
 				reason = "Unknown reason"
 			}
 
-			log.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC), reason, gpsField.GpsUTC, timeAgoAsText(gpsField.GpsUTC), gpsField.Lat, gpsField.Long, thisZoneText)
+			infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC), reason, gpsField.GpsUTC, timeAgoAsText(gpsField.GpsUTC), gpsField.Lat, gpsField.Long, thisZoneText)
 
 		}
 
@@ -256,13 +255,13 @@ func newDataPostHandler(s storage.Storage, n notify.Notifier) func(http.Response
 		// Insert the document into storage
 		err = storer.WriteCommit(ctx, string(body))
 		if err != nil {
-			log.Printf("Error inserting document: %v", err)
+			errorLogger.Printf("Error inserting document: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		// All happy
-		log.Printf("Successfully inserted document")
+		infoLogger.Printf("Successfully inserted document")
 		w.WriteHeader(http.StatusOK)
 	}
 }
@@ -271,7 +270,7 @@ func handleHealth(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "OK")
 	if !lastWasHealthCheck {
-		log.Println("Got a health check [repeats will be hidden].")
+		infoLogger.Println("Got a health check [repeats will be hidden].")
 	}
 
 	lastWasHealthCheck = true
@@ -286,7 +285,7 @@ func newTestNotifyHandler(n notify.Notifier) func(http.ResponseWriter, *http.Req
 
 		err := notifier.Notify(ctx, "Test notification", "This is a test notification.")
 		if err != nil {
-			log.Printf("Error sending test notification: %v", err)
+			errorLogger.Printf("Error sending test notification: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
