@@ -116,10 +116,7 @@ func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 	}
 }
 
-func newDataPostHandler(s storage.Storage, n notify.Notifier, tagAuthKey string) func(http.ResponseWriter, *http.Request) {
-	storer := s // TODO: Is this necessary for a closure?
-	notifier := n
-
+func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAuthKey string) func(http.ResponseWriter, *http.Request) {
 	persistentState := make(dogStatesType)
 
 	return func(w http.ResponseWriter, r *http.Request) {
