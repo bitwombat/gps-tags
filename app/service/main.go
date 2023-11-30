@@ -10,6 +10,10 @@ import (
 	"github.com/bitwombat/gps-tags/storage"
 )
 
+const BatteryLowThreshold = 4.0
+const BatteryCriticalThreshold = 3.8
+const BatteryHysteresis = 0.1
+
 // systemd recognises these prefixes and colors accordingly. Also allows filtering priorities with journalctl.
 var fatalLogger = log.New(os.Stdout, "<2>", log.LstdFlags)
 var errorLogger = log.New(os.Stdout, "<3>", log.LstdFlags)

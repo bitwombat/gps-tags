@@ -65,8 +65,13 @@ var idToName = map[float64]string{
 
 var lastWasHealthCheck bool // Used to clean up the log output.
 
+// A data structure for ["dog"]["boundary"] = true/false
 type boundaryStatesType map[string]bool
 type dogBoundaryStatesType map[string]boundaryStatesType
+
+// Same for battery notifications
+type batteryNotificationStatesType map[string]bool
+type dogBatteryNotificationStatesType map[string]batteryNotificationStatesType
 
 func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
 
@@ -118,6 +123,8 @@ func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 func newDataPostHandler(s storage.Storage, n notify.Notifier, tagAuthKey string) func(http.ResponseWriter, *http.Request) {
 	storer := s // TODO: Is this necessary for a closure?
 	notifier := n
+
+	dogBatteryNotificationStates := make(dogBatteryNotificationStatesType)
 
 	prevDogBoundaryState := make(dogBoundaryStatesType)
 
@@ -211,7 +218,44 @@ func newDataPostHandler(s storage.Storage, n notify.Notifier, tagAuthKey string)
 
 		}
 
-		// Notify based on most recent record in the set just sent
+		// --------------------------------------------------------------------
+		// Notify about battery condition -------------------------------------
+		// --------------------------------------------------------------------
+		batteryVoltage := float64(latestRecord.Fields[2].AnalogueData.Num1) / 1000
+
+		debugLogger.Printf("Battery voltage: %.3f V\n", batteryVoltage)
+
+		if dogBatteryNotificationStates[dogName] == nil {
+			dogBatteryNotificationStates[dogName] = make(batteryNotificationStatesType)
+		}
+
+		if batteryVoltage < BatteryLowThreshold && !dogBatteryNotificationStates[dogName]["lowBattery"] {
+			err = notifier.Notify(ctx, fmt.Sprintf("%s's battery low", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage))
+			logIfErr(err)
+			if err == nil {
+				dogBatteryNotificationStates[dogName]["lowBattery"] = true
+			}
+		}
+
+		if batteryVoltage < BatteryCriticalThreshold && !dogBatteryNotificationStates[dogName]["criticalBattery"] {
+			err = notifier.Notify(ctx, fmt.Sprintf("%s's battery critical", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage))
+			logIfErr(err)
+			if err == nil {
+				dogBatteryNotificationStates[dogName]["criticalBattery"] = true
+			}
+		}
+
+		if batteryVoltage > BatteryLowThreshold+BatteryHysteresis { // The higher of the two thresholds
+			// Battery must have been replaced
+			dogBatteryNotificationStates[dogName]["lowBattery"] = false
+			dogBatteryNotificationStates[dogName]["criticalBattery"] = false
+			err = notifier.Notify(ctx, fmt.Sprintf("New battery for %s detected", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage))
+			logIfErr(err)
+		}
+
+		// --------------------------------------------------------------------
+		// Notify about zones and boundaries ----------------------------------
+		// --------------------------------------------------------------------
 		latestGPSRecord := latestRecord.Fields[0]
 
 		if NamedZones != nil {
