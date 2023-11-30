@@ -65,13 +65,9 @@ var idToName = map[float64]string{
 
 var lastWasHealthCheck bool // Used to clean up the log output.
 
-// A data structure for ["dog"]["boundary"] = true/false
-type boundaryStatesType map[string]bool
-type dogBoundaryStatesType map[string]boundaryStatesType
-
-// Same for battery notifications
-type batteryNotificationStatesType map[string]bool
-type dogBatteryNotificationStatesType map[string]batteryNotificationStatesType
+// A data structure for persistent ["dog"]["boundary"] = true/false states.
+type statesType map[string]bool
+type dogStatesType map[string]statesType
 
 func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
 
@@ -124,9 +120,7 @@ func newDataPostHandler(s storage.Storage, n notify.Notifier, tagAuthKey string)
 	storer := s // TODO: Is this necessary for a closure?
 	notifier := n
 
-	dogBatteryNotificationStates := make(dogBatteryNotificationStatesType)
-
-	prevDogBoundaryState := make(dogBoundaryStatesType)
+	persistentState := make(dogStatesType)
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -225,30 +219,30 @@ func newDataPostHandler(s storage.Storage, n notify.Notifier, tagAuthKey string)
 
 		debugLogger.Printf("Battery voltage: %.3f V\n", batteryVoltage)
 
-		if dogBatteryNotificationStates[dogName] == nil {
-			dogBatteryNotificationStates[dogName] = make(batteryNotificationStatesType)
+		if persistentState[dogName] == nil {
+			persistentState[dogName] = make(statesType)
 		}
 
-		if batteryVoltage < BatteryLowThreshold && !dogBatteryNotificationStates[dogName]["lowBattery"] {
+		if batteryVoltage < BatteryLowThreshold && !persistentState[dogName]["lowBattery"] {
 			err = notifier.Notify(ctx, fmt.Sprintf("%s's battery low", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage))
 			logIfErr(err)
 			if err == nil {
-				dogBatteryNotificationStates[dogName]["lowBattery"] = true
+				persistentState[dogName]["lowBattery"] = true
 			}
 		}
 
-		if batteryVoltage < BatteryCriticalThreshold && !dogBatteryNotificationStates[dogName]["criticalBattery"] {
+		if batteryVoltage < BatteryCriticalThreshold && !persistentState[dogName]["criticalBattery"] {
 			err = notifier.Notify(ctx, fmt.Sprintf("%s's battery critical", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage))
 			logIfErr(err)
 			if err == nil {
-				dogBatteryNotificationStates[dogName]["criticalBattery"] = true
+				persistentState[dogName]["criticalBattery"] = true
 			}
 		}
 
-		if batteryVoltage > BatteryLowThreshold+BatteryHysteresis { // The higher of the two thresholds
+		if batteryVoltage > BatteryLowThreshold+BatteryHysteresis && (persistentState[dogName]["lowBattery"] || persistentState[dogName]["criticalBattery"]) { // The higher of the two thresholds
 			// Battery must have been replaced
-			dogBatteryNotificationStates[dogName]["lowBattery"] = false
-			dogBatteryNotificationStates[dogName]["criticalBattery"] = false
+			persistentState[dogName]["lowBattery"] = false
+			persistentState[dogName]["criticalBattery"] = false
 			err = notifier.Notify(ctx, fmt.Sprintf("New battery for %s detected", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage))
 			logIfErr(err)
 		}
@@ -268,33 +262,29 @@ func newDataPostHandler(s storage.Storage, n notify.Notifier, tagAuthKey string)
 		currInsidePropertyBoundary := poly.IsInside(propertyOutline, currLocationPoint)
 		currInsideSafeZoneBoundary := poly.IsInside(safeZoneOutline, currLocationPoint)
 
-		if prevDogBoundaryState[dogName] == nil {
-			prevDogBoundaryState[dogName] = make(boundaryStatesType)
-		}
-
 		// Notify on changes
-		if prevDogBoundaryState[dogName]["propertyBoundary"] && !currInsidePropertyBoundary {
+		if persistentState[dogName]["propertyBoundary"] && !currInsidePropertyBoundary {
 			err = notifier.Notify(ctx, fmt.Sprintf("%s is off the property", dogName), thisZoneText)
 			logIfErr(err)
 		}
 
-		if !prevDogBoundaryState[dogName]["propertyBoundary"] && currInsidePropertyBoundary {
+		if !persistentState[dogName]["propertyBoundary"] && currInsidePropertyBoundary {
 			err = notifier.Notify(ctx, fmt.Sprintf("%s is now back on property", dogName), thisZoneText)
 			logIfErr(err)
 		}
 
-		if prevDogBoundaryState[dogName]["safeZoneBoundary"] && !currInsideSafeZoneBoundary {
+		if persistentState[dogName]["safeZoneBoundary"] && !currInsideSafeZoneBoundary {
 			err = notifier.Notify(ctx, fmt.Sprintf("%s is getting far from home base", dogName), thisZoneText)
 			logIfErr(err)
 		}
 
-		if !prevDogBoundaryState[dogName]["safeZoneBoundary"] && currInsideSafeZoneBoundary {
+		if !persistentState[dogName]["safeZoneBoundary"] && currInsideSafeZoneBoundary {
 			err = notifier.Notify(ctx, fmt.Sprintf("%s is now back close to home base", dogName), thisZoneText)
 			logIfErr(err)
 		}
 
-		prevDogBoundaryState[dogName]["propertyBoundary"] = currInsidePropertyBoundary
-		prevDogBoundaryState[dogName]["safeZoneBoundary"] = currInsideSafeZoneBoundary
+		persistentState[dogName]["propertyBoundary"] = currInsidePropertyBoundary
+		persistentState[dogName]["safeZoneBoundary"] = currInsideSafeZoneBoundary
 
 		// Insert the document into storage
 		id, err := storer.WriteCommit(ctx, string(body))
