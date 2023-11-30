@@ -5,6 +5,7 @@ favicon_io.zip.dir
 app/storage/__debug_bin
 app/poly/main
 sensitive
+stuff
 app/service/gps-tags
 dog-tracking.service
 .env
