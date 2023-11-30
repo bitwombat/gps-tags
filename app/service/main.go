@@ -47,8 +47,11 @@ func main() {
 	dataPostHandler := newDataPostHandler(storer, notifier)
 	httpsMux.HandleFunc("/upload", dataPostHandler)
 
-	// Notification testing endpoint
+	// Notification testing endpoints
 	httpsMux.HandleFunc("/testnotify", newTestNotifyHandler(notifier))
+	httpsMux.HandleFunc("/notifytest", newTestNotifyHandler(notifier))
+	httpsMux.HandleFunc("/testnotification", newTestNotifyHandler(notifier))
+	httpsMux.HandleFunc("/notificationtest", newTestNotifyHandler(notifier))
 
 	// Health check endpoint (from load balancer)
 	httpMux := http.NewServeMux()
