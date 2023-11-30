@@ -50,17 +50,18 @@ func main() {
 	httpsMux := http.NewServeMux()
 	storer := storage.NewMongoStorer(collection)
 	notifier := notify.NewNtfyNotifier(ntfySubscriptionId)
+	loggingNotifier := notify.NewLoggingNotifier(notifier, debugLogger)
 	httpsMux.HandleFunc("/current", newCurrentMapPageHandler(storer))
 
 	// Data upload endpoint
-	dataPostHandler := newDataPostHandler(storer, notifier, tagAuthKey)
+	dataPostHandler := newDataPostHandler(storer, loggingNotifier, tagAuthKey)
 	httpsMux.HandleFunc("/upload", dataPostHandler)
 
 	// Notification testing endpoints
-	httpsMux.HandleFunc("/testnotify", newTestNotifyHandler(notifier))
-	httpsMux.HandleFunc("/notifytest", newTestNotifyHandler(notifier))
-	httpsMux.HandleFunc("/testnotification", newTestNotifyHandler(notifier))
-	httpsMux.HandleFunc("/notificationtest", newTestNotifyHandler(notifier))
+	httpsMux.HandleFunc("/testnotify", newTestNotifyHandler(loggingNotifier))
+	httpsMux.HandleFunc("/notifytest", newTestNotifyHandler(loggingNotifier))
+	httpsMux.HandleFunc("/testnotification", newTestNotifyHandler(loggingNotifier))
+	httpsMux.HandleFunc("/notificationtest", newTestNotifyHandler(loggingNotifier))
 
 	// Health check endpoint (from load balancer)
 	httpMux := http.NewServeMux()
