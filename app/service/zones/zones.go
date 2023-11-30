@@ -28,7 +28,7 @@ func (c *Coordinates) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error
 	var value string
 	err := d.DecodeElement(&value, &start)
 	if err != nil {
-		return fmt.Errorf("while decoding XML element: %v", err)
+		return fmt.Errorf("while decoding XML element: %w", err)
 	}
 
 	for _, str := range strings.Fields(value) {
@@ -43,7 +43,7 @@ func UnmarkshallKML(kmlBlob string) (Zone, error) {
 	var z Zone
 	err := xml.Unmarshal([]byte(kmlBlob), &z)
 	if err != nil {
-		return Zone{}, fmt.Errorf("while unmarshalling KML: %v", err)
+		return Zone{}, fmt.Errorf("while unmarshalling KML: %w", err)
 	}
 
 	return z, nil
@@ -52,7 +52,7 @@ func UnmarkshallKML(kmlBlob string) (Zone, error) {
 func ReadKMLFile(filename string) (Zone, error) {
 	kmlBlob, err := os.ReadFile(filename)
 	if err != nil {
-		return Zone{}, fmt.Errorf("while reading KML file: %v", err)
+		return Zone{}, fmt.Errorf("while reading KML file: %w", err)
 	}
 
 	return UnmarkshallKML(string(kmlBlob))
@@ -61,7 +61,7 @@ func ReadKMLFile(filename string) (Zone, error) {
 func ReadKMLDir(path string) ([]Zone, error) {
 	files, err := os.ReadDir(path)
 	if err != nil {
-		return nil, fmt.Errorf("while reading KML directory: %v", err)
+		return nil, fmt.Errorf("while reading KML directory: %w", err)
 	}
 
 	var zones []Zone
@@ -69,7 +69,7 @@ func ReadKMLDir(path string) ([]Zone, error) {
 		if strings.HasSuffix(file.Name(), ".kml") {
 			zone, err := ReadKMLFile(path + "/" + file.Name())
 			if err != nil {
-				return nil, fmt.Errorf("while reading KML file: %v", err)
+				return nil, fmt.Errorf("while reading KML file: %w", err)
 			}
 			zones = append(zones, zone)
 		}

@@ -33,7 +33,7 @@ func main() {
 	infoLogger.Println("Connecting to MongoDB.")
 	collection, err := storage.NewMongoConnection(mongoURL, "dogs")
 	if err != nil {
-		fatalLogger.Fatal(fmt.Errorf("getting a Mongo connection: %v", err))
+		fatalLogger.Fatal(fmt.Errorf("getting a Mongo connection: %w", err))
 	}
 
 	ntfySubscriptionId := os.Getenv("NTFY_SUBSCRIPTION_ID")
