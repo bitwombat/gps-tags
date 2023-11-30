@@ -280,6 +280,8 @@ func newTestNotifyHandler(n notify.Notifier) func(http.ResponseWriter, *http.Req
 	notifier := n
 
 	return func(w http.ResponseWriter, r *http.Request) {
+		debugLogger.Println("Got a request to send a test notification.")
+
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
 
