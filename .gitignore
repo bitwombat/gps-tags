@@ -6,3 +6,5 @@ app/storage/__debug_bin
 app/poly/main
 sensitive
 app/service/gps-tags
+dog-tracking.service
+.env

@@ -8,8 +8,8 @@ Restart=always
 User=root
 Group=root
 Environment=MONGO_URL="mongodb://127.0.0.1:27017"
-Environment=NTFY_SUBSCRIPTION_ID="ahShaikee"
-Environment=TAG_AUTH_KEY="6ebaa65ed27455fd6d32bfd4c01303cd"
+Environment=NTFY_SUBSCRIPTION_ID="807fbceda2"
+Environment=TAG_AUTH_KEY="b3d9c1fa69"
 WorkingDirectory=/root
 
 [Install]
