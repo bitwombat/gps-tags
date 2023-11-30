@@ -22,7 +22,7 @@ func NewNtfyNotifier(subscriptionId string) Notifier {
 }
 
 func cacheBustingString() string {
-	bytes := make([]byte, 8)
+	bytes := make([]byte, 4)
 	_, err := rand.Read(bytes)
 	if err != nil {
 		return "failure-with-rand" // It'll be OK... just a cache buster string
