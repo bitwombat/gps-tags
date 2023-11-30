@@ -37,6 +37,11 @@ func main() {
 		warningLogger.Print("WARNING: NTFY_SUBSCRIPTION_ID not set. Notifications will not be sent.")
 	}
 
+	tagAuthKey := os.Getenv("TAG_AUTH_KEY")
+	if tagAuthKey == "" {
+		fatalLogger.Fatal("TAG_AUTH_KEY not set")
+	}
+
 	// Web page endpoints
 	httpsMux := http.NewServeMux()
 	storer := storage.NewMongoStorer(collection)
@@ -44,7 +49,7 @@ func main() {
 	httpsMux.HandleFunc("/current", newCurrentMapPageHandler(storer))
 
 	// Data upload endpoint
-	dataPostHandler := newDataPostHandler(storer, notifier)
+	dataPostHandler := newDataPostHandler(storer, notifier, tagAuthKey)
 	httpsMux.HandleFunc("/upload", dataPostHandler)
 
 	// Notification testing endpoints

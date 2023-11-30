@@ -115,7 +115,7 @@ func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 	}
 }
 
-func newDataPostHandler(s storage.Storage, n notify.Notifier) func(http.ResponseWriter, *http.Request) {
+func newDataPostHandler(s storage.Storage, n notify.Notifier, tagAuthKey string) func(http.ResponseWriter, *http.Request) {
 	storer := s // TODO: Is this necessary for a closure?
 	notifier := n
 
@@ -140,7 +140,7 @@ func newDataPostHandler(s storage.Storage, n notify.Notifier) func(http.Response
 			return
 		}
 
-		if authKey != "6ebaa65ed27455fd6d32bfd4c01303cd" {
+		if authKey != tagAuthKey {
 			errorLogger.Printf("Got a bad auth key: %v\n", authKey)
 			w.WriteHeader(http.StatusUnauthorized)
 			return
