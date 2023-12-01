@@ -58,6 +58,8 @@ type AnalogueData struct {
 	Num5 int `json:"5"`
 }
 
+const AnalogueDataFType = 6
+
 var idToName = map[float64]string{
 	810095: "rueger",
 	810243: "tucker",
@@ -212,36 +214,46 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 		// --------------------------------------------------------------------
 		// Notify about battery condition -------------------------------------
 		// --------------------------------------------------------------------
-		batteryVoltage := float64(latestRecord.Fields[2].AnalogueData.Num1) / 1000
+		var batteryVoltage float64
 
-		debugLogger.Printf("Battery voltage: %.3f V\n", batteryVoltage)
-
-		if persistentState[dogName] == nil {
-			persistentState[dogName] = make(statesType)
-		}
-
-		if batteryVoltage < BatteryLowThreshold && !persistentState[dogName]["lowBattery"] {
-			err = notifier.Notify(ctx, fmt.Sprintf("%s's battery low", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage))
-			logIfErr(err)
-			if err == nil {
-				persistentState[dogName]["lowBattery"] = true
+		for _, f := range latestRecord.Fields {
+			if f.FType == AnalogueDataFType {
+				batteryVoltage = float64(f.AnalogueData.Num1) / 1000
 			}
 		}
 
-		if batteryVoltage < BatteryCriticalThreshold && !persistentState[dogName]["criticalBattery"] {
-			err = notifier.Notify(ctx, fmt.Sprintf("%s's battery critical", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage))
-			logIfErr(err)
-			if err == nil {
-				persistentState[dogName]["criticalBattery"] = true
-			}
-		}
+		if batteryVoltage == 0 {
+			debugLogger.Println("No battery voltage in record")
+		} else {
+			debugLogger.Printf("Battery voltage: %.3f V\n", batteryVoltage)
 
-		if batteryVoltage > BatteryLowThreshold+BatteryHysteresis && (persistentState[dogName]["lowBattery"] || persistentState[dogName]["criticalBattery"]) { // The higher of the two thresholds
-			// Battery must have been replaced
-			persistentState[dogName]["lowBattery"] = false
-			persistentState[dogName]["criticalBattery"] = false
-			err = notifier.Notify(ctx, fmt.Sprintf("New battery for %s detected", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage))
-			logIfErr(err)
+			if persistentState[dogName] == nil {
+				persistentState[dogName] = make(statesType)
+			}
+
+			if batteryVoltage < BatteryLowThreshold && !persistentState[dogName]["lowBattery"] {
+				err = notifier.Notify(ctx, fmt.Sprintf("%s's battery low", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage))
+				logIfErr(err)
+				if err == nil {
+					persistentState[dogName]["lowBattery"] = true
+				}
+			}
+
+			if batteryVoltage < BatteryCriticalThreshold && !persistentState[dogName]["criticalBattery"] {
+				err = notifier.Notify(ctx, fmt.Sprintf("%s's battery critical", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage))
+				logIfErr(err)
+				if err == nil {
+					persistentState[dogName]["criticalBattery"] = true
+				}
+			}
+
+			if batteryVoltage > BatteryLowThreshold+BatteryHysteresis && (persistentState[dogName]["lowBattery"] || persistentState[dogName]["criticalBattery"]) { // The higher of the two thresholds
+				// Battery must have been replaced
+				persistentState[dogName]["lowBattery"] = false
+				persistentState[dogName]["criticalBattery"] = false
+				err = notifier.Notify(ctx, fmt.Sprintf("New battery for %s detected", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage))
+				logIfErr(err)
+			}
 		}
 
 		// --------------------------------------------------------------------
