@@ -49,7 +49,14 @@ func main() {
 	// Web page endpoints
 	httpsMux := http.NewServeMux()
 	storer := storage.NewMongoStorer(collection)
-	notifier := notify.NewNtfyNotifier(ntfySubscriptionId)
+
+	var notifier notify.Notifier
+	if os.Getenv("NONOTIFY") != "" {
+		warningLogger.Print("WARNING: NONOTIFY env var set. Null notifier being used. No notifications will be sent.")
+		notifier = notify.NewNullNotifier()
+	} else {
+		notifier = notify.NewNtfyNotifier(ntfySubscriptionId)
+	}
 	loggingNotifier := notify.NewLoggingNotifier(notifier, debugLogger)
 	httpsMux.HandleFunc("/current", newCurrentMapPageHandler(storer))
 
