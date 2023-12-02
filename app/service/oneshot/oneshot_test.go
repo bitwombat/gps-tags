@@ -16,14 +16,12 @@ func TestSets(t *testing.T) {
 	// WHEN the condition to set the oneshot is true
 	err := SetOrReset("someEvent", storage,
 		Config{
-			SetIf: func() bool {
-				return true
-			},
+			SetIf: true,
 			OnSet: func() error {
 				fired = true
 				return nil
 			},
-			ResetIf: nil,
+			ResetIf: false,
 			OnReset: nil,
 		})
 
@@ -42,14 +40,12 @@ func TestItDoesntSetIfConditionIsntTrue(t *testing.T) {
 	// WHEN the condition to set the oneshot is NOT true
 	err := SetOrReset("someEvent", storage,
 		Config{
-			SetIf: func() bool {
-				return false
-			},
+			SetIf: false,
 			OnSet: func() error {
 				fired = true
 				return nil
 			},
-			ResetIf: nil,
+			ResetIf: false,
 			OnReset: nil,
 		})
 
@@ -69,28 +65,24 @@ func TestItDoesntSetIfActionFails(t *testing.T) {
 	// WHEN the condition to set the oneshot is true but the action fails
 	err := SetOrReset("someEvent", storage,
 		Config{
-			SetIf: func() bool {
-				return true
-			},
+			SetIf: true,
 			OnSet: func() error {
 				firedOnce = true
 				return fmt.Errorf("some error")
 			},
-			ResetIf: nil,
+			ResetIf: false,
 			OnReset: nil,
 		})
 
 	// AND WHEN we attempt to set the oneshot again
 	err = SetOrReset("someEvent", storage,
 		Config{
-			SetIf: func() bool {
-				return true
-			},
+			SetIf: true,
 			OnSet: func() error {
 				firedTwice = true
 				return nil
 			},
-			ResetIf: nil,
+			ResetIf: false,
 			OnReset: nil,
 		})
 
@@ -111,13 +103,12 @@ func TestItDoesntFireSetActionTwice(t *testing.T) {
 	// WHEN the condition to set the oneshot is true
 	err := SetOrReset("someEvent", storage,
 		Config{
-			SetIf: func() bool {
-				return true
-			}, OnSet: func() error {
+			SetIf: true,
+			OnSet: func() error {
 				firedOnce = true
 				return nil
 			},
-			ResetIf: nil,
+			ResetIf: false,
 			OnReset: nil,
 		})
 	require.Nil(t, err)
@@ -126,14 +117,12 @@ func TestItDoesntFireSetActionTwice(t *testing.T) {
 	// AND we attempt to set the oneshot a second time
 	err = SetOrReset("someEvent", storage,
 		Config{
-			SetIf: func() bool {
-				return true
-			},
+			SetIf: true,
 			OnSet: func() error {
 				firedTwice = true
 				return nil
 			},
-			ResetIf: nil,
+			ResetIf: false,
 			OnReset: nil,
 		})
 
@@ -153,22 +142,18 @@ func TestReset(t *testing.T) {
 	// AND the oneshot is set
 	err := SetOrReset("someEvent", storage,
 		Config{
-			SetIf: func() bool {
-				return true
-			},
+			SetIf:   true,
 			OnSet:   nil,
-			ResetIf: nil,
+			ResetIf: false,
 			OnReset: nil,
 		})
 
 	// WHEN we reset the oneshot
 	err = SetOrReset("someEvent", storage,
 		Config{
-			SetIf: nil,
-			OnSet: nil,
-			ResetIf: func() bool {
-				return true
-			},
+			SetIf:   false,
+			OnSet:   nil,
+			ResetIf: true,
 			OnReset: func() error {
 				resetFired = true
 				return nil
@@ -191,22 +176,18 @@ func TestItDoesntFireResetActionTwice(t *testing.T) {
 	// AND the oneshot is set
 	err := SetOrReset("someEvent", storage,
 		Config{
-			SetIf: func() bool {
-				return true
-			},
+			SetIf:   true,
 			OnSet:   nil,
-			ResetIf: nil,
+			ResetIf: false,
 			OnReset: nil,
 		})
 
 	// WHEN we reset the oneshot
 	err = SetOrReset("someEvent", storage,
 		Config{
-			SetIf: nil,
-			OnSet: nil,
-			ResetIf: func() bool {
-				return true
-			},
+			SetIf:   false,
+			OnSet:   nil,
+			ResetIf: true,
 			OnReset: func() error {
 				resetFiredOnce = true
 				return nil
@@ -216,11 +197,9 @@ func TestItDoesntFireResetActionTwice(t *testing.T) {
 	// WHEN we reset the oneshot
 	err = SetOrReset("someEvent", storage,
 		Config{
-			SetIf: nil,
-			OnSet: nil,
-			ResetIf: func() bool {
-				return true
-			},
+			SetIf:   false,
+			OnSet:   nil,
+			ResetIf: true,
 			OnReset: func() error {
 				resetFiredTwice = true
 				return nil
@@ -242,36 +221,30 @@ func TestItCanBeSetAndReset(t *testing.T) {
 	// AND the oneshot is set
 	err := SetOrReset("someEvent", storage,
 		Config{
-			SetIf: func() bool {
-				return true
-			},
+			SetIf:   true,
 			OnSet:   nil,
-			ResetIf: nil,
+			ResetIf: false,
 			OnReset: nil,
 		})
 
 	// AND we reset the oneshot
 	err = SetOrReset("someEvent", storage,
 		Config{
-			SetIf: nil,
-			OnSet: nil,
-			ResetIf: func() bool {
-				return true
-			},
+			SetIf:   false,
+			OnSet:   nil,
+			ResetIf: true,
 			OnReset: nil,
 		})
 
 	// WHEN we set the oneshot again
 	err = SetOrReset("someEvent", storage,
 		Config{
-			SetIf: func() bool {
-				return true
-			},
+			SetIf: true,
 			OnSet: func() error {
 				setFiredSecondTime = true
 				return nil
 			},
-			ResetIf: nil,
+			ResetIf: false,
 			OnReset: nil,
 		})
 
