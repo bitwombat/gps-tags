@@ -14,57 +14,8 @@ import (
 	"github.com/bitwombat/gps-tags/oneshot"
 	"github.com/bitwombat/gps-tags/poly"
 	"github.com/bitwombat/gps-tags/storage"
-	"github.com/bitwombat/gps-tags/substitute"
 	zonespkg "github.com/bitwombat/gps-tags/zones"
 )
-
-type TagData struct {
-	SerNo   int      `json:"SerNo"`
-	Imei    string   `json:"IMEI"`
-	Iccid   string   `json:"ICCID"`
-	ProdID  int      `json:"ProdId"`
-	Fw      string   `json:"FW"`
-	Records []Record `json:"Records"`
-}
-
-type Record struct {
-	SeqNo   int     `json:"SeqNo"`
-	Reason  int     `json:"Reason"`
-	DateUTC string  `json:"DateUTC"`
-	Fields  []Field `json:"Fields"`
-}
-
-type Field struct {
-	GpsUTC       string       `json:"GpsUTC,omitempty"`
-	Lat          float64      `json:"Lat,omitempty"`
-	Long         float64      `json:"Long,omitempty"`
-	Alt          int          `json:"Alt,omitempty"`
-	Spd          int          `json:"Spd,omitempty"`
-	SpdAcc       int          `json:"SpdAcc,omitempty"`
-	Head         int          `json:"Head,omitempty"`
-	Pdop         int          `json:"PDOP,omitempty"`
-	PosAcc       int          `json:"PosAcc,omitempty"`
-	GpsStat      int          `json:"GpsStat,omitempty"`
-	FType        int          `json:"FType"`
-	DIn          int          `json:"DIn,omitempty"`
-	DOut         int          `json:"DOut,omitempty"`
-	DevStat      int          `json:"DevStat,omitempty"`
-	AnalogueData AnalogueData `json:"AnalogueData,omitempty"`
-}
-
-type AnalogueData struct {
-	Num1 int `json:"1"`
-	Num3 int `json:"3"`
-	Num4 int `json:"4"`
-	Num5 int `json:"5"`
-}
-
-const AnalogueDataFType = 6
-
-var idToName = map[float64]string{
-	810095: "rueger",
-	810243: "tucker",
-}
 
 var lastWasHealthCheck bool // Used to clean up the log output.
 
@@ -73,53 +24,6 @@ func makeNotifier(notifier notify.Notifier, ctx context.Context, title, message 
 		err := notifier.Notify(ctx, title, message)
 		logIfErr(err)
 		return err
-	}
-}
-
-func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		debugLogger.Println("Got a current map page request.")
-		lastWasHealthCheck = false
-
-		tags, err := storer.GetLastPositions()
-		if err != nil {
-			errorLogger.Printf("Error getting last position from storage: %v\n", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		subs := make(map[string]string)
-
-		for _, tag := range tags {
-			name := idToName[tag.SerNo]
-			reason, ok := device.ReasonToText[tag.Reason]
-			if !ok {
-				errorLogger.Printf("Error: Unknown reason code: %v\n", tag.Reason)
-				reason = "Unknown reason"
-			}
-			subs[name+"Lat"] = fmt.Sprintf("%.7f", tag.Latitude)
-			subs[name+"Lng"] = fmt.Sprintf("%.7f", tag.Longitude)
-			subs[name+"Note"] = "Last GPS: " + timeAgoAsText(tag.GpsUTC) + " ago<br>Last Checkin: " + timeAgoAsText(tag.DateUTC) + " ago<br>Reason: " + reason + "<br>Battery: " + fmt.Sprintf("%.2f", tag.Battery/1000) + "V"
-			subs[name+"Colour"] = timeAgoInColour(tag.GpsUTC)
-		}
-
-		mapPage, err := substitute.ContentsOf("public_html/current-map.html", subs)
-
-		if err != nil {
-			errorLogger.Printf("Error getting contents of index.html: %v\n", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		_, err = w.Write([]byte(mapPage))
-		if err != nil {
-			errorLogger.Printf("Error writing response: %v\n", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		// Don't need this - it's taken care of by w.Write:  w.WriteHeader(http.StatusOK)
 	}
 }
 
@@ -198,11 +102,7 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 
 			gpsField := r.Fields[0]
 
-			if NamedZones != nil {
-				thisZoneText = zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: gpsField.Lat, Longitude: gpsField.Long})
-			} else {
-				thisZoneText = "No zones loaded"
-			}
+			thisZoneText = zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: gpsField.Lat, Longitude: gpsField.Long})
 
 			reason, ok := device.ReasonToText[int64(r.Reason)]
 			if !ok {
@@ -276,8 +176,8 @@ func notifyAboutZones(ctx context.Context, latestRecord Record, NamedZones []zon
 	}
 
 	currentLocation := poly.Point{X: latestGPSRecord.Lat, Y: latestGPSRecord.Long}
-	isOutsidePropertyBoundary := !poly.IsInside(propertyOutline, currentLocation)
-	isOutsideSafeZoneBoundary := !poly.IsInside(safeZoneOutline, currentLocation)
+	isOutsidePropertyBoundary := !poly.IsInside(propertyBoundary, currentLocation)
+	isOutsideSafeZoneBoundary := !poly.IsInside(safeZoneBoundary, currentLocation)
 
 	_ = oneshot.SetOrReset(dogName+"offProperty", persistentState,
 		oneshot.Config{
@@ -294,34 +194,4 @@ func notifyAboutZones(ctx context.Context, latestRecord Record, NamedZones []zon
 			ResetIf: !isOutsideSafeZoneBoundary,
 			OnReset: makeNotifier(notifier, ctx, fmt.Sprintf("%s is now back close to the house", dogName), thisZoneText),
 		})
-}
-
-func handleHealth(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintf(w, "OK")
-	if !lastWasHealthCheck {
-		debugLogger.Println("Got a health check [repeats will be hidden].")
-	}
-
-	lastWasHealthCheck = true
-}
-
-func newTestNotifyHandler(n notify.Notifier) func(http.ResponseWriter, *http.Request) {
-	notifier := n
-
-	return func(w http.ResponseWriter, r *http.Request) {
-		debugLogger.Println("Got a request to send a test notification.")
-
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-		defer cancel()
-
-		err := notifier.Notify(ctx, "Test notification", "This is a test notification.")
-		if err != nil {
-			errorLogger.Printf("Error sending test notification: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		w.WriteHeader(http.StatusOK)
-	}
 }

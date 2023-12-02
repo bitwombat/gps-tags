@@ -65,7 +65,7 @@ func main() {
 
 	// Health check endpoint (from load balancer)
 	httpMux := http.NewServeMux()
-	httpMux.HandleFunc("/health", handleHealth)
+	httpMux.HandleFunc("/health", handleHealthCheck)
 
 	// Static file serving
 	fs := http.FileServer(http.Dir("./public_html"))

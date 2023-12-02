@@ -2,7 +2,7 @@ package main
 
 import "github.com/bitwombat/gps-tags/poly"
 
-var propertyOutline = []poly.Point{
+var propertyBoundary = []poly.Point{
 	{X: -31.4586212322512, Y: 152.6422124774594},
 	{X: -31.4595509701308, Y: 152.6438560831193},
 	{X: -31.45812972583087, Y: 152.6451090582995},
@@ -11,7 +11,7 @@ var propertyOutline = []poly.Point{
 	{X: -31.4586212322512, Y: 152.6422124774594},
 }
 
-var safeZoneOutline = []poly.Point{
+var safeZoneBoundary = []poly.Point{
 	{X: -31.45682907060356, Y: 152.6423896947185},
 	{X: -31.4566607599576, Y: 152.6418404324234},
 	{X: -31.45698678814134, Y: 152.641332228427},
