@@ -11,6 +11,7 @@ import (
 
 	"github.com/bitwombat/gps-tags/device"
 	"github.com/bitwombat/gps-tags/notify"
+	"github.com/bitwombat/gps-tags/oneshot"
 	"github.com/bitwombat/gps-tags/poly"
 	"github.com/bitwombat/gps-tags/storage"
 	"github.com/bitwombat/gps-tags/substitute"
@@ -67,9 +68,13 @@ var idToName = map[float64]string{
 
 var lastWasHealthCheck bool // Used to clean up the log output.
 
-// A data structure for persistent ["dog"]["boundary"] = true/false states.
-type statesType map[string]bool
-type dogStatesType map[string]statesType
+func makeNotifier(notifier notify.Notifier, ctx context.Context, title, message string) func() error {
+	return func() error {
+		err := notifier.Notify(ctx, title, message)
+		logIfErr(err)
+		return err
+	}
+}
 
 func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
 
@@ -119,7 +124,7 @@ func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 }
 
 func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAuthKey string) func(http.ResponseWriter, *http.Request) {
-	persistentState := make(dogStatesType)
+	persistentState := make(map[string]bool)
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
@@ -227,33 +232,29 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 		} else {
 			debugLogger.Printf("Battery voltage: %.3f V\n", batteryVoltage)
 
-			if persistentState[dogName] == nil {
-				persistentState[dogName] = make(statesType)
-			}
+			oneshot.SetOrReset(dogName+"lowBattery", persistentState,
+				oneshot.Config{
+					SetIf: func() bool {
+						return batteryVoltage < BatteryLowThreshold
+					},
+					OnSet: makeNotifier(notifier, ctx, fmt.Sprintf("%s's battery low", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
+					ResetIf: func() bool {
+						return batteryVoltage > BatteryLowThreshold+BatteryHysteresis
+					},
+					OnReset: makeNotifier(notifier, ctx, fmt.Sprintf("New battery for %s detected", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
+				})
 
-			if batteryVoltage < BatteryLowThreshold && !persistentState[dogName]["lowBattery"] {
-				err = notifier.Notify(ctx, fmt.Sprintf("%s's battery low", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage))
-				logIfErr(err)
-				if err == nil {
-					persistentState[dogName]["lowBattery"] = true
-				}
-			}
+			oneshot.SetOrReset(dogName+"criticalBattery", persistentState,
+				oneshot.Config{
+					SetIf: func() bool {
+						return batteryVoltage < BatteryCriticalThreshold
+					},
+					OnSet: makeNotifier(notifier, ctx, fmt.Sprintf("%s's battery critical", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
+					ResetIf: func() bool {
+						return batteryVoltage > BatteryLowThreshold
+					},
+				})
 
-			if batteryVoltage < BatteryCriticalThreshold && !persistentState[dogName]["criticalBattery"] {
-				err = notifier.Notify(ctx, fmt.Sprintf("%s's battery critical", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage))
-				logIfErr(err)
-				if err == nil {
-					persistentState[dogName]["criticalBattery"] = true
-				}
-			}
-
-			if batteryVoltage > BatteryLowThreshold+BatteryHysteresis && (persistentState[dogName]["lowBattery"] || persistentState[dogName]["criticalBattery"]) { // The higher of the two thresholds
-				// Battery must have been replaced
-				persistentState[dogName]["lowBattery"] = false
-				persistentState[dogName]["criticalBattery"] = false
-				err = notifier.Notify(ctx, fmt.Sprintf("New battery for %s detected", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage))
-				logIfErr(err)
-			}
 		}
 
 		// --------------------------------------------------------------------
@@ -268,32 +269,33 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 		}
 
 		currLocationPoint := poly.Point{X: latestGPSRecord.Lat, Y: latestGPSRecord.Long}
-		currInsidePropertyBoundary := poly.IsInside(propertyOutline, currLocationPoint)
-		currInsideSafeZoneBoundary := poly.IsInside(safeZoneOutline, currLocationPoint)
+		isInsidePropertyBoundary := poly.IsInside(propertyOutline, currLocationPoint)
+		isInsideSafeZoneBoundary := poly.IsInside(safeZoneOutline, currLocationPoint)
 
 		// Notify on changes
-		if persistentState[dogName]["propertyBoundary"] && !currInsidePropertyBoundary {
-			err = notifier.Notify(ctx, fmt.Sprintf("%s is off the property", dogName), thisZoneText)
-			logIfErr(err)
-		}
+		oneshot.SetOrReset(dogName+"offProperty", persistentState,
+			oneshot.Config{
+				SetIf: func() bool {
+					return !isInsidePropertyBoundary
+				},
+				OnSet: makeNotifier(notifier, ctx, fmt.Sprintf("%s is off the property", dogName), thisZoneText),
+				ResetIf: func() bool {
+					return isInsidePropertyBoundary
+				},
+				OnReset: makeNotifier(notifier, ctx, fmt.Sprintf("%s is now back on the property", dogName), thisZoneText),
+			})
 
-		if !persistentState[dogName]["propertyBoundary"] && currInsidePropertyBoundary {
-			err = notifier.Notify(ctx, fmt.Sprintf("%s is now back on property", dogName), thisZoneText)
-			logIfErr(err)
-		}
-
-		if persistentState[dogName]["safeZoneBoundary"] && !currInsideSafeZoneBoundary {
-			err = notifier.Notify(ctx, fmt.Sprintf("%s is getting far from home base", dogName), thisZoneText)
-			logIfErr(err)
-		}
-
-		if !persistentState[dogName]["safeZoneBoundary"] && currInsideSafeZoneBoundary {
-			err = notifier.Notify(ctx, fmt.Sprintf("%s is now back close to home base", dogName), thisZoneText)
-			logIfErr(err)
-		}
-
-		persistentState[dogName]["propertyBoundary"] = currInsidePropertyBoundary
-		persistentState[dogName]["safeZoneBoundary"] = currInsideSafeZoneBoundary
+		oneshot.SetOrReset(dogName+"outsideSafeZone", persistentState,
+			oneshot.Config{
+				SetIf: func() bool {
+					return !isInsideSafeZoneBoundary
+				},
+				OnSet: makeNotifier(notifier, ctx, fmt.Sprintf("%s is getting far from home base", dogName), thisZoneText),
+				ResetIf: func() bool {
+					return isInsideSafeZoneBoundary
+				},
+				OnReset: makeNotifier(notifier, ctx, fmt.Sprintf("%s is now back close to home base", dogName), thisZoneText),
+			})
 
 		// Insert the document into storage
 		id, err := storer.WriteCommit(ctx, string(body))
