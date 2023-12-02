@@ -126,6 +126,12 @@ func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAuthKey string) func(http.ResponseWriter, *http.Request) {
 	persistentState := make(map[string]bool)
 
+	NamedZones, err := zonespkg.ReadKMLDir("named_zones")
+	if err != nil {
+		errorLogger.Printf("Error reading KML files: %v", err)
+		// not a critical error, keep going
+	}
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 		defer cancel()
@@ -173,15 +179,6 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 			return
 		}
 
-		var thisZoneText string
-
-		NamedZones, err := zonespkg.ReadKMLDir("named_zones")
-		if err != nil {
-			errorLogger.Printf("Error reading KML files: %v", err)
-			// not a critical error, keep going
-			return
-		}
-
 		dogName, ok := idToName[float64(tagData.SerNo)]
 		if !ok {
 			errorLogger.Printf("Unknown tag number: %v", tagData.SerNo)
@@ -192,6 +189,7 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 
 		// Process the records
 		for _, r := range tagData.Records {
+			var thisZoneText string
 
 			// Figure out the most recent record for notifications later
 			if r.SeqNo > latestRecord.SeqNo {
@@ -216,86 +214,9 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 
 		}
 
-		// --------------------------------------------------------------------
-		// Notify about battery condition -------------------------------------
-		// --------------------------------------------------------------------
-		var batteryVoltage float64
-
-		for _, f := range latestRecord.Fields {
-			if f.FType == AnalogueDataFType {
-				batteryVoltage = float64(f.AnalogueData.Num1) / 1000
-			}
-		}
-
-		if batteryVoltage == 0 {
-			debugLogger.Println("No battery voltage in record")
-		} else {
-			debugLogger.Printf("Battery voltage: %.3f V\n", batteryVoltage)
-
-			oneshot.SetOrReset(dogName+"lowBattery", persistentState,
-				oneshot.Config{
-					SetIf: func() bool {
-						return batteryVoltage < BatteryLowThreshold
-					},
-					OnSet: makeNotifier(notifier, ctx, fmt.Sprintf("%s's battery low", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
-					ResetIf: func() bool {
-						return batteryVoltage > BatteryLowThreshold+BatteryHysteresis
-					},
-					OnReset: makeNotifier(notifier, ctx, fmt.Sprintf("New battery for %s detected", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
-				})
-
-			oneshot.SetOrReset(dogName+"criticalBattery", persistentState,
-				oneshot.Config{
-					SetIf: func() bool {
-						return batteryVoltage < BatteryCriticalThreshold
-					},
-					OnSet: makeNotifier(notifier, ctx, fmt.Sprintf("%s's battery critical", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
-					ResetIf: func() bool {
-						return batteryVoltage > BatteryLowThreshold
-					},
-				})
-
-		}
-
-		// --------------------------------------------------------------------
-		// Notify about zones and boundaries ----------------------------------
-		// --------------------------------------------------------------------
-		latestGPSRecord := latestRecord.Fields[0]
-
-		if NamedZones != nil {
-			thisZoneText = "Last seen " + zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: latestGPSRecord.Lat, Longitude: latestGPSRecord.Long})
-		} else {
-			thisZoneText = "<No zones loaded>"
-		}
-
-		currLocationPoint := poly.Point{X: latestGPSRecord.Lat, Y: latestGPSRecord.Long}
-		isInsidePropertyBoundary := poly.IsInside(propertyOutline, currLocationPoint)
-		isInsideSafeZoneBoundary := poly.IsInside(safeZoneOutline, currLocationPoint)
-
-		// Notify on changes
-		oneshot.SetOrReset(dogName+"offProperty", persistentState,
-			oneshot.Config{
-				SetIf: func() bool {
-					return !isInsidePropertyBoundary
-				},
-				OnSet: makeNotifier(notifier, ctx, fmt.Sprintf("%s is off the property", dogName), thisZoneText),
-				ResetIf: func() bool {
-					return isInsidePropertyBoundary
-				},
-				OnReset: makeNotifier(notifier, ctx, fmt.Sprintf("%s is now back on the property", dogName), thisZoneText),
-			})
-
-		oneshot.SetOrReset(dogName+"outsideSafeZone", persistentState,
-			oneshot.Config{
-				SetIf: func() bool {
-					return !isInsideSafeZoneBoundary
-				},
-				OnSet: makeNotifier(notifier, ctx, fmt.Sprintf("%s is getting far from home base", dogName), thisZoneText),
-				ResetIf: func() bool {
-					return isInsideSafeZoneBoundary
-				},
-				OnReset: makeNotifier(notifier, ctx, fmt.Sprintf("%s is now back close to home base", dogName), thisZoneText),
-			})
+		// Send notifications
+		notifyAboutBattery(ctx, latestRecord, dogName, persistentState, notifier)
+		notifyAboutZones(ctx, latestRecord, NamedZones, dogName, persistentState, notifier)
 
 		// Insert the document into storage
 		id, err := storer.WriteCommit(ctx, string(body))
@@ -309,6 +230,70 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 		debugLogger.Print("Successfully inserted document, id: ", id)
 		w.WriteHeader(http.StatusOK)
 	}
+}
+
+func notifyAboutBattery(ctx context.Context, latestRecord Record, dogName string, persistentState map[string]bool, notifier notify.Notifier) {
+	var batteryVoltage float64
+
+	for _, f := range latestRecord.Fields {
+		if f.FType == AnalogueDataFType {
+			batteryVoltage = float64(f.AnalogueData.Num1) / 1000
+		}
+	}
+
+	if batteryVoltage == 0 {
+		debugLogger.Println("No battery voltage in record")
+	} else {
+		debugLogger.Printf("Battery voltage: %.3f V\n", batteryVoltage)
+
+		_ = oneshot.SetOrReset(dogName+"lowBattery", persistentState,
+			oneshot.Config{
+				SetIf:   batteryVoltage < BatteryLowThreshold,
+				OnSet:   makeNotifier(notifier, ctx, fmt.Sprintf("%s's battery low", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
+				ResetIf: batteryVoltage > BatteryLowThreshold+BatteryHysteresis,
+				OnReset: makeNotifier(notifier, ctx, fmt.Sprintf("New battery for %s detected", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
+			})
+
+		_ = oneshot.SetOrReset(dogName+"criticalBattery", persistentState,
+			oneshot.Config{
+				SetIf:   batteryVoltage < BatteryCriticalThreshold,
+				OnSet:   makeNotifier(notifier, ctx, fmt.Sprintf("%s's battery critical", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
+				ResetIf: batteryVoltage > BatteryLowThreshold,
+			})
+
+	}
+}
+
+func notifyAboutZones(ctx context.Context, latestRecord Record, NamedZones []zonespkg.Zone, dogName string, persistentState map[string]bool, notifier notify.Notifier) {
+	latestGPSRecord := latestRecord.Fields[0]
+
+	var thisZoneText string
+
+	if NamedZones != nil {
+		thisZoneText = "Last seen " + zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: latestGPSRecord.Lat, Longitude: latestGPSRecord.Long})
+	} else {
+		thisZoneText = "<No zones loaded>"
+	}
+
+	currentLocation := poly.Point{X: latestGPSRecord.Lat, Y: latestGPSRecord.Long}
+	isOutsidePropertyBoundary := !poly.IsInside(propertyOutline, currentLocation)
+	isOutsideSafeZoneBoundary := !poly.IsInside(safeZoneOutline, currentLocation)
+
+	_ = oneshot.SetOrReset(dogName+"offProperty", persistentState,
+		oneshot.Config{
+			SetIf:   isOutsidePropertyBoundary,
+			OnSet:   makeNotifier(notifier, ctx, fmt.Sprintf("%s is off the property", dogName), thisZoneText),
+			ResetIf: !isOutsidePropertyBoundary,
+			OnReset: makeNotifier(notifier, ctx, fmt.Sprintf("%s is now back on the property", dogName), thisZoneText),
+		})
+
+	_ = oneshot.SetOrReset(dogName+"outsideSafeZone", persistentState,
+		oneshot.Config{
+			SetIf:   isOutsideSafeZoneBoundary,
+			OnSet:   makeNotifier(notifier, ctx, fmt.Sprintf("%s is getting far from the house", dogName), thisZoneText),
+			ResetIf: !isOutsideSafeZoneBoundary,
+			OnReset: makeNotifier(notifier, ctx, fmt.Sprintf("%s is now back close to the house", dogName), thisZoneText),
+		})
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {
