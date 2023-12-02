@@ -18,7 +18,7 @@ func NewLoggingNotifier(n Notifier, l *log.Logger) Notifier {
 }
 
 func (ln LoggingNotifier) Notify(ctx context.Context, title, message string) error {
-	ln.Logger.Print("Sending notification " + title + " " + message)
+	ln.Logger.Print("Sending notification: \"" + title + "\" \"" + message + "\"")
 	err := ln.Notifier.Notify(ctx, title, message)
 	return err
 }
