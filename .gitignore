@@ -9,3 +9,4 @@ stuff
 app/service/gps-tags
 dog-tracking.service
 .env
+app/service/.vscode
