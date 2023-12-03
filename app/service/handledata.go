@@ -141,6 +141,9 @@ func notifyAboutBattery(ctx context.Context, latestRecord Record, dogName string
 		}
 	}
 
+	// We don't want to hear about low battery in the middle of the night.
+	nowIsWakingHours := time.Now().Hour() >= 8 && time.Now().Hour() <= 22
+
 	if batteryVoltage == 0 {
 		debugLogger.Println("No battery voltage in record")
 	} else {
@@ -148,7 +151,7 @@ func notifyAboutBattery(ctx context.Context, latestRecord Record, dogName string
 
 		_ = oneshot.SetOrReset(dogName+"lowBattery", persistentState,
 			oneshot.Config{
-				SetIf:   batteryVoltage < BatteryLowThreshold,
+				SetIf:   (batteryVoltage < BatteryLowThreshold) && nowIsWakingHours,
 				OnSet:   makeNotifier(notifier, ctx, fmt.Sprintf("%s's battery low", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
 				ResetIf: batteryVoltage > BatteryLowThreshold+BatteryHysteresis,
 				OnReset: makeNotifier(notifier, ctx, fmt.Sprintf("New battery for %s detected", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
@@ -156,7 +159,7 @@ func notifyAboutBattery(ctx context.Context, latestRecord Record, dogName string
 
 		_ = oneshot.SetOrReset(dogName+"criticalBattery", persistentState,
 			oneshot.Config{
-				SetIf:   batteryVoltage < BatteryCriticalThreshold,
+				SetIf:   (batteryVoltage < BatteryCriticalThreshold) && nowIsWakingHours,
 				OnSet:   makeNotifier(notifier, ctx, fmt.Sprintf("%s's battery critical", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
 				ResetIf: batteryVoltage > BatteryLowThreshold,
 			})
