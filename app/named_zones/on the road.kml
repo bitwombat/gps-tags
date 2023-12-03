@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
 <Document>
-	<name>near MIddle Dam.kml</name>
-	<StyleMap id="msn_ylw-pushpin5">
+	<name>on the road.kml</name>
+	<StyleMap id="msn_ylw-pushpin">
 		<Pair>
 			<key>normal</key>
-			<styleUrl>#sn_ylw-pushpin4</styleUrl>
+			<styleUrl>#sn_ylw-pushpin</styleUrl>
 		</Pair>
 		<Pair>
 			<key>highlight</key>
-			<styleUrl>#sh_ylw-pushpin4</styleUrl>
+			<styleUrl>#sh_ylw-pushpin</styleUrl>
 		</Pair>
 	</StyleMap>
-	<Style id="sh_ylw-pushpin4">
+	<Style id="sh_ylw-pushpin">
 		<IconStyle>
 			<scale>1.3</scale>
 			<Icon>
@@ -20,16 +20,18 @@
 			</Icon>
 			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
 		</IconStyle>
+		<BalloonStyle>
+		</BalloonStyle>
 		<LineStyle>
 			<color>ff0055ff</color>
 			<width>3</width>
 		</LineStyle>
 		<PolyStyle>
-			<color>800000ff</color>
+			<color>8000ff55</color>
 			<outline>0</outline>
 		</PolyStyle>
 	</Style>
-	<Style id="sn_ylw-pushpin4">
+	<Style id="sn_ylw-pushpin">
 		<IconStyle>
 			<scale>1.1</scale>
 			<Icon>
@@ -37,24 +39,26 @@
 			</Icon>
 			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
 		</IconStyle>
+		<BalloonStyle>
+		</BalloonStyle>
 		<LineStyle>
 			<color>ff0055ff</color>
 			<width>3</width>
 		</LineStyle>
 		<PolyStyle>
-			<color>800000ff</color>
+			<color>8000ff55</color>
 			<outline>0</outline>
 		</PolyStyle>
 	</Style>
 	<Placemark>
-		<name>near MIddle Dam</name>
-		<styleUrl>#msn_ylw-pushpin5</styleUrl>
+		<name>on the road</name>
+		<styleUrl>#msn_ylw-pushpin</styleUrl>
 		<Polygon>
 			<tessellate>1</tessellate>
 			<outerBoundaryIs>
 				<LinearRing>
 					<coordinates>
-						152.6425657426592,-31.45740649962016,0 152.6434631224458,-31.45743756012408,0 152.643708385167,-31.4572722225942,0 152.6425896306183,-31.45665506504296,0 152.6425657426592,-31.45740649962016,0 
+						152.6400751372334,-31.45643771983069,0 152.6410914539701,-31.45578075806575,0 152.6414056843538,-31.45528394623596,0 152.6412679448129,-31.45522655879688,0 152.6399666862463,-31.45625310229633,0 152.6400751372334,-31.45643771983069,0 
 					</coordinates>
 				</LinearRing>
 			</outerBoundaryIs>
