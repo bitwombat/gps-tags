@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -73,6 +74,12 @@ func main() {
 	// Health check endpoint (from load balancer)
 	httpMux := http.NewServeMux()
 	httpMux.HandleFunc("/health", handleHealthCheck)
+
+	httpMux.HandleFunc("/owntracks", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		body, _ := io.ReadAll(r.Body)
+		debugLogger.Println(string(body))
+	})
 
 	// Static file serving
 	fs := http.FileServer(http.Dir("./public_html"))
