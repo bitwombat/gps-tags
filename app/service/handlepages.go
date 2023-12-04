@@ -33,6 +33,7 @@ func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 			}
 			subs[name+"Lat"] = fmt.Sprintf("%.7f", tag.Latitude)
 			subs[name+"Lng"] = fmt.Sprintf("%.7f", tag.Longitude)
+			subs[name+"AccuracyRadius"] = fmt.Sprintf("%.7f", tag.PosAcc)
 			subs[name+"Note"] = "Last GPS: " + timeAgoAsText(tag.GpsUTC) + " ago<br>Last Checkin: " + timeAgoAsText(tag.DateUTC) + " ago<br>Reason: " + reason + "<br>Battery: " + fmt.Sprintf("%.2f", tag.Battery/1000) + "V"
 			subs[name+"Colour"] = timeAgoInColour(tag.GpsUTC)
 		}

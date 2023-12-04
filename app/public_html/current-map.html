@@ -2,81 +2,101 @@
 <html>
 
 <head>
-    <title>Where the dogs at?</title>
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+	<title>Where the dogs at?</title>
+	<script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
 
-    <link rel="stylesheet" type="text/css" href="./style.css" />
-    <meta name="viewport" content="width=device-width">
+	<link rel="stylesheet" type="text/css" href="./style.css" />
+	<meta name="viewport" content="width=device-width">
 </head>
 
 <body>
 
-    <!-- prettier-ignore -->
-    <script>(g => { var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__", m = document, b = window; b = b[c] || (b[c] = {}); var d = b.maps || (b.maps = {}), r = new Set, e = new URLSearchParams, u = () => h || (h = new Promise(async (f, n) => { await (a = m.createElement("script")); e.set("libraries", [...r] + ""); for (k in g) e.set(k.replace(/[A-Z]/g, t => "_" + t[0].toLowerCase()), g[k]); e.set("callback", c + ".maps." + q); a.src = `https://maps.${c}apis.com/maps/api/js?` + e; d[q] = f; a.onerror = () => h = n(Error(p + " could not load.")); a.nonce = m.querySelector("script[nonce]")?.nonce || ""; m.head.append(a) })); d[l] ? console.warn(p + " only loads once. Ignoring:", g) : d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n)) })
-            ({ key: "AIzaSyCZPD76ks8WY5t_bTS4mDfRT0CkCZXHxy0", v: "weekly" });</script>
-    <script>
+	<!-- prettier-ignore -->
+	<script>(g => {var h, a, k, p = "The Google Maps JavaScript API", c = "google", l = "importLibrary", q = "__ib__", m = document, b = window; b = b[c] || (b[c] = {}); var d = b.maps || (b.maps = {}), r = new Set, e = new URLSearchParams, u = () => h || (h = new Promise(async (f, n) => {await (a = m.createElement("script")); e.set("libraries", [...r] + ""); for (k in g) e.set(k.replace(/[A-Z]/g, t => "_" + t[0].toLowerCase()), g[k]); e.set("callback", c + ".maps." + q); a.src = `https://maps.${c}apis.com/maps/api/js?` + e; d[q] = f; a.onerror = () => h = n(Error(p + " could not load.")); a.nonce = m.querySelector("script[nonce]")?.nonce || ""; m.head.append(a)})); d[l] ? console.warn(p + " only loads once. Ignoring:", g) : d[l] = (f, ...n) => r.add(f) && u().then(() => d[l](f, ...n))})
+			({key: "AIzaSyCZPD76ks8WY5t_bTS4mDfRT0CkCZXHxy0", v: "weekly"});</script>
+	<script>
 
-        let map;
+		let map;
 
-        const home = { lat: -31.457605903965163, lng: 152.64217334946048 };
+		const home = {lat: -31.457605903965163, lng: 152.64217334946048};
 
-        async function initMap() {
-            const { Map } = await google.maps.importLibrary("maps");
-            const { Marker, AdvancedMarkerElement, PinElement } = await google.maps.importLibrary("marker");
+		async function initMap() {
+			const {Map, Cicle} = await google.maps.importLibrary("maps");
+			const {Marker, AdvancedMarkerElement, PinElement} = await google.maps.importLibrary("marker");
 
-			function makeMarker(map, title, colour, lat, lng, note) {
-                var ele = document.createElement('div')
-                ele.innerHTML = title[0]
-                ele.style.color = "white"
-                ele.style.fontSize = "16px"
-                ele.style.fontWeight = "bold"
+			function makeMarker(map, title, colour, lat, lng, accuracyRadius, note) {
+				// Make a DOM element to go in the pin element. Allows us to put the letter inside the marker.
+				var ele = document.createElement('div')
+				ele.innerHTML = title[0]
+				ele.style.color = "white"
+				ele.style.fontSize = "16px"
+				ele.style.fontWeight = "bold"
 
-                const pe = new PinElement({ 
-                    glyphColor: "white", 
-                    borderColor: "black", 
-                    background: colour, 
-                    glyph: ele
-                })
+				// Make a Pin Element to go in the marker. Allows us to style the marker.
+				const pe = new PinElement({
+					glyphColor: "white",
+					borderColor: "black",
+					background: colour,
+					glyph: ele
+				})
 
-                const marker = new AdvancedMarkerElement({
-                    map: map,
+				// Make a Marker to go on the map at a particular position.
+				const marker = new AdvancedMarkerElement({
+					map: map,
 					position: {
 						lat: lat,
 						lng: lng
 					},
-                    content:  pe.element,
-                });
+					content: pe.element,
+				});
 
+				// Make an Info Window
 				const infoWindow = new google.maps.InfoWindow({
 					content: note,
 				});
-		
+
+				// Show the info window on click.
 				marker.addListener("click", () => {
 					infoWindow.open({
 						anchor: marker,
 						map,
 					});
 				});
-	
+
+				// Make a circle to show the GPS accuracy.
+				const circle = new Circle({
+					map: map,
+					radius: accuracyRadius,
+					fillColor: "red",
+					fillOpacity: 0.30,
+					strokeColor: "red",
+					strokeOpacity: 0.60,
+					strokeWeight: 2.00,
+					center: {
+						lat: lat,
+						lng: lng
+					}
+				});
+
 			}
 
 			// Put together the map and markers
-            map = new Map(document.getElementById("map"), {
-                center: home,
-                zoom: 18,
-                mapId: "HOME_MAP",
-                mapTypeId: 'satellite'
-            });
+			map = new Map(document.getElementById("map"), {
+				center: home,
+				zoom: 18,
+				mapId: "HOME_MAP",
+				mapTypeId: 'satellite'
+			});
 
-			makeMarker(map, "Rueger", "{{.ruegerColour}}", {{.ruegerLat}}, {{.ruegerLng}}, "{{.ruegerNote}}")
-			makeMarker(map, "Tucker", "{{.tuckerColour}}", {{.tuckerLat}}, {{.tuckerLng}}, "{{.tuckerNote}}")
-    
-        }
+			makeMarker(map, "Rueger", "{{.ruegerColour}}", {{.ruegerLat}}, {{.ruegerLng}}, {{.ruegerAccuracyRadius}}, "{{.ruegerNote}}")
+			makeMarker(map, "Tucker", "{{.tuckerColour}}", {{.tuckerLat}}, {{.tuckerLng}}, {{.tuckerAccuracyRadius}}, "{{.tuckerNote}}")
 
-        initMap();
-    </script>
+		}
 
-    <div id="map"></div>
+		initMap();
+	</script>
+
+	<div id="map"></div>
 
 </body>
 
