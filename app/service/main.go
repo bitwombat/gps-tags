@@ -49,6 +49,7 @@ func main() {
 
 	// Web page endpoints
 	httpsMux := http.NewServeMux()
+
 	storer := storage.NewMongoStorer(collection)
 
 	var notifier notify.Notifier
@@ -59,13 +60,15 @@ func main() {
 		notifier = notify.NewNtfyNotifier(ntfySubscriptionId)
 	}
 	loggingNotifier := notify.NewLoggingNotifier(notifier, debugLogger)
+
+	// Current location map page
 	httpsMux.HandleFunc("/current", newCurrentMapPageHandler(storer))
 
 	// Data upload endpoint
 	dataPostHandler := newDataPostHandler(storer, loggingNotifier, tagAuthKey)
 	httpsMux.HandleFunc("/upload", dataPostHandler)
 
-	// Notification testing endpoints
+	// Notification testing endpoint and aliases
 	httpsMux.HandleFunc("/testnotify", newTestNotifyHandler(loggingNotifier))
 	httpsMux.HandleFunc("/notifytest", newTestNotifyHandler(loggingNotifier))
 	httpsMux.HandleFunc("/testnotification", newTestNotifyHandler(loggingNotifier))

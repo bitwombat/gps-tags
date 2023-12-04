@@ -41,7 +41,7 @@ func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 		mapPage, err := substitute.ContentsOf("public_html/current-map.html", subs)
 
 		if err != nil {
-			errorLogger.Printf("Error getting contents of index.html: %v\n", err)
+			errorLogger.Printf("Error getting contents of current-map.html: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
