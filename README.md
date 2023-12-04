@@ -14,21 +14,23 @@ Notifications indicate when the tag has left boundaries.
 
 ## Theory of operation
 
-A service written in Go listens to endpoints.
+A web service written in Go listens to endpoints.
 
-`/upload` is for devices to post their JSON payloads The payload is
+The `/upload` endpoint is for GPS tracking devices to post their JSON payloads. The payload is
 dumped as-is into a MongoDB database.
 
-If the tag is outside the Safe Zone or Property boundaries, notifications are
-sent (currently only [ntfy.sh](https://ntfy.sh) is supported).
+If the device location is outside the Safe Zone or Property boundaries, notifications are
+sent (currently [ntfy.sh](https://ntfy.sh) is supported).
 
-A boundary can be divided up into named zones for more useful notifications.
-These zones are defined in .kml files created with Google Earth.
+A boundary can be divided up into named zones for more useful notifications. See
+screenshot below. These zones are defined in .kml files created with Google Earth.
 
-When web users visit `/current` with a browser, a Google Map is returned, with
+When web users visit `/current` with a browser, a Google Map is returned with
 markers showing current tag positions. The markers have other data about the
-tag, including data freshness and battery level.
+device, including data freshness and battery level.
 
+When web users visit `/paths` with a browser, a Google Map is returned showing a
+path of the last 50 received positions.
 
 ## Installation and setup
 
