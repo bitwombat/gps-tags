@@ -9,6 +9,7 @@ import (
 type Storage interface {
 	WriteCommit(context.Context, string) (string, error)
 	GetLastPositions() ([]PositionRecord, error)
+	GetLastNPositions(int) ([]PathPointRecord, error)
 }
 
 // A field present in the document but not in the struct here doesn't break anything (is ignored).
@@ -51,6 +52,25 @@ type PositionRecord struct {
 	PosAcc    float64
 	GpsStatus float64
 	Battery   float64
+}
+
+type MongoPathPoint struct {
+	Document []struct {
+		SerNo     float64
+		SeqNo     float64
+		Latitude  []float64
+		Longitude []float64
+	}
+}
+
+type PathPoint struct {
+	Latitude  float64
+	Longitude float64
+}
+
+type PathPointRecord struct {
+	SerNo      float64
+	PathPoints []PathPoint
 }
 
 func TimeAgoAsText(timeStr string, Now func() time.Time) string {

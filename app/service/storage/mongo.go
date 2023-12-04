@@ -118,6 +118,58 @@ func (s storer) GetLastPositions() ([]PositionRecord, error) {
 	return records, nil
 }
 
+func (s storer) GetLastNPositions(n int) ([]PathPointRecord, error) {
+	// (A field present in the projection but not in the struct decoded to does not break anything.)
+	pipeline := []bson.M{
+		{
+			"$unwind": "$Records",
+		},
+		{
+			"$project": bson.M{
+				"serNo":     "$SerNo",
+				"seqNo":     "$Records.SeqNo",
+				"latitude":  "$Records.Fields.Lat",
+				"longitude": "$Records.Fields.Long",
+			},
+		},
+		{
+			"$group": bson.M{
+				"_id": "$serNo",
+				"document": bson.M{
+					"$topN": bson.M{
+						"n":      n,
+						"sortBy": bson.M{"seqNo": -1},
+						"output": "$$ROOT",
+					},
+				},
+			},
+		},
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+	cursor, err := s.collection.Aggregate(ctx, pipeline)
+	if err != nil {
+		return nil, fmt.Errorf("calling collection.Aggregate: %w", err)
+	}
+	defer cursor.Close(ctx)
+
+	var result []MongoPathPoint
+	//var result []bson.M
+
+	err = cursor.All(ctx, &result)
+	if err != nil {
+		return nil, fmt.Errorf("calling cursor.All: %w", err)
+	}
+
+	var pathPointRecords []PathPointRecord
+	for _, pr := range result {
+		pathPointRecords = append(pathPointRecords, MarshalPathPointRecord(pr))
+	}
+
+	return pathPointRecords, nil
+}
+
 func MarshalPositionRecord(m MongoPositionRecord) *PositionRecord {
 	pr := &PositionRecord{
 		SerNo:   m.Document.SerNo,
@@ -171,6 +223,22 @@ func MarshalPositionRecord(m MongoPositionRecord) *PositionRecord {
 	if len(m.Document.Battery) > 0 {
 		pr.Battery = m.Document.Battery[0]
 	}
+
+	return pr
+}
+
+func MarshalPathPointRecord(m MongoPathPoint) PathPointRecord {
+	pr := PathPointRecord{}
+
+	var pathPoints []PathPoint
+	for _, doc := range m.Document {
+		pr.SerNo = doc.SerNo
+		pathPoints = append(pathPoints, PathPoint{
+			Latitude:  doc.Latitude[0],
+			Longitude: doc.Longitude[0],
+		})
+	}
+	pr.PathPoints = pathPoints
 
 	return pr
 }

@@ -21,7 +21,7 @@
 		const home = {lat: -31.457605903965163, lng: 152.64217334946048};
 
 		async function initMap() {
-			const {Map, Cicle} = await google.maps.importLibrary("maps");
+			const {Map, Circle} = await google.maps.importLibrary("maps");
 			const {Marker, AdvancedMarkerElement, PinElement} = await google.maps.importLibrary("marker");
 
 			function makeMarker(map, title, colour, lat, lng, accuracyRadius, note) {

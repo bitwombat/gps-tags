@@ -9,6 +9,55 @@ import (
 	"github.com/bitwombat/gps-tags/substitute"
 )
 
+func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		debugLogger.Println("Got a current map page request.")
+		lastWasHealthCheck = false
+
+		pathpoints, err := storer.GetLastNPositions(50)
+		if err != nil {
+			errorLogger.Printf("Error getting last N positions from storage: %v\n", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		//for _, tag := range tags {
+		//name := idToName[tag.SerNo]
+
+		// Start the JavaScript array
+		pathpointStr := "["
+		for _, pathpoint := range pathpoints[1].PathPoints {
+			pathpointStr += fmt.Sprintf("{lat: %.7f, lng: %.7f},", pathpoint.Latitude, pathpoint.Longitude)
+		}
+		// Take the damn trailling comma off.
+		pathpointStr = pathpointStr[:len(pathpointStr)-1]
+		// Close out the array
+		pathpointStr += "]"
+
+		subs := make(map[string]string)
+		subs["rueger"+"Path"] = pathpointStr
+		//}
+
+		mapPage, err := substitute.ContentsOf("public_html/paths.html", subs)
+
+		if err != nil {
+			errorLogger.Printf("Error getting contents of paths.html: %v\n", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		_, err = w.Write([]byte(mapPage))
+		if err != nil {
+			errorLogger.Printf("Error writing response: %v\n", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		// Don't need this - it's taken care of by w.Write:  w.WriteHeader(http.StatusOK)
+	}
+}
+
 func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
 
 	return func(w http.ResponseWriter, r *http.Request) {

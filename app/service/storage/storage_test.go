@@ -173,6 +173,107 @@ const strippedDownMultiRecordSample2 = `{
 }
 `
 
+var nSamples = []interface{}{`{
+  "SerNo": 810095,
+  "Records": [
+    {
+      "SeqNo": 1,
+      "Fields": [
+        {
+          "Lat": 100,
+          "Long": 101
+        }
+      ]
+    },
+    {
+      "SeqNo": 2,
+      "Fields": [
+        {
+          "Lat": 102,
+          "Long": 103
+        }
+      ]
+    },
+    {
+      "SeqNo": 3,
+      "Fields": [
+        {
+          "Lat": 104,
+          "Long": 105
+        }
+      ]
+    },
+    {
+      "SeqNo": 4,
+      "Fields": [
+        {
+          "Lat": 106,
+          "Long": 107
+        }
+      ]
+    },
+    {
+      "SeqNo": 5,
+      "Fields": [
+        {
+          "Lat": 108,
+          "Long": 109
+        }
+      ]
+    }
+  ]
+}`,
+	`{
+  "SerNo": 810243,
+  "Records": [
+    {
+      "SeqNo": 2,
+      "Fields": [
+        {
+          "Lat": 110,
+          "Long": 111
+        }
+      ]
+    },
+    {
+      "SeqNo": 4,
+      "Fields": [
+        {
+          "Lat": 112,
+          "Long": 113
+        }
+      ]
+    },
+    {
+      "SeqNo": 6,
+      "Fields": [
+        {
+          "Lat": 114,
+          "Long": 115
+        }
+      ]
+    },
+    {
+      "SeqNo": 8,
+      "Fields": [
+        {
+          "Lat": 116,
+          "Long": 117
+        }
+      ]
+    },
+    {
+      "SeqNo": 10,
+      "Fields": [
+        {
+          "Lat": 118,
+          "Long": 119
+        }
+      ]
+    }
+  ]
+}`}
+
 func randomTestCollectionName() string {
 	bytes := make([]byte, 8)
 	_, err := rand.Read(bytes)
@@ -233,7 +334,7 @@ func Test_ReadCommit(t *testing.T) {
 	require.Equal(t, 2, len(results[0].Records))
 }
 
-func insert(collection *mongo.Collection, jsonstr string) (*mongo.InsertOneResult, error) {
+func insert(collection *mongo.Collection, jsonstr string) (*mongo.InsertOneResult, error) { // TODO: Remove, unused.
 	// Unmarshal JSON to map
 	var data map[string]interface{}
 	err := json.Unmarshal([]byte(jsonstr), &data)
@@ -355,5 +456,86 @@ func TestAgeFrom(t *testing.T) {
 			require.Equal(t, tt.expected, age)
 		})
 	}
+
+}
+
+func Test_GetLastNPositions(t *testing.T) {
+
+	// GIVEN commits with multiple records and for multiple tags.
+	collection, err := NewMongoConnection(mongoURL, randomTestCollectionName())
+	require.Nil(t, err)
+
+	storer := NewMongoStorer(collection)
+
+	for _, r := range nSamples {
+		if s, ok := r.(string); ok {
+			_, err = storer.WriteCommit(context.Background(), s)
+			require.Nil(t, err)
+		} else {
+			t.Fatal("type assertion failed")
+		}
+	}
+
+	// WHEN we get the last 3 position for all tags.
+	result, err := storer.GetLastNPositions(3)
+	require.Nil(t, err)
+
+	// THEN we get the latest position's values for both known tags.
+	for _, r := range result {
+		switch r.SerNo {
+		case 810095:
+			require.Equal(t, 108.0, r.PathPoints[0].Latitude)
+			require.Equal(t, 109.0, r.PathPoints[0].Longitude)
+			require.Equal(t, 106.0, r.PathPoints[1].Latitude)
+			require.Equal(t, 107.0, r.PathPoints[1].Longitude)
+			require.Equal(t, 104.0, r.PathPoints[2].Latitude)
+			require.Equal(t, 105.0, r.PathPoints[2].Longitude)
+		case 810243:
+			require.Equal(t, 118.0, r.PathPoints[0].Latitude)
+			require.Equal(t, 119.0, r.PathPoints[0].Longitude)
+			require.Equal(t, 116.0, r.PathPoints[1].Latitude)
+			require.Equal(t, 117.0, r.PathPoints[1].Longitude)
+			require.Equal(t, 114.0, r.PathPoints[2].Latitude)
+			require.Equal(t, 115.0, r.PathPoints[2].Longitude)
+		default:
+			t.Fatalf("Unmatched serNo: %v", r.SerNo)
+		}
+	}
+
+	// for cursor.Next(context.Background()) {
+	// 	// result := struct{
+	// 	//   Foo string
+	// 	//   Bar int32
+	// 	// }{}
+	// 	var result bson.D
+
+	// 	err = cursor.Decode(&result)
+	// 	if err != nil {
+	// 		log.Fatal(err)
+	// 	}
+
+	// 	x := result[1].Value
+	// 	log.Printf("Type of x: %T\n", x)
+	// 	log.Println(x)
+	// 	doc, ok := x.(bson.D) // Assert 'x' to 'primitive.D'
+	// 	if !ok {
+	// 		log.Fatal("Couldn't type assert")
+	// 	}
+	// 	y := doc[0].Value
+	// 	log.Print(y)
+	// 	for _, elem := range result {
+	// 		key := elem.Key
+	// 		value := elem.Value
+
+	// 		fmt.Println(key, value)
+
+	// do something with result...
+	// }
+	// To get the raw bson bytes use cursor.Current
+	//raw := cur.Current
+	// do something with raw...
+	// }
+	// err = cursor.Err()
+	// require.Nil(t, err)
 
 }
