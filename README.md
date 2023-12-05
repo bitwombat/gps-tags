@@ -5,9 +5,16 @@ Matters Yabby3](https://support.digitalmatter.com/en_US/yabby3-cellular) GPS
 tracking devices to send data to. It also serves web pages of maps with pins
 showing current tag locations.
 
+Demo at: https://tags.bitwombat.com.au/current
+and
+https://tags.bitwombat.com.au/paths
+
 [<img src="screenshot.png">]()
 
-Notifications indicate when the tag has left boundaries.
+[<img src="screenshot-paths.png">]()
+
+Notifications indicate when the tag has left boundaries or when the battery
+is low.
 
 [<img src="ntfy-screenshot.png">]()
 
@@ -31,6 +38,10 @@ device, including data freshness and battery level.
 
 When web users visit `/paths` with a browser, a Google Map is returned showing a
 path of the last 50 received positions.
+
+`/testnotify` is provided to trigger notifications for the purpose of testing
+them.
+
 
 ## Installation and setup
 
