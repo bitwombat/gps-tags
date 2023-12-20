@@ -114,6 +114,12 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 
 		}
 
+		if latestRecord.Fields[0].Lat == 0 || latestRecord.Fields[0].Long == 0 { // Oddball, bogus GPS result.
+			errorLogger.Print("Got 0 for lat or long... not committing record")
+			w.WriteHeader(http.StatusOK) // Say "OK" because we don't want the system re-sending this record.
+			return
+		}
+
 		// Send notifications
 		notifyAboutBattery(ctx, latestRecord, dogName, persistentState, notifier)
 		notifyAboutZones(ctx, latestRecord, NamedZones, dogName, persistentState, notifier)
