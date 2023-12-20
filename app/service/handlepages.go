@@ -15,7 +15,7 @@ func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *h
 		debugLogger.Println("Got a current map page request.")
 		lastWasHealthCheck = false
 
-		pathpoints, err := storer.GetLastNPositions(50)
+		pathpoints, err := storer.GetLastNPositions(30)
 		if err != nil {
 			errorLogger.Printf("Error getting last N positions from storage: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -25,19 +25,26 @@ func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *h
 		//for _, tag := range tags {
 		//name := idToName[tag.SerNo]
 
-		// Start the JavaScript array
-		pathpointStr := "["
-		for _, pathpoint := range pathpoints[1].PathPoints {
-			pathpointStr += fmt.Sprintf("{lat: %.7f, lng: %.7f},", pathpoint.Latitude, pathpoint.Longitude)
-		}
-		// Take the damn trailling comma off.
-		pathpointStr = pathpointStr[:len(pathpointStr)-1]
-		// Close out the array
-		pathpointStr += "]"
-
 		subs := make(map[string]string)
-		subs["rueger"+"Path"] = pathpointStr
-		//}
+
+		for _, tag := range pathpoints {
+			// Start the JavaScript array
+			pathpointStr := "["
+			name := idToName[tag.SerNo]
+			for i, pathpoint := range tag.PathPoints {
+				if i == 0 { // First point is most recent. Use this for the marker.
+					subs[name+"Lat"] = fmt.Sprintf("%.7f", pathpoint.Latitude)
+					subs[name+"Lng"] = fmt.Sprintf("%.7f", pathpoint.Longitude)
+				}
+				pathpointStr += fmt.Sprintf("{lat: %.7f, lng: %.7f},", pathpoint.Latitude, pathpoint.Longitude)
+			}
+			// Take the damn trailling comma off.
+			pathpointStr = pathpointStr[:len(pathpointStr)-1]
+			// Close out the array
+			pathpointStr += "]"
+
+			subs[name+"Path"] = pathpointStr
+		}
 
 		mapPage, err := substitute.ContentsOf("public_html/paths.html", subs)
 

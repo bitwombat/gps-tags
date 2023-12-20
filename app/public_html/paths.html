@@ -22,15 +22,59 @@
 
         async function initMap() {
             const {Map, Polyline} = await google.maps.importLibrary("maps");
-            const {Marker} = await google.maps.importLibrary("marker");
+			const {Marker, AdvancedMarkerElement, PinElement} = await google.maps.importLibrary("marker");
 
-            function makePath(map, name, points) {
+			function makeMarker(map, name, colour, lat, lng) {
+				// Make a DOM element to go in the pin element. Allows us to put the letter inside the marker.
+				var ele = document.createElement('div')
+				ele.innerHTML = name[0]
+				ele.style.color = "white"
+				ele.style.fontSize = "16px"
+				ele.style.fontWeight = "bold"
+
+				// Make a Pin Element to go in the marker. Allows us to style the marker.
+				const pe = new PinElement({
+					glyphColor: "white",
+					borderColor: "black",
+					background: colour,
+					glyph: ele
+				})
+
+				// Make a Marker to go on the map at a particular position.
+				const marker = new AdvancedMarkerElement({
+					map: map,
+					position: {
+						lat: lat,
+						lng: lng
+					},
+					content: pe.element,
+				});
+
+			}
+
+            function makePath(map, name, colour, points, lat, lng) {
+
+                // Make a marker at the start of the path
+                makeMarker(map, name, colour, lat, lng)
+
+                // Make a line for the path
                 const dottedLine = new Polyline({
                     path: points,
                     strokeOpacity: 1.0,
-                    map: map
+                    strokeColor: colour,
+                    map: map,
+                    icons: [{
+                        icon: {
+                            path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW,
+                            strokeColor: colour,
+                            fillColor: colour,
+                        },
+                        repeat: '10%'
+                    }]
                 });
 
+                // Make little marker dots all along the path to indicate the
+                // actual locations measured.
                 points.forEach(point => {
                     new Marker({
                         position: point,
@@ -39,6 +83,7 @@
                             path: google.maps.SymbolPath.CIRCLE,
                             scale: 3,
                             strokeColor: '#FF0000',
+                            fillColor: '#FF0000',
                         }
                     });
                 });
@@ -53,7 +98,8 @@
                 mapTypeId: 'satellite'
             });
 
-            makePath(map, "Rueger", {{.ruegerPath}})
+            makePath(map, "Rueger", "purple", {{.ruegerPath}}, {{.ruegerLat}}, {{.ruegerLng}})
+            makePath(map, "Tucker", "blue", {{.tuckerPath}}, {{.tuckerLat}}, {{.tuckerLng}})
 
         }
 

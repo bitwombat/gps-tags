@@ -24,10 +24,10 @@
 			const {Map, Circle} = await google.maps.importLibrary("maps");
 			const {Marker, AdvancedMarkerElement, PinElement} = await google.maps.importLibrary("marker");
 
-			function makeMarker(map, title, colour, lat, lng, accuracyRadius, note) {
+			function makeMarker(map, name, colour, lat, lng, accuracyRadius, note) {
 				// Make a DOM element to go in the pin element. Allows us to put the letter inside the marker.
 				var ele = document.createElement('div')
-				ele.innerHTML = title[0]
+				ele.innerHTML = name[0]
 				ele.style.color = "white"
 				ele.style.fontSize = "16px"
 				ele.style.fontWeight = "bold"
