@@ -153,8 +153,6 @@ func notifyAboutBattery(ctx context.Context, latestRecord Record, dogName string
 	if batteryVoltage == 0 {
 		debugLogger.Println("No battery voltage in record")
 	} else {
-		debugLogger.Printf("Battery voltage: %.3f V\n", batteryVoltage)
-
 		_ = oneshot.SetOrReset(dogName+"lowBattery", persistentState,
 			oneshot.Config{
 				SetIf:   (batteryVoltage < BatteryLowThreshold) && nowIsWakingHours,
