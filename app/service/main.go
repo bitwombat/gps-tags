@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/bitwombat/gps-tags/notify"
 	"github.com/bitwombat/gps-tags/storage"
@@ -21,6 +22,27 @@ var errorLogger = log.New(os.Stdout, "<3>", log.LstdFlags)
 var warningLogger = log.New(os.Stdout, "<4>", log.LstdFlags)
 var infoLogger = log.New(os.Stdout, "<6>", log.LstdFlags)
 var debugLogger = log.New(os.Stdout, "<7>", log.LstdFlags)
+
+func multiDomainFileServer() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Determine the directory based on the host
+		host := strings.ToLower(r.Host)
+		var dir string
+		switch host {
+		case "tags.bitwombat.com.au":
+			dir = "./public_html"
+		case "photos.bitwombat.com.au":
+			dir = "./public_html.photos"
+		default:
+			dir = "./public_html"
+		}
+
+		// Create a new file server for the determined directory
+		fs := http.FileServer(http.Dir(dir))
+		// Serve using the file server
+		fs.ServeHTTP(w, r)
+	})
+}
 
 // Start the service - connect to Mongo, set up notification, set up endpoints, and start the HTTP servers.
 func main() {
@@ -88,8 +110,7 @@ func main() {
 	})
 
 	// Static file serving
-	fs := http.FileServer(http.Dir("./public_html"))
-	httpsMux.Handle("/", fs)
+	httpsMux.Handle("/", multiDomainFileServer())
 
 	// Start servers
 	infoLogger.Println("Starting servers.")
