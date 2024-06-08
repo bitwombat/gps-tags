@@ -22,35 +22,35 @@
 
         async function initMap() {
             const {Map, Polyline} = await google.maps.importLibrary("maps");
-			const {Marker, AdvancedMarkerElement, PinElement} = await google.maps.importLibrary("marker");
+            const {Marker, AdvancedMarkerElement, PinElement} = await google.maps.importLibrary("marker");
 
-			function makeMarker(map, name, colour, lat, lng) {
-				// Make a DOM element to go in the pin element. Allows us to put the letter inside the marker.
-				var ele = document.createElement('div')
-				ele.innerHTML = name[0]
-				ele.style.color = "white"
-				ele.style.fontSize = "16px"
-				ele.style.fontWeight = "bold"
+            function makeMarker(map, name, colour, lat, lng) {
+                // Make a DOM element to go in the pin element. Allows us to put the letter inside the marker.
+                var ele = document.createElement('div')
+                ele.innerHTML = name[0]
+                ele.style.color = "white"
+                ele.style.fontSize = "16px"
+                ele.style.fontWeight = "bold"
 
-				// Make a Pin Element to go in the marker. Allows us to style the marker.
-				const pe = new PinElement({
-					glyphColor: "white",
-					borderColor: "black",
-					background: colour,
-					glyph: ele
-				})
+                // Make a Pin Element to go in the marker. Allows us to style the marker.
+                const pe = new PinElement({
+                    glyphColor: "white",
+                    borderColor: "black",
+                    background: colour,
+                    glyph: ele
+                })
 
-				// Make a Marker to go on the map at a particular position.
-				const marker = new AdvancedMarkerElement({
-					map: map,
-					position: {
-						lat: lat,
-						lng: lng
-					},
-					content: pe.element,
-				});
+                // Make a Marker to go on the map at a particular position.
+                const marker = new AdvancedMarkerElement({
+                    map: map,
+                    position: {
+                        lat: lat,
+                        lng: lng
+                    },
+                    content: pe.element,
+                });
 
-			}
+            }
 
             function makePath(map, name, colour, points, lat, lng) {
 
@@ -98,8 +98,8 @@
                 mapTypeId: 'satellite'
             });
 
-            makePath(map, "Rueger", "purple", {{.ruegerPath}}, {{.ruegerLat}}, {{.ruegerLng}})
-            makePath(map, "Tucker", "blue", {{.tuckerPath}}, {{.tuckerLat}}, {{.tuckerLng}})
+            makePath(map, "Rueger", "purple", {{.ruegerPath}}, {{.ruegerLat} }, {{.ruegerLng} })
+        makePath(map, "Charlie", "blue", {{.charliePath}}, {{.charlieLat}}, {{.charlieLng}})
 
         }
 

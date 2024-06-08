@@ -45,5 +45,5 @@ const AnalogueDataFType = 6
 
 var idToName = map[float64]string{
 	810095: "rueger",
-	810243: "tucker",
+	810243: "charlie",
 }
