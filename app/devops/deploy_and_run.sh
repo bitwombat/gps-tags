@@ -2,6 +2,8 @@
 
 set -e
 
+[ -d service ] || ( echo "I want to be run right above the service dir." ; exit 1 )
+
 # Vars
 SERVICE_FILE="dog-tracking.service"
 
