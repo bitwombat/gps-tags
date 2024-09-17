@@ -84,3 +84,4 @@ From this dir, run
 5. Improve instructions for setting up a server.
 6. Make domain configurable with env vars (get it out of ntfy.go).
 7. Make dog names and tag IDs controlled by env vars.
+8. Make links in alerts go to dog location at that time.
