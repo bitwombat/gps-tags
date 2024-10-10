@@ -23,9 +23,10 @@ var warningLogger = log.New(os.Stdout, "<4>", log.LstdFlags)
 var infoLogger = log.New(os.Stdout, "<6>", log.LstdFlags)
 var debugLogger = log.New(os.Stdout, "<7>", log.LstdFlags)
 
-func multiDomainFileServer() http.Handler {
+func hostnameBasedFileServer() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Determine the directory based on the host
+		// Determine the directory to serve filess from based on the hostname in
+		// the request.
 		host := strings.ToLower(r.Host)
 		var dir string
 		switch host {
@@ -37,14 +38,15 @@ func multiDomainFileServer() http.Handler {
 			dir = "./public_html"
 		}
 
-		// Create a new file server for the determined directory
+		// Create a new file server for that directory
 		fs := http.FileServer(http.Dir(dir))
 		// Serve using the file server
 		fs.ServeHTTP(w, r)
 	})
 }
 
-// Start the service - connect to Mongo, set up notification, set up endpoints, and start the HTTP servers.
+// Start the service - connect to Mongo, set up notification, set up endpoints,
+// and start the HTTP servers.
 func main() {
 	infoLogger.Println("Starting Dog Tag service.")
 
@@ -64,12 +66,7 @@ func main() {
 		warningLogger.Print("WARNING: NTFY_SUBSCRIPTION_ID not set. Notifications will not be sent.")
 	}
 
-	tagAuthKey := os.Getenv("TAG_AUTH_KEY")
-	if tagAuthKey == "" {
-		fatalLogger.Fatal("TAG_AUTH_KEY not set")
-	}
-
-	// Web page endpoints
+	// Set up endpoints
 	httpsMux := http.NewServeMux()
 
 	storer := storage.NewMongoStorer(collection)
@@ -82,6 +79,11 @@ func main() {
 		notifier = notify.NewNtfyNotifier(ntfySubscriptionId)
 	}
 	loggingNotifier := notify.NewLoggingNotifier(notifier, debugLogger)
+
+	tagAuthKey := os.Getenv("TAG_AUTH_KEY")
+	if tagAuthKey == "" {
+		fatalLogger.Fatal("TAG_AUTH_KEY not set")
+	}
 
 	// Current location map page
 	httpsMux.HandleFunc("/current", newCurrentMapPageHandler(storer))
@@ -110,7 +112,7 @@ func main() {
 	})
 
 	// Static file serving
-	httpsMux.Handle("/", multiDomainFileServer())
+	httpsMux.Handle("/", hostnameBasedFileServer())
 
 	// Start servers
 	infoLogger.Println("Starting servers.")
