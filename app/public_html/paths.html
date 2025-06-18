@@ -21,6 +21,7 @@
         async function initMap() {
             const {Map, Polyline} = await google.maps.importLibrary("maps");
             const {Marker, AdvancedMarkerElement, PinElement} = await google.maps.importLibrary("marker");
+            const bounds = new google.maps.LatLngBounds();
 
             function makeMarker(map, name, colour, lat, lng) {
                 // Make a DOM element to go in the pin element. Allows us to put the letter inside the marker.
@@ -48,6 +49,7 @@
                     content: pe.element,
                 });
 
+                bounds.extend({lat: lat, lng: lng});
             }
 
             function makePath(map, name, colour, points, lat, lng) {
@@ -74,6 +76,7 @@
                 // Make little marker dots all along the path to indicate the
                 // actual locations measured.
                 points.forEach(point => {
+                    bounds.extend({lat: point.lat, lng: point.lng});
                     new Marker({
                         position: point,
                         map: map,
@@ -96,9 +99,10 @@
                 mapTypeId: 'satellite'
             });
 
-            makePath(map, "Rueger", "purple", {{.ruegerPath}}, {{.ruegerLat} }, {{.ruegerLng} })
-        makePath(map, "Charlie", "blue", {{.charliePath}}, {{.charlieLat}}, {{.charlieLng}})
+            makePath(map, "Rueger", "purple", {{.ruegerPath}}, {{.ruegerLat}}, {{.ruegerLng}});
+            makePath(map, "Charlie", "blue", {{.charliePath}}, {{.charlieLat}}, {{.charlieLng}});
 
+            map.fitBounds(bounds);
         }
 
         initMap();

@@ -21,6 +21,7 @@
         async function initMap() {
             const {Map, Circle} = await google.maps.importLibrary("maps");
             const {Marker, AdvancedMarkerElement, PinElement} = await google.maps.importLibrary("marker");
+            const bounds = new google.maps.LatLngBounds();
 
             function makeMarker(map, name, colour, lat, lng, accuracyRadius, note) {
                 // Make a DOM element to go in the pin element. Allows us to put the letter inside the marker.
@@ -47,6 +48,8 @@
                     },
                     content: pe.element,
                 });
+
+                bounds.extend({lat: lat, lng: lng});
 
                 // Make an Info Window
                 const infoWindow = new google.maps.InfoWindow({
@@ -88,6 +91,8 @@
 
             makeMarker(map, "Rueger", "{{.ruegerColour}}", {{.ruegerLat}}, {{.ruegerLng}}, {{.ruegerAccuracyRadius}}, "{{.ruegerNote}}")
             makeMarker(map, "Charlie", "{{.charlieColour}}", {{.charlieLat}}, {{.charlieLng}}, {{.charlieAccuracyRadius}}, "{{.charlieNote}}")
+
+            map.fitBounds(bounds);
 
         }
 
