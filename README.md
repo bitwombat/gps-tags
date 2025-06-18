@@ -85,3 +85,10 @@ From this dir, run
 6. Make domain configurable with env vars (get it out of ntfy.go).
 7. Make dog names and tag IDs controlled by env vars.
 8. Make links in alerts go to dog location at that time.
+9. Analyze battery usage.
+10. If dog is out of range for long enough, don't report when he comes back
+    (e.g. the collar hasn't checked in, and the next update is 28 hours later,
+    and it reports "Dog X is now back close to the house".
+11. Notify when the collar hasn't been heard from in X hours.
+12. Notify when the collar hasn't GPS located in X hours.
+
