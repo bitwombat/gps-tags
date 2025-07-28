@@ -11,3 +11,4 @@ dog-tracking.service
 .env
 app/service/.vscode
 tmux.scr
+data
