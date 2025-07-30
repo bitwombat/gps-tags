@@ -61,7 +61,6 @@ them.
    (see TODOs below)
 
 
-
 ## Deployment
 
 From this dir, run
@@ -73,6 +72,40 @@ From this dir, run
 
     $ docker run --name some-mongo -d mongo:7.0
     $ go test ./...
+
+
+## Backing up MongoDB
+
+### Install mongodump
+
+    wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-amazon2-x86_64-100.12.2.tgz
+    tar zxvf mongodb-database-tools-amazon2-x86_64-100.12.2.tgz
+    export PATH=/root/mongodb-database-tools-amazon2-x86_64-100.12.2/bin:$PATH
+
+### Run mongodump
+
+    mongodump
+
+Results are in `./dump`
+
+## Using MongoSH
+
+    $ mongosh
+    $ show dbs
+    $ use tags
+    $ show collections
+    $ db.dogs.find()
+    $ db.dogs.drop()
+
+
+See https://www.mongodb.com/docs/mongodb-shell/crud/read/
+https://www.mongodb.com/docs/manual/reference/method/
+
+## Exporting to MySQL
+
+Follow instructions to install mongodb-database-tools from above, then:
+
+    mongoexport --collection=dogs --db=tags  --type=json --jsonArray --out=dogs.json
 
 
 ## TODOs
@@ -91,4 +124,6 @@ From this dir, run
     and it reports "Dog X is now back close to the house".
 11. Notify when the collar hasn't been heard from in X hours.
 12. Notify when the collar hasn't GPS located in X hours.
+13. Report furthest distance travelled.
+14. Time window & slider for paths.
 
