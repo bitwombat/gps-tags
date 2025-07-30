@@ -1,70 +1,154 @@
+version: "2"
 run:
-    deadline: 3m
-    tests: false
-    skip-files:
-        - .*\.pb\.go
-    skip-dirs:
-      - mocks
-      - unit_test
-      - tmp
-
+  concurrency: 8
+  go: ""
+  build-tags:
+    - integration
+  modules-download-mode: readonly
+  issues-exit-code: 1
+  tests: true
+  allow-parallel-runners: false
+output:
+  path-prefix: ""
 linters:
-  presets:
-    - unused
-    - bugs
   enable:
-    - gocognit
-    - gocyclo
-    - gosimple
-    - stylecheck
-    - exportloopref
-    - goimports
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - contextcheck
+    - durationcheck
+    - errname
+    - errorlint
+    - gocritic
+    - godot
+    - gomoddirectives
     - gosec
     - misspell
+    - nakedret
+    - nilerr
+    - nilnil
+    - noctx
     - nolintlint
+    - prealloc
+    - predeclared
+    - promlinter
+    - reassign
     - revive
+    - rowserrcheck
+    - sqlclosecheck
+    - staticcheck
+    - testableexamples
+    - thelper
+    - tparallel
+    - unconvert
     - unparam
-    - unused
+    - usestdlibvars
+    - wastedassign
   disable:
-  # Those which are deprecated and replaced by ones we have enabled
-  # Basically, we have these to suppress the warning.
+    - containedctx
+    - cyclop
+    - decorder
     - depguard
-    - wsl
+    - dogsled
+    - dupl
+    - dupword
+    - err113
+    - errchkjson
+    - exhaustive
+    - exhaustruct
+    - forbidigo
+    - forcetypeassert
+    - funlen
+    - ginkgolinter
+    - gocheckcompilerdirectives
+    - gochecknoglobals
+    - gochecknoinits
+    - gocognit
+    - goconst
+    - gocyclo
     - godox
-    - varcheck
-    - deadcode
-    - scopelint
-    - structcheck
-
-linters-settings:
-  exhaustive:
-    # Without this setting, you have to list all values, which makes a default
-    # redundant. This might be fine if this linter was part of the PMITC standard
-    # set, so that it would catch with lint what would otherwise be caught by `default`.
-    # Instead, we'll keep using `default` statements - it's safer. The docs say turning
-    # this on defeats the purpose, but it will still find switch statements that are
-    # not exhaustive AND do not have default statements.
-    default-signifies-exhaustive: true
-  unparam:
-    check-exported: true
-  govet:
-    enable:
-      - nillness
-      - shadow
-  stylecheck:
-    # STxxxx checks in https://staticcheck.io/docs/configuration/options/#checks
-    # ST1000 - Incorrect or missing package comment
-    checks: ["all", "-ST1000"]
-    # Default adding "CSV", excluding ones detailed in the 'revive' section below.
-    initialisms: ["ACL", "API", "ASCII", "CPU", "CSS", "CSV", "DNS", "EOF", "GUID", "HTML", "IP", "JSON", "QPS", "RAM", "RPC", "SLA", "SMTP", "SQL", "SSH", "TCP", "TLS", "TTL", "UDP", "UI", "GID", "UID", "UUID", "URI", "UTF8", "VM", "XML", "XMPP", "XSRF", "XSS", "SIP", "RTP", "AMQP", "DB", "TS"]
-  revive:
-    rules:
-      - name: var-naming
-        severity: error
-        disabled: false
-        arguments:
-          # What does the 'D' stand for in "ID"? It's not an acronym.
-          # Also, URL and HTTP are commonly lowercase or titlecase in PMITC,
-          # so allow them.
-          - ["ID", "URL", "HTTP"] # AllowList
-          - [] # DisallowList
+    - goheader
+    - gomodguard
+    - goprintffuncname
+    - grouper
+    - importas
+    - interfacebloat
+    - ireturn
+    - lll
+    - loggercheck
+    - maintidx
+    - makezero
+    - mnd
+    - musttag
+    - nestif
+    - nlreturn
+    - nonamedreturns
+    - nosprintfhostport
+    - paralleltest
+    - tagliatelle
+    - testpackage
+    - varnamelen
+    - whitespace
+    - wrapcheck
+    - wsl
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+      exclude-functions:
+        - io/ioutil.ReadFile
+        - io.Copy(*bytes.Buffer)
+        - io.Copy(os.Stdout)
+    gocritic:
+      disabled-checks:
+        - hugeParam
+        - rangeExprCopy
+        - rangeValCopy
+      enabled-tags:
+        - diagnostic
+        - experimental
+        - opinionated
+        - performance
+        - style
+    govet:
+      disable:
+        - fieldalignment
+    nakedret:
+      max-func-lines: 1
+    tagliatelle:
+      case:
+        rules:
+          avro: snake
+          bson: camel
+          json: snake
+          mapstructure: kebab
+          xml: camel
+          yaml: snake
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+  new: false
+  fix: false
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
