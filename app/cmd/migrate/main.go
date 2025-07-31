@@ -2,18 +2,23 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+
+	"github.com/bitwombat/gps-tags-cmd/target"
 )
 
+type TagsJSON []TagJSON
+
 type TagJSON struct {
-	ID     ID       `json:"_id"`
-	ProdID float64  `json:"ProdId"`
-	Fw     string   `json:"FW"`
-	Record []Record `json:"Records"`
-	SerNo  float64  `json:"SerNo"`
-	Imei   string   `json:"IMEI"`
-	Iccid  string   `json:"ICCID"`
+	ID      ID       `json:"_id"`
+	ProdID  float64  `json:"ProdId"`
+	Fw      string   `json:"FW"`
+	Records []Record `json:"Records"`
+	SerNo   float64  `json:"SerNo"`
+	Imei    string   `json:"IMEI"`
+	Iccid   string   `json:"ICCID"`
 }
 
 type ID struct {
@@ -90,32 +95,32 @@ func (r *Record) UnmarshalJSON(p []byte) error {
 			FType float64 `json:"FType"`
 		}{}
 		if err := json.Unmarshal(rawField, &obj); err != nil {
-			return fmt.Errorf("unmarshalling the raw field %v: %w", rawField, err)
+			return fmt.Errorf("unmarshaling the raw field %v: %w", rawField, err)
 		}
 
 		switch obj.FType {
 		case 0.0:
 			var ft0 FType0
 			if err := json.Unmarshal(rawField, &ft0); err != nil {
-				return fmt.Errorf("unmarshalling the field %v: %w", rawField, err)
+				return fmt.Errorf("unmarshaling the field %v: %w", rawField, err)
 			}
 			r.Fields = append(r.Fields, ft0)
 		case 2.0:
 			var ft2 FType2
 			if err := json.Unmarshal(rawField, &ft2); err != nil {
-				return fmt.Errorf("unmarshalling the field %v: %w", rawField, err)
+				return fmt.Errorf("unmarshaling the field %v: %w", rawField, err)
 			}
 			r.Fields = append(r.Fields, ft2)
 		case 6.0:
 			var ft6 FType6
 			if err := json.Unmarshal(rawField, &ft6); err != nil {
-				return fmt.Errorf("unmarshalling the field %v: %w", rawField, err)
+				return fmt.Errorf("unmarshaling the field %v: %w", rawField, err)
 			}
 			r.Fields = append(r.Fields, ft6)
 		case 15.0:
 			var ft15 FType15
 			if err := json.Unmarshal(rawField, &ft15); err != nil {
-				return fmt.Errorf("unmarshalling the field %v: %w", rawField, err)
+				return fmt.Errorf("unmarshaling the field %v: %w", rawField, err)
 			}
 			r.Fields = append(r.Fields, ft15)
 		default:
@@ -126,6 +131,97 @@ func (r *Record) UnmarshalJSON(p []byte) error {
 	return nil
 }
 
+func (is TagsJSON) marshal() (target.Tags, error) {
+	var tts target.Tags
+	for _, i := range is {
+		tt, err := i.marshal()
+		if err != nil {
+			return nil, fmt.Errorf("marshaling tag %v: %w", i, err)
+		}
+		tts = append(tts, tt)
+	}
+
+	return tts, nil
+}
+
+func (i TagJSON) marshal() (target.Tag, error) {
+	var o target.Tag
+
+	o.ID = i.ID.Oid
+	o.ProdID = int(i.ProdID)
+	o.Fw = i.Fw
+	o.SerNo = int(i.SerNo)
+	o.Imei = i.Imei
+	o.Iccid = i.Iccid
+	var err error
+	o.Records, err = marshalRecords(i.Records)
+	if err != nil {
+		return target.Tag{}, fmt.Errorf("marshaling records: %w", err)
+	}
+
+	return o, nil
+}
+
+func marshalRecords(i []Record) ([]target.Record, error) {
+	var o []target.Record = make([]target.Record, len(i))
+	for k, r := range i {
+		o[k].DateUTC = r.DateUTC
+		o[k].SeqNo = int(r.SeqNo)
+		o[k].Reason = int(r.Reason)
+		var err error
+		o[k].Fields, err = marshalFields(r.Fields)
+		if err != nil {
+			return nil, fmt.Errorf("marshaling fields: %w", err)
+		}
+	}
+
+	return o, nil
+}
+
+func marshalFields(i []Field) ([]target.Field, error) {
+	var o []target.Field
+	for _, f := range i {
+		switch ft := f.(type) {
+		case FType0:
+			var nf target.GPS
+			nf.Spd = int(ft.Spd)
+			nf.SpdAcc = int(ft.SpdAcc)
+			nf.Head = int(ft.Head)
+			nf.GpsStat = int(ft.GpsStat)
+			nf.GpsUTC = ft.GpsUTC
+			nf.Lat = ft.Lat
+			nf.Long = ft.Long
+			nf.Alt = int(ft.Alt)
+			nf.PosAcc = int(ft.PosAcc)
+			nf.Pdop = int(ft.Pdop)
+
+		case FType2:
+			var nf target.GPIO
+			nf.DIn = int(ft.DIn)
+			nf.DOut = int(ft.DOut)
+			nf.DevStat = int(ft.DevStat)
+			o = append(o, nf)
+
+		case FType6:
+			var nf target.Analogue
+			nf.InternalBatteryVoltage = int(ft.AnalogueData.Num1)
+			nf.Temperature = int(ft.AnalogueData.Num3)
+			nf.LastGSMCQ = int(ft.AnalogueData.Num4)
+			nf.LoadedVoltage = int(ft.AnalogueData.Num5)
+			o = append(o, nf)
+
+		case FType15:
+			var nf target.TripType
+			nf.Tt = int(ft.Tt)
+			nf.Trim = int(ft.Trim)
+			o = append(o, nf)
+		default:
+			return nil, errors.New("unknown field type")
+		}
+
+	}
+	return o, nil
+}
 func pretty(o any) {
 	var b []byte
 	b, _ = json.MarshalIndent(o, "", "  ")
@@ -141,13 +237,21 @@ func main() {
 		os.Exit(1)
 	}
 
-	var data []TagJSON
+	var data TagsJSON
 
 	err = json.Unmarshal(jsonData, &data)
 	if err != nil {
-		fmt.Printf("unmarshalling JSON: %v\n", err)
+		fmt.Printf("unmarshaling JSON: %v\n", err)
 		panic(err)
 	}
 	//fmt.Printf("%v\n", data)
 	pretty(data)
+
+	targetData, err := data.marshal()
+	if err != nil {
+		fmt.Printf("marshaling data to target types: %v\n", err)
+		panic(err)
+	}
+
+	pretty(targetData)
 }
