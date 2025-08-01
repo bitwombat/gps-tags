@@ -11,9 +11,9 @@ package target
 // comprehension, while most fields are kept the same to reduce effort
 // re-mapping these names back to the device data.
 
-type Tags []Tag
+type Txs []Tx
 
-type Tag struct {
+type Tx struct {
 	ID      string
 	ProdID  int
 	Fw      string

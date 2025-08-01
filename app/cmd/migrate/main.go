@@ -9,9 +9,9 @@ import (
 	"github.com/bitwombat/gps-tags-cmd/target"
 )
 
-type TagsJSON []TagJSON
+type TxsJSON []TxJSON
 
-type TagJSON struct {
+type TxJSON struct {
 	ID      ID       `json:"_id"`
 	ProdID  float64  `json:"ProdId"`
 	Fw      string   `json:"FW"`
@@ -56,7 +56,7 @@ type FType2 struct {
 }
 
 type FType6 struct {
-	AnalogueData AnalogueData `json:"AnalogueData,omitempty"`
+	AnalogueData AnalogueData `json:"AnalogueData"`
 	FType        float64      `json:"FType"`
 }
 
@@ -124,15 +124,15 @@ func (r *Record) UnmarshalJSON(p []byte) error {
 			}
 			r.Fields = append(r.Fields, ft15)
 		default:
-			return fmt.Errorf("unreconised FType: %f", obj.FType)
+			return fmt.Errorf("unrecognised FType: %f", obj.FType)
 		}
 	}
 
 	return nil
 }
 
-func (is TagsJSON) marshal() (target.Tags, error) {
-	var tts target.Tags
+func (is TxsJSON) marshal() (target.Txs, error) {
+	var tts target.Txs
 	for _, i := range is {
 		tt, err := i.marshal()
 		if err != nil {
@@ -144,8 +144,8 @@ func (is TagsJSON) marshal() (target.Tags, error) {
 	return tts, nil
 }
 
-func (i TagJSON) marshal() (target.Tag, error) {
-	var o target.Tag
+func (i TxJSON) marshal() (target.Tx, error) {
+	var o target.Tx
 
 	o.ID = i.ID.Oid
 	o.ProdID = int(i.ProdID)
@@ -156,7 +156,7 @@ func (i TagJSON) marshal() (target.Tag, error) {
 	var err error
 	o.Records, err = marshalRecords(i.Records)
 	if err != nil {
-		return target.Tag{}, fmt.Errorf("marshaling records: %w", err)
+		return target.Tx{}, fmt.Errorf("marshaling records: %w", err)
 	}
 
 	return o, nil
@@ -230,28 +230,27 @@ func pretty(o any) {
 }
 
 func main() {
-	// jsonData, err := os.ReadFile("dogs_stripped_down_all_reasons.json")
-	jsonData, err := os.ReadFile("dogs.json")
+	text, err := os.ReadFile("dogs.json")
 	if err != nil {
 		fmt.Printf("reading input json file: %v\n", err)
 		os.Exit(1)
 	}
 
-	var data TagsJSON
+	var hardwareTxs TxsJSON
 
-	err = json.Unmarshal(jsonData, &data)
+	err = json.Unmarshal(text, &hardwareTxs)
 	if err != nil {
 		fmt.Printf("unmarshaling JSON: %v\n", err)
 		panic(err)
 	}
-	//fmt.Printf("%v\n", data)
-	pretty(data)
 
-	targetData, err := data.marshal()
+	pretty(hardwareTxs)
+
+	txs, err := hardwareTxs.marshal()
 	if err != nil {
 		fmt.Printf("marshaling data to target types: %v\n", err)
 		panic(err)
 	}
 
-	pretty(targetData)
+	pretty(txs)
 }
