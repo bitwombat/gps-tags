@@ -183,7 +183,7 @@ func marshalFields(i []Field) ([]target.Field, error) {
 	for _, f := range i {
 		switch ft := f.(type) {
 		case FType0:
-			var nf target.GPS
+			var nf target.GPSReading
 			nf.Spd = int(ft.Spd)
 			nf.SpdAcc = int(ft.SpdAcc)
 			nf.Head = int(ft.Head)
@@ -196,14 +196,14 @@ func marshalFields(i []Field) ([]target.Field, error) {
 			nf.Pdop = int(ft.Pdop)
 
 		case FType2:
-			var nf target.GPIO
+			var nf target.GPIOReading
 			nf.DIn = int(ft.DIn)
 			nf.DOut = int(ft.DOut)
 			nf.DevStat = int(ft.DevStat)
 			o = append(o, nf)
 
 		case FType6:
-			var nf target.Analogue
+			var nf target.AnalogueReading
 			nf.InternalBatteryVoltage = int(ft.AnalogueData.Num1)
 			nf.Temperature = int(ft.AnalogueData.Num3)
 			nf.LastGSMCQ = int(ft.AnalogueData.Num4)
@@ -211,7 +211,7 @@ func marshalFields(i []Field) ([]target.Field, error) {
 			o = append(o, nf)
 
 		case FType15:
-			var nf target.TripType
+			var nf target.TripTypeReading
 			nf.Tt = int(ft.Tt)
 			nf.Trim = int(ft.Trim)
 			o = append(o, nf)

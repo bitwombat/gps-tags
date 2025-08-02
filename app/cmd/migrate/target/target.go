@@ -197,7 +197,7 @@ Hoping to not need these with the Stringer code gen
 
 type Field any
 
-type GPS struct { // FType0
+type GPSReading struct { // FType0
 	Spd     int
 	SpdAcc  int
 	Head    int
@@ -210,20 +210,20 @@ type GPS struct { // FType0
 	Pdop    int
 }
 
-type GPIO struct { // FType2
+type GPIOReading struct { // FType2
 	DIn     int
 	DOut    int
 	DevStat int
 }
 
-type Analogue struct { // FType6
+type AnalogueReading struct { // FType6
 	InternalBatteryVoltage int
 	Temperature            int
 	LastGSMCQ              int
 	LoadedVoltage          int
 }
 
-type TripType struct { // FType15
+type TripTypeReading struct { // FType15
 	Tt   int
 	Trim int
 }
