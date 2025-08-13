@@ -1,10 +1,10 @@
 DROP TABLE IF EXISTS `gpsReading`;
 
-DROP TABLE IF EXISTS `GPIOReading`;
+DROP TABLE IF EXISTS `gpioReading`;
 
-DROP TABLE IF EXISTS `AnalogueReading`;
+DROP TABLE IF EXISTS `analogueReading`;
 
-DROP TABLE IF EXISTS `TripTypeReading`;
+DROP TABLE IF EXISTS `tripTypeReading`;
 
 DROP TABLE IF EXISTS `record`;
 
@@ -24,9 +24,8 @@ CREATE TABLE
 
 CREATE TABLE
     `record` (
-        `ID` INT PRIMARY KEY AUTO_INCREMENT,
+        `ID` VARCHAR(100) PRIMARY KEY,
         `TxID` VARCHAR(100) NOT NULL,
-        `ProdID` INT,
         `DeviceDateTime` DATETIME,
         `SeqNo` INT,
         `Reason` INT,
@@ -36,14 +35,14 @@ CREATE TABLE
 CREATE TABLE
     `gpsReading` (
         `ID` INT PRIMARY KEY AUTO_INCREMENT,
-        `RecordID` INT NOT NULL,
+        `RecordID` VARCHAR(100) NOT NULL,
         `Spd` INT,
         `SpdAcc` INT,
         `Head` INT,
         `GpsStat` INT,
         `GpsUTC` DATETIME,
         `Lat` FLOAT,
-        `Long` FLOAT,
+        `Lng` FLOAT,
         `Alt` INT,
         `PosAcc` INT,
         `Pdop` INT,
@@ -53,7 +52,7 @@ CREATE TABLE
 CREATE TABLE
     `gpioReading` (
         `ID` INT PRIMARY KEY AUTO_INCREMENT,
-        `RecordID` INT NOT NULL,
+        `RecordID` VARCHAR(100) NOT NULL,
         `DIn` INT,
         `DOut` INT,
         `DevStat` INT,
@@ -63,7 +62,7 @@ CREATE TABLE
 CREATE TABLE
     `analogueReading` (
         `ID` INT PRIMARY KEY AUTO_INCREMENT,
-        `RecordID` INT NOT NULL,
+        `RecordID` VARCHAR(100) NOT NULL,
         `InternalBatteryVoltage` INT,
         `Temperature` INT,
         `LastGSMCQ` INT,
@@ -74,7 +73,7 @@ CREATE TABLE
 CREATE TABLE
     `tripTypeReading` (
         `ID` INT PRIMARY KEY AUTO_INCREMENT,
-        `RecordID` INT NOT NULL,
+        `RecordID` VARCHAR(100) NOT NULL,
         `Tt` INT,
         `Trim` INT,
         CONSTRAINT `c_triptype` FOREIGN KEY (`RecordID`) REFERENCES `record` (`ID`)

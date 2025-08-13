@@ -1,10 +1,13 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/bitwombat/gps-tags-cmd/target"
 )
@@ -194,6 +197,7 @@ func marshalFields(i []Field) ([]target.Field, error) {
 			nf.Alt = int(ft.Alt)
 			nf.PosAcc = int(ft.PosAcc)
 			nf.Pdop = int(ft.Pdop)
+			o = append(o, nf)
 
 		case FType2:
 			var nf target.GPIOReading
@@ -215,6 +219,7 @@ func marshalFields(i []Field) ([]target.Field, error) {
 			nf.Tt = int(ft.Tt)
 			nf.Trim = int(ft.Trim)
 			o = append(o, nf)
+
 		default:
 			return nil, errors.New("unknown field type")
 		}
@@ -230,7 +235,19 @@ func pretty(o any) {
 }
 
 func main() {
-	text, err := os.ReadFile("dogs.json")
+	if len(os.Args) < 2 {
+		fmt.Println("Need filename")
+		os.Exit(1)
+	}
+
+	filename := os.Args[1]
+
+	if filepath.Ext(filename) != ".json" {
+		fmt.Println("Expecting a file ending in .json")
+		os.Exit(1)
+	}
+
+	text, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Printf("reading input json file: %v\n", err)
 		os.Exit(1)
@@ -241,16 +258,45 @@ func main() {
 	err = json.Unmarshal(text, &hardwareTxs)
 	if err != nil {
 		fmt.Printf("unmarshaling JSON: %v\n", err)
-		panic(err)
+		os.Exit(1)
 	}
 
-	pretty(hardwareTxs)
+	fmt.Printf("Read %v transmissions from JSON.\n", len(hardwareTxs))
+
+	//pretty(hardwareTxs)
 
 	txs, err := hardwareTxs.marshal()
 	if err != nil {
 		fmt.Printf("marshaling data to target types: %v\n", err)
-		panic(err)
+		os.Exit(1)
 	}
 
-	pretty(txs)
+	fmt.Printf("Converted %v JSON transmissions to own structure.\n", len(txs))
+	//pretty(txs)
+
+	outfilename := strings.TrimSuffix(filepath.Base(filename), ".json") + ".sql"
+
+	f, err := os.Create(outfilename)
+	if err != nil {
+		fmt.Printf("opening file %s: %v\n", outfilename, err)
+		os.Exit(1)
+	}
+
+	defer f.Close()
+
+	w := bufio.NewWriterSize(f, 1<<16) // 64k buffer
+
+	fmt.Println("Writing to", outfilename)
+
+	for _, tx := range txs {
+		sql := tx.ToSQL()
+
+		_, err = w.WriteString(sql)
+		if err != nil {
+			fmt.Printf("error writing to %s: %v\n", outfilename, err)
+			os.Exit(1)
+		}
+	}
+
+	w.Flush()
 }

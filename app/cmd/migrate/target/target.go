@@ -1,6 +1,12 @@
 //go:generate stringer -type=ReasonCode
 package target
 
+import (
+	"fmt"
+
+	"github.com/google/uuid"
+)
+
 // This package/these structs are only needed because all the JSON objects in
 // MongoDB have floats where integers should be. These structs are copies of
 // those in the main package, just with 'int' replacing 'int'.
@@ -195,7 +201,9 @@ Hoping to not need these with the Stringer code gen
 50   Bluetooth Tag Data
 */
 
-type Field any
+type Field interface {
+	toSQL(string) string
+}
 
 type GPSReading struct { // FType0
 	Spd     int
@@ -226,4 +234,43 @@ type AnalogueReading struct { // FType6
 type TripTypeReading struct { // FType15
 	Tt   int
 	Trim int
+}
+
+func (t Tx) ToSQL() string {
+	s := fmt.Sprintf("INSERT INTO tx (ID, ProdID, Fw, SerNo, Imei, Iccid) VALUES ('%s', %v, '%s', %v, '%s', '%s');\n", t.ID, t.ProdID, t.Fw, t.SerNo, t.Imei, t.Iccid)
+
+	for _, r := range t.Records {
+		s += r.toSQL(t.ID)
+	}
+
+	return s
+}
+
+func (r Record) toSQL(txID string) string {
+	// get new GUID from stdlib
+	//uuid.SetRand(rand.New(rand.NewSource(1)))  // Make it deterministic for testing (saving this line for later)
+	rID := uuid.NewString()
+	s := fmt.Sprintf("INSERT INTO record (ID, TXID, DeviceDateTime, SeqNo, Reason) VALUES ('%s', '%s', '%s', %v, %v);\n", rID, txID, r.DateUTC, r.SeqNo, r.Reason)
+	for _, f := range r.Fields {
+		s += f.toSQL(rID)
+	}
+
+	return s
+}
+
+// TODO: Do something smarter with the UTC date
+func (g GPSReading) toSQL(recordID string) string {
+	return fmt.Sprintf("INSERT INTO gpsReading (RecordID, Spd, SpdAcc, Head, GpsStat, GpsUTC, Lat, Lng, Alt, PosAcc, Pdop) VALUES ('%s', %v, %v, %v, %v, '%s', %f, %f, %v, %v, %v);\n", recordID, g.Spd, g.SpdAcc, g.Head, g.GpsStat, g.GpsUTC, g.Lat, g.Long, g.Alt, g.PosAcc, g.Pdop)
+}
+
+func (g GPIOReading) toSQL(recordID string) string {
+	return fmt.Sprintf("INSERT INTO gpioReading (RecordID, DIn, DOut, DevStat) VALUES ('%s', %v, %v, %v);\n", recordID, g.DIn, g.DOut, g.DevStat)
+}
+
+func (a AnalogueReading) toSQL(recordID string) string {
+	return fmt.Sprintf("INSERT INTO analogueReading (RecordID, InternalBatteryVoltage, Temperature, LastGSMCQ, LoadedVoltage) VALUES ('%s', %v, %v, %v, %v);\n", recordID, a.InternalBatteryVoltage, a.Temperature, a.LastGSMCQ, a.LoadedVoltage)
+}
+
+func (t TripTypeReading) toSQL(recordID string) string {
+	return fmt.Sprintf("INSERT INTO tripTypeReading (RecordID, Tt, Trim) VALUES ('%s', %v, %v);\n", recordID, t.Tt, t.Trim)
 }
