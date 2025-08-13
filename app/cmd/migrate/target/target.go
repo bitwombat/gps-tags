@@ -260,7 +260,7 @@ func (r Record) toSQL(txID string) string {
 
 // TODO: Do something smarter with the UTC date
 func (g GPSReading) toSQL(recordID string) string {
-	return fmt.Sprintf("INSERT INTO gpsReading (RecordID, Spd, SpdAcc, Head, GpsStat, GpsUTC, Lat, Lng, Alt, PosAcc, Pdop) VALUES ('%s', %v, %v, %v, %v, '%s', %f, %f, %v, %v, %v);\n", recordID, g.Spd, g.SpdAcc, g.Head, g.GpsStat, g.GpsUTC, g.Lat, g.Long, g.Alt, g.PosAcc, g.Pdop)
+	return fmt.Sprintf("INSERT INTO gpsReading (RecordID, Spd, SpdAcc, Head, GpsStat, GpsUTC, Lat, Lng, Alt, PosAcc, Pdop) VALUES ('%s', %v, %v, %v, %v, '%s', %.9f, %.9f, %v, %v, %v);\n", recordID, g.Spd, g.SpdAcc, g.Head, g.GpsStat, g.GpsUTC, g.Lat, g.Long, g.Alt, g.PosAcc, g.Pdop)
 }
 
 func (g GPIOReading) toSQL(recordID string) string {
