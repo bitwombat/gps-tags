@@ -19,21 +19,23 @@ func SetOrReset(event string, storage map[string]bool, config Config) error {
 		if config.OnSet != nil {
 			err = config.OnSet()
 		}
-		if err == nil {
-			storage[event] = true
+		if err != nil {
+			return err
 		}
-	}
 
-	err = nil
+		storage[event] = true
+	}
 
 	if storage[event] && config.ResetIf {
 		if config.OnReset != nil {
 			err = config.OnReset()
 		}
-		if err == nil {
-			storage[event] = false
+		if err != nil {
+			return err
 		}
+
+		storage[event] = false
 	}
 
-	return err
+	return nil
 }
