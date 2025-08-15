@@ -15,9 +15,9 @@ type stepType struct {
 }
 
 func TestOneShot(t *testing.T) {
+	uut := NewOneShot()
 
 	someError := fmt.Errorf("some error")
-	storage := map[string]bool{}
 
 	var setActionCount int
 	var resetActionCount int
@@ -259,16 +259,61 @@ func TestOneShot(t *testing.T) {
 	} {
 		t.Run(tc.description, func(t *testing.T) {
 			for _, step := range tc.steps {
-				err := SetOrReset("testing", storage, step.config)
+				err := uut.SetReset("testing", step.config)
 				require.Equal(t, step.expectedError, err, "returned error")
 				require.Equal(t, step.expectedSetActionCount, setActionCount, "set action count")
 				require.Equal(t, step.expectedResetActionCount, resetActionCount, "reset action count")
 			}
 			setActionCount = 0
 			resetActionCount = 0
-			storage = make(map[string]bool)
+			clear(uut)
 		})
 	}
 }
 
-// TODO: Test that events are tracked separately (how?), ie. the map is a map. Necessary?
+func TestEventsDontInterfere(t *testing.T) {
+	// GIVEN a single oneshot instance
+	uut := NewOneShot()
+
+	var setActionCount int
+	var resetActionCount int
+
+	var SetFn = func() error {
+		setActionCount++
+		return nil
+	}
+
+	var ResetFn = func() error {
+		resetActionCount++
+		return nil
+	}
+
+	// WHEN we set event1
+	err := uut.SetReset("event1", Config{
+		SetIf:   true,
+		OnSet:   SetFn,
+		ResetIf: false,
+		OnReset: ResetFn,
+	},
+	)
+
+	// THEN we should see the normal behaviour
+	require.Nil(t, err)
+	require.Equal(t, 1, setActionCount)
+	require.Equal(t, 0, resetActionCount)
+
+	// AND WHEN we set event2
+	err = uut.SetReset("event2", Config{
+		SetIf:   true,
+		OnSet:   SetFn,
+		ResetIf: false,
+		OnReset: ResetFn,
+	},
+	)
+
+	// THEN we should see that it was independent - it also fired
+	require.Nil(t, err)
+	require.Equal(t, 2, setActionCount)
+	require.Equal(t, 0, resetActionCount)
+
+}

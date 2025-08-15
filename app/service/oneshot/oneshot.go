@@ -7,15 +7,17 @@ type Config struct {
 	OnReset func() error
 }
 
-func SetOrReset(event string, storage map[string]bool, config Config) error {
+type OneShot map[string]bool
 
-	if storage == nil {
-		panic("storage passed to oneshot is nil")
-	}
+func NewOneShot() OneShot {
+	return make(map[string]bool)
+}
+
+func (o OneShot) SetReset(event string, config Config) error {
 
 	var err error
 
-	if !storage[event] && config.SetIf {
+	if !o[event] && config.SetIf {
 		if config.OnSet != nil {
 			err = config.OnSet()
 		}
@@ -23,10 +25,10 @@ func SetOrReset(event string, storage map[string]bool, config Config) error {
 			return err
 		}
 
-		storage[event] = true
+		o[event] = true
 	}
 
-	if storage[event] && config.ResetIf {
+	if o[event] && config.ResetIf {
 		if config.OnReset != nil {
 			err = config.OnReset()
 		}
@@ -34,7 +36,7 @@ func SetOrReset(event string, storage map[string]bool, config Config) error {
 			return err
 		}
 
-		storage[event] = false
+		o[event] = false
 	}
 
 	return nil

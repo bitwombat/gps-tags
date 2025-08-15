@@ -11,7 +11,7 @@ import (
 
 	"github.com/bitwombat/gps-tags/device"
 	"github.com/bitwombat/gps-tags/notify"
-	"github.com/bitwombat/gps-tags/oneshot"
+	oshotpkg "github.com/bitwombat/gps-tags/oneshot"
 	"github.com/bitwombat/gps-tags/poly"
 	"github.com/bitwombat/gps-tags/storage"
 	zonespkg "github.com/bitwombat/gps-tags/zones"
@@ -28,7 +28,7 @@ func makeNotifier(notifier notify.Notifier, ctx context.Context, title, message 
 }
 
 func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAuthKey string) func(http.ResponseWriter, *http.Request) {
-	persistentState := make(map[string]bool)
+	oneShot := oshotpkg.NewOneShot()
 
 	NamedZones, err := zonespkg.ReadKMLDir("named_zones")
 	if err != nil {
@@ -121,8 +121,8 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 		}
 
 		// Send notifications
-		notifyAboutBattery(ctx, latestRecord, dogName, persistentState, notifier)
-		notifyAboutZones(ctx, latestRecord, NamedZones, dogName, persistentState, notifier)
+		notifyAboutBattery(ctx, latestRecord, dogName, oneShot, notifier)
+		notifyAboutZones(ctx, latestRecord, NamedZones, dogName, oneShot, notifier)
 
 		// Insert the document into storage
 		id, err := storer.WriteCommit(ctx, string(body))
@@ -138,7 +138,7 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 	}
 }
 
-func notifyAboutBattery(ctx context.Context, latestRecord Record, dogName string, persistentState map[string]bool, notifier notify.Notifier) {
+func notifyAboutBattery(ctx context.Context, latestRecord Record, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
 	var batteryVoltage float64
 
 	for _, f := range latestRecord.Fields {
@@ -153,16 +153,16 @@ func notifyAboutBattery(ctx context.Context, latestRecord Record, dogName string
 	if batteryVoltage == 0 {
 		debugLogger.Println("No battery voltage in record")
 	} else {
-		_ = oneshot.SetOrReset(dogName+"lowBattery", persistentState,
-			oneshot.Config{
+		_ = oneShot.SetReset(dogName+"lowBattery",
+			oshotpkg.Config{
 				SetIf:   (batteryVoltage < BatteryLowThreshold) && nowIsWakingHours,
 				OnSet:   makeNotifier(notifier, ctx, fmt.Sprintf("%s's battery low", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
 				ResetIf: batteryVoltage > BatteryLowThreshold+BatteryHysteresis,
 				OnReset: makeNotifier(notifier, ctx, fmt.Sprintf("New battery for %s detected", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
 			})
 
-		_ = oneshot.SetOrReset(dogName+"criticalBattery", persistentState,
-			oneshot.Config{
+		_ = oneShot.SetReset(dogName+"criticalBattery",
+			oshotpkg.Config{
 				SetIf:   (batteryVoltage < BatteryCriticalThreshold) && nowIsWakingHours,
 				OnSet:   makeNotifier(notifier, ctx, fmt.Sprintf("%s's battery critical", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
 				ResetIf: batteryVoltage > BatteryLowThreshold,
@@ -171,7 +171,7 @@ func notifyAboutBattery(ctx context.Context, latestRecord Record, dogName string
 	}
 }
 
-func notifyAboutZones(ctx context.Context, latestRecord Record, NamedZones []zonespkg.Zone, dogName string, persistentState map[string]bool, notifier notify.Notifier) {
+func notifyAboutZones(ctx context.Context, latestRecord Record, NamedZones []zonespkg.Zone, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
 	latestGPSRecord := latestRecord.Fields[0]
 
 	var thisZoneText string
@@ -186,16 +186,16 @@ func notifyAboutZones(ctx context.Context, latestRecord Record, NamedZones []zon
 	isOutsidePropertyBoundary := !poly.IsInside(propertyBoundary, currentLocation)
 	isOutsideSafeZoneBoundary := !poly.IsInside(safeZoneBoundary, currentLocation)
 
-	_ = oneshot.SetOrReset(dogName+"offProperty", persistentState,
-		oneshot.Config{
+	_ = oneShot.SetReset(dogName+"offProperty",
+		oshotpkg.Config{
 			SetIf:   isOutsidePropertyBoundary,
 			OnSet:   makeNotifier(notifier, ctx, fmt.Sprintf("%s is off the property", dogName), thisZoneText),
 			ResetIf: !isOutsidePropertyBoundary,
 			OnReset: makeNotifier(notifier, ctx, fmt.Sprintf("%s is now back on the property", dogName), thisZoneText),
 		})
 
-	_ = oneshot.SetOrReset(dogName+"outsideSafeZone", persistentState,
-		oneshot.Config{
+	_ = oneShot.SetReset(dogName+"outsideSafeZone",
+		oshotpkg.Config{
 			SetIf:   isOutsideSafeZoneBoundary,
 			OnSet:   makeNotifier(notifier, ctx, fmt.Sprintf("%s is getting far from the house", dogName), thisZoneText),
 			ResetIf: !isOutsideSafeZoneBoundary,
