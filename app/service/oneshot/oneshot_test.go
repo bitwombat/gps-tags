@@ -266,7 +266,7 @@ func TestOneShot(t *testing.T) {
 			}
 			setActionCount = 0
 			resetActionCount = 0
-			clear(uut)
+			clear(uut.storage)
 		})
 	}
 }
