@@ -13,10 +13,9 @@ import (
 	"github.com/bitwombat/gps-tags/device"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-const mongoURL = "mongodb://172.17.0.2:27017"
+const mongoURL = "mongodb://localhost:27017"
 
 const basicCompleteSample = `{
   "SerNo": 810095,
@@ -284,7 +283,7 @@ func randomTestCollectionName() string {
 	return "test-" + hex.EncodeToString(bytes)
 }
 
-func Test_WriteCommit(t *testing.T) {
+func Test_WriteMongoInsertOne(t *testing.T) {
 	collection, err := NewMongoConnection(mongoURL, randomTestCollectionName())
 	require.Nil(t, err)
 
@@ -304,7 +303,7 @@ func Test_WriteCommit(t *testing.T) {
 
 }
 
-func Test_ReadCommit(t *testing.T) {
+func TestMongoFind(t *testing.T) {
 	collection, err := NewMongoConnection(mongoURL, randomTestCollectionName())
 	require.Nil(t, err)
 
@@ -334,35 +333,17 @@ func Test_ReadCommit(t *testing.T) {
 	require.Equal(t, 2, len(results[0].Records))
 }
 
-func insert(collection *mongo.Collection, jsonstr string) (*mongo.InsertOneResult, error) { // TODO: Remove, unused.
-	// Unmarshal JSON to map
-	var data map[string]interface{}
-	err := json.Unmarshal([]byte(jsonstr), &data)
-	if err != nil {
-		return nil, err
-	}
-
-	// Insert into MongoDB
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-
-	insertResult, err := collection.InsertOne(ctx, data)
-
-	return insertResult, err
-}
-
 func Test_GetLatestPosition(t *testing.T) {
-
 	// GIVEN two commits with multiple records and for multiple tags.
 	collection, err := NewMongoConnection(mongoURL, randomTestCollectionName())
 	require.Nil(t, err)
 
 	storer := NewMongoStorer(collection)
 
-	_, err = storer.WriteCommit(context.Background(), strippedDownMultiRecordSample1)
+	_, err = storer.WriteTx(context.Background(), strippedDownMultiRecordSample1)
 	require.Nil(t, err)
 
-	_, err = storer.WriteCommit(context.Background(), strippedDownMultiRecordSample2)
+	_, err = storer.WriteTx(context.Background(), strippedDownMultiRecordSample2)
 	require.Nil(t, err)
 
 	// WHEN we get the latest position for all tags.
@@ -370,6 +351,7 @@ func Test_GetLatestPosition(t *testing.T) {
 	require.Nil(t, err)
 
 	// THEN we get the latest position's values for both known tags.
+	require.Len(t, result, 2, "length of result array")
 	for _, r := range result {
 		switch r.SerNo {
 		case 810095:
@@ -393,45 +375,9 @@ func Test_GetLatestPosition(t *testing.T) {
 		}
 	}
 
-	// for cursor.Next(context.Background()) {
-	// 	// result := struct{
-	// 	//   Foo string
-	// 	//   Bar int32
-	// 	// }{}
-	// 	var result bson.D
-
-	// 	err = cursor.Decode(&result)
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-
-	// 	x := result[1].Value
-	// 	log.Printf("Type of x: %T\n", x)
-	// 	log.Println(x)
-	// 	doc, ok := x.(bson.D) // Assert 'x' to 'primitive.D'
-	// 	if !ok {
-	// 		log.Fatal("Couldn't type assert")
-	// 	}
-	// 	y := doc[0].Value
-	// 	log.Print(y)
-	// 	for _, elem := range result {
-	// 		key := elem.Key
-	// 		value := elem.Value
-
-	// 		fmt.Println(key, value)
-
-	// do something with result...
-	// }
-	// To get the raw bson bytes use cursor.Current
-	//raw := cur.Current
-	// do something with raw...
-	// }
-	// err = cursor.Err()
-	// require.Nil(t, err)
-
 }
 
-func TestAgeFrom(t *testing.T) {
+func TestTimeAgoAsText(t *testing.T) {
 	now := func() time.Time {
 		t, err := time.Parse(time.DateTime, "2023-11-19 23:21:42")
 		if err != nil {
@@ -469,7 +415,7 @@ func Test_GetLastNPositions(t *testing.T) {
 
 	for _, r := range nSamples {
 		if s, ok := r.(string); ok {
-			_, err = storer.WriteCommit(context.Background(), s)
+			_, err = storer.WriteTx(context.Background(), s)
 			require.Nil(t, err)
 		} else {
 			t.Fatal("type assertion failed")
@@ -501,41 +447,5 @@ func Test_GetLastNPositions(t *testing.T) {
 			t.Fatalf("Unmatched serNo: %v", r.SerNo)
 		}
 	}
-
-	// for cursor.Next(context.Background()) {
-	// 	// result := struct{
-	// 	//   Foo string
-	// 	//   Bar int32
-	// 	// }{}
-	// 	var result bson.D
-
-	// 	err = cursor.Decode(&result)
-	// 	if err != nil {
-	// 		log.Fatal(err)
-	// 	}
-
-	// 	x := result[1].Value
-	// 	log.Printf("Type of x: %T\n", x)
-	// 	log.Println(x)
-	// 	doc, ok := x.(bson.D) // Assert 'x' to 'primitive.D'
-	// 	if !ok {
-	// 		log.Fatal("Couldn't type assert")
-	// 	}
-	// 	y := doc[0].Value
-	// 	log.Print(y)
-	// 	for _, elem := range result {
-	// 		key := elem.Key
-	// 		value := elem.Value
-
-	// 		fmt.Println(key, value)
-
-	// do something with result...
-	// }
-	// To get the raw bson bytes use cursor.Current
-	//raw := cur.Current
-	// do something with raw...
-	// }
-	// err = cursor.Err()
-	// require.Nil(t, err)
 
 }

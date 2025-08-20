@@ -15,6 +15,39 @@ type storer struct {
 	collection *mongo.Collection
 }
 
+// A field present in the document but not in the struct here doesn't break anything (is ignored).
+
+// What Mongo returns is odd: sub-document, and single numbers (e.g lat/long) as
+// arrays. Only [0] is ever populated.
+type MongoPositionRecord struct {
+	Document struct {
+		SerNo     float64
+		SeqNo     float64
+		Reason    int64
+		DateUTC   string
+		Latitude  []float64
+		Longitude []float64
+		Altitude  []float64
+		Speed     []float64
+		GpsUTC    []string
+		SpeedAcc  []float64
+		Heading   []float64
+		PDOP      []float64
+		PosAcc    []float64
+		GpsStatus []float64
+		Battery   []float64
+	}
+}
+
+type MongoPathPoint struct {
+	Document []struct {
+		SerNo     float64
+		SeqNo     float64
+		Latitude  []float64
+		Longitude []float64
+	}
+}
+
 func NewMongoConnection(mongoURL, collectionName string) (*mongo.Collection, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
 	defer cancel()
@@ -40,7 +73,7 @@ func NewMongoStorer(collection *mongo.Collection) storer {
 	return storer{collection: collection}
 }
 
-func (s storer) WriteCommit(ctx context.Context, jsonStr string) (string, error) {
+func (s storer) WriteTx(ctx context.Context, jsonStr string) (string, error) {
 	// Unmarshal JSON to map
 	var data map[string]interface{}
 	if err := json.Unmarshal([]byte(jsonStr), &data); err != nil {
@@ -155,7 +188,6 @@ func (s storer) GetLastNPositions(n int) ([]PathPointRecord, error) {
 	defer cursor.Close(ctx)
 
 	var result []MongoPathPoint
-	//var result []bson.M
 
 	err = cursor.All(ctx, &result)
 	if err != nil {

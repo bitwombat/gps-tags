@@ -7,33 +7,9 @@ import (
 )
 
 type Storage interface {
-	WriteCommit(context.Context, string) (string, error)
+	WriteTx(context.Context, string) (string, error)
 	GetLastPositions() ([]PositionRecord, error)
 	GetLastNPositions(int) ([]PathPointRecord, error)
-}
-
-// A field present in the document but not in the struct here doesn't break anything (is ignored).
-
-// What Mongo returns is odd: sub-document, and single numbers (e.g lat/long) as
-// arrays. Only [0] is ever populated.
-type MongoPositionRecord struct {
-	Document struct {
-		SerNo     float64
-		SeqNo     float64
-		Reason    int64
-		DateUTC   string
-		Latitude  []float64
-		Longitude []float64
-		Altitude  []float64
-		Speed     []float64
-		GpsUTC    []string
-		SpeedAcc  []float64
-		Heading   []float64
-		PDOP      []float64
-		PosAcc    []float64
-		GpsStatus []float64
-		Battery   []float64
-	}
 }
 
 type PositionRecord struct {
@@ -52,15 +28,6 @@ type PositionRecord struct {
 	PosAcc    float64
 	GpsStatus float64
 	Battery   float64
-}
-
-type MongoPathPoint struct {
-	Document []struct {
-		SerNo     float64
-		SeqNo     float64
-		Latitude  []float64
-		Longitude []float64
-	}
 }
 
 type PathPoint struct {

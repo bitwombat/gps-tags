@@ -125,7 +125,7 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 		notifyAboutZones(ctx, latestRecord, NamedZones, dogName, oneShot, notifier)
 
 		// Insert the document into storage
-		id, err := storer.WriteCommit(ctx, string(body))
+		id, err := storer.WriteTx(ctx, string(body))
 		if err != nil {
 			errorLogger.Printf("Error inserting document: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
