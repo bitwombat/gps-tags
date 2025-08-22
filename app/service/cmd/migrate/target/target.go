@@ -20,9 +20,9 @@ import (
 //
 // Reminder on the structure: A Tx has Records which have Fields
 
-type Txs []Tx
+type TagTxs []TagTx
 
-type Tx struct {
+type TagTx struct {
 	ID      string
 	ProdID  int
 	Fw      string
@@ -239,8 +239,8 @@ type TripTypeReading struct { // FType15
 	Trim int
 }
 
-// ToSQL creates a string of SQL commands for the given Tx.
-func (t Tx) ToSQL() string {
+// ToSQL creates a string of SQL commands for the given tag transmission
+func (t TagTx) ToSQL() string {
 	s := fmt.Sprintf("INSERT INTO tx (ID, ProdID, Fw, SerNo, Imei, Iccid) VALUES ('%s', %v, '%s', %v, '%s', '%s');\n", t.ID, t.ProdID, t.Fw, t.SerNo, t.Imei, t.Iccid)
 
 	for _, r := range t.Records {

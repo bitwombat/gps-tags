@@ -1,6 +1,6 @@
 package main
 
-type TagData struct {
+type TagTx struct {
 	SerNo   int      `json:"SerNo"`
 	Imei    string   `json:"IMEI"`
 	Iccid   string   `json:"ICCID"`

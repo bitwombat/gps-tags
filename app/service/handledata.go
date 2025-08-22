@@ -74,7 +74,7 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 
 		debugLogger.Println(string(body))
 
-		var tagData TagData
+		var tagData TagTx
 
 		err = json.Unmarshal(body, &tagData)
 		if err != nil {

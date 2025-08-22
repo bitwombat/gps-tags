@@ -13,32 +13,34 @@ import (
 	"github.com/bitwombat/gps-tags/cmd/migrate/target"
 )
 
-type TxsJSON []TxJSON
+// These types are for reading the MongoDB export file, which is JSON.
+// The suffix types differentiates them from the internal type names.
+type TxsMongo []TxMongo
 
-type TxJSON struct {
-	ID      ID       `json:"_id"`
-	ProdID  float64  `json:"ProdId"`
-	Fw      string   `json:"FW"`
-	Records []Record `json:"Records"`
-	SerNo   float64  `json:"SerNo"`
-	Imei    string   `json:"IMEI"`
-	Iccid   string   `json:"ICCID"`
+type TxMongo struct {
+	ID      IdMongo       `json:"_id"`
+	ProdID  float64       `json:"ProdId"`
+	Fw      string        `json:"FW"`
+	Records []RecordMongo `json:"Records"`
+	SerNo   float64       `json:"SerNo"`
+	Imei    string        `json:"IMEI"`
+	Iccid   string        `json:"ICCID"`
 }
 
-type ID struct {
+type IdMongo struct {
 	Oid string `json:"$oid"`
 }
 
-type Record struct {
-	DateUTC string  `json:"DateUTC"`
-	Fields  []Field `json:"Fields"`
-	SeqNo   float64 `json:"SeqNo"`
-	Reason  float64 `json:"Reason"`
+type RecordMongo struct {
+	DateUTC string       `json:"DateUTC"`
+	Fields  []FieldMongo `json:"Fields"`
+	SeqNo   float64      `json:"SeqNo"`
+	Reason  float64      `json:"Reason"`
 }
 
-type Field any
+type FieldMongo any
 
-type FType0 struct {
+type FType0Mongo struct {
 	Spd     float64 `json:"Spd,omitempty"`
 	SpdAcc  float64 `json:"SpdAcc,omitempty"`
 	Head    float64 `json:"Head,omitempty"`
@@ -52,32 +54,33 @@ type FType0 struct {
 	Pdop    float64 `json:"PDOP,omitempty"`
 }
 
-type FType2 struct {
+type FType2Mongo struct {
 	DIn     float64 `json:"DIn,omitempty"`
 	DOut    float64 `json:"DOut,omitempty"`
 	DevStat float64 `json:"DevStat,omitempty"`
 	FType   float64 `json:"FType"`
 }
 
-type FType6 struct {
-	AnalogueData AnalogueData `json:"AnalogueData"`
-	FType        float64      `json:"FType"`
+type FType6Mongo struct {
+	AnalogueData AnalogueDataMongo `json:"AnalogueData"`
+	FType        float64           `json:"FType"`
 }
 
-type AnalogueData struct {
+type AnalogueDataMongo struct {
 	Num1 float64 `json:"1"`
 	Num3 float64 `json:"3"`
 	Num4 float64 `json:"4"`
 	Num5 float64 `json:"5"`
 }
 
-type FType15 struct {
+type FType15Mongo struct {
 	FType float64 `json:"FType"`
 	Tt    float64 `json:"TT"`
 	Trim  float64 `json:"Trim"`
 }
 
-func (r *Record) UnmarshalJSON(p []byte) error {
+func (r *RecordMongo) UnmarshalJSON(p []byte) error {
+	// This code is necessary because the type of the Fields varies.
 	// Unmarshal the regular parts of the JSON value
 	var rawRecord struct {
 		DateUTC string            `json:"DateUTC"`
@@ -104,25 +107,25 @@ func (r *Record) UnmarshalJSON(p []byte) error {
 
 		switch obj.FType {
 		case 0.0:
-			var ft0 FType0
+			var ft0 FType0Mongo
 			if err := json.Unmarshal(rawField, &ft0); err != nil {
 				return fmt.Errorf("unmarshaling the field %v: %w", rawField, err)
 			}
 			r.Fields = append(r.Fields, ft0)
 		case 2.0:
-			var ft2 FType2
+			var ft2 FType2Mongo
 			if err := json.Unmarshal(rawField, &ft2); err != nil {
 				return fmt.Errorf("unmarshaling the field %v: %w", rawField, err)
 			}
 			r.Fields = append(r.Fields, ft2)
 		case 6.0:
-			var ft6 FType6
+			var ft6 FType6Mongo
 			if err := json.Unmarshal(rawField, &ft6); err != nil {
 				return fmt.Errorf("unmarshaling the field %v: %w", rawField, err)
 			}
 			r.Fields = append(r.Fields, ft6)
 		case 15.0:
-			var ft15 FType15
+			var ft15 FType15Mongo
 			if err := json.Unmarshal(rawField, &ft15); err != nil {
 				return fmt.Errorf("unmarshaling the field %v: %w", rawField, err)
 			}
@@ -135,12 +138,12 @@ func (r *Record) UnmarshalJSON(p []byte) error {
 	return nil
 }
 
-func (is TxsJSON) marshal() (target.Txs, error) {
-	var tts target.Txs
-	for _, i := range is {
-		tt, err := i.marshal()
+func (txs TxsMongo) convert() (target.TagTxs, error) {
+	var tts target.TagTxs
+	for _, tx := range txs {
+		tt, err := tx.convert()
 		if err != nil {
-			return nil, fmt.Errorf("marshaling tag %v: %w", i, err)
+			return nil, fmt.Errorf("converting tag %v: %w", tx, err)
 		}
 		tts = append(tts, tt)
 	}
@@ -148,8 +151,8 @@ func (is TxsJSON) marshal() (target.Txs, error) {
 	return tts, nil
 }
 
-func (i TxJSON) marshal() (target.Tx, error) {
-	var o target.Tx
+func (i TxMongo) convert() (target.TagTx, error) {
+	var o target.TagTx
 
 	o.ID = i.ID.Oid
 	o.ProdID = int(i.ProdID)
@@ -158,35 +161,35 @@ func (i TxJSON) marshal() (target.Tx, error) {
 	o.Imei = i.Imei
 	o.Iccid = i.Iccid
 	var err error
-	o.Records, err = marshalRecords(i.Records)
+	o.Records, err = convertRecords(i.Records)
 	if err != nil {
-		return target.Tx{}, fmt.Errorf("marshaling records: %w", err)
+		return target.TagTx{}, fmt.Errorf("converting records: %w", err)
 	}
 
 	return o, nil
 }
 
-func marshalRecords(i []Record) ([]target.Record, error) {
+func convertRecords(i []RecordMongo) ([]target.Record, error) {
 	var o []target.Record = make([]target.Record, len(i))
 	for k, r := range i {
 		o[k].DateUTC = r.DateUTC
 		o[k].SeqNo = int(r.SeqNo)
 		o[k].Reason = int(r.Reason)
 		var err error
-		o[k].Fields, err = marshalFields(r.Fields)
+		o[k].Fields, err = convertFields(r.Fields)
 		if err != nil {
-			return nil, fmt.Errorf("marshaling fields: %w", err)
+			return nil, fmt.Errorf("converting fields: %w", err)
 		}
 	}
 
 	return o, nil
 }
 
-func marshalFields(i []Field) ([]target.Field, error) {
+func convertFields(i []FieldMongo) ([]target.Field, error) {
 	var o []target.Field
 	for _, f := range i {
 		switch ft := f.(type) {
-		case FType0:
+		case FType0Mongo:
 			var nf target.GPSReading
 			nf.Spd = int(ft.Spd)
 			nf.SpdAcc = int(ft.SpdAcc)
@@ -200,14 +203,14 @@ func marshalFields(i []Field) ([]target.Field, error) {
 			nf.Pdop = int(ft.Pdop)
 			o = append(o, nf)
 
-		case FType2:
+		case FType2Mongo:
 			var nf target.GPIOReading
 			nf.DIn = int(ft.DIn)
 			nf.DOut = int(ft.DOut)
 			nf.DevStat = int(ft.DevStat)
 			o = append(o, nf)
 
-		case FType6:
+		case FType6Mongo:
 			var nf target.AnalogueReading
 			nf.InternalBatteryVoltage = int(ft.AnalogueData.Num1)
 			nf.Temperature = int(ft.AnalogueData.Num3)
@@ -215,7 +218,7 @@ func marshalFields(i []Field) ([]target.Field, error) {
 			nf.LoadedVoltage = int(ft.AnalogueData.Num5)
 			o = append(o, nf)
 
-		case FType15:
+		case FType15Mongo:
 			var nf target.TripTypeReading
 			nf.Tt = int(ft.Tt)
 			nf.Trim = int(ft.Trim)
@@ -254,7 +257,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	var hardwareTxs TxsJSON
+	var hardwareTxs TxsMongo
 
 	err = json.Unmarshal(text, &hardwareTxs)
 	if err != nil {
@@ -266,9 +269,9 @@ func main() {
 
 	//pretty(hardwareTxs)
 
-	txs, err := hardwareTxs.marshal()
+	txs, err := hardwareTxs.convert()
 	if err != nil {
-		fmt.Printf("marshaling data to target types: %v\n", err)
+		fmt.Printf("converting data to target types: %v\n", err)
 		os.Exit(1)
 	}
 
