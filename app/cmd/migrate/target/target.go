@@ -7,15 +7,18 @@ import (
 	"github.com/google/uuid"
 )
 
-// This package/these structs are only needed because all the JSON objects in
-// MongoDB have floats where integers should be. These structs are copies of
-// those in the main package, just with 'int' replacing 'int'.
-
-// Except... the name FType was replaced with a more descriptive name for what
-// is in those fields. Since these types are used by the application later for
-// reading/writing SQL, some changes are made for maintainability and
-// comprehension, while most fields are kept the same to reduce effort
-// re-mapping these names back to the device data.
+// From the device, a Record's Fields may be one of several types. This isn't
+// great for downstream Go code, so these types here serve to provide a sane
+// internal type for use in code.
+//
+// These types are also used for the one-off migration from MongoDB. Records
+// read from MongoDB have floats where integers should be. These types here have
+// ints in the correct places.
+//
+// Most field names are kept the same as the device to reduce mental effort if
+// mapping these back to the raw device data.
+//
+// Reminder on the structure: A Tx has Records which have Fields
 
 type Txs []Tx
 
@@ -236,6 +239,7 @@ type TripTypeReading struct { // FType15
 	Trim int
 }
 
+// ToSQL creates a string of SQL commands for the given Tx.
 func (t Tx) ToSQL() string {
 	s := fmt.Sprintf("INSERT INTO tx (ID, ProdID, Fw, SerNo, Imei, Iccid) VALUES ('%s', %v, '%s', %v, '%s', '%s');\n", t.ID, t.ProdID, t.Fw, t.SerNo, t.Imei, t.Iccid)
 
@@ -246,6 +250,7 @@ func (t Tx) ToSQL() string {
 	return s
 }
 
+// toSQL turns a Record into SQL commands, iterating through its Fields.
 func (r Record) toSQL(txID string) string {
 	// get new GUID from stdlib
 	//uuid.SetRand(rand.New(rand.NewSource(1)))  // Make it deterministic for testing (saving this line for later)
@@ -258,19 +263,22 @@ func (r Record) toSQL(txID string) string {
 	return s
 }
 
-// TODO: Do something smarter with the UTC date
+// toSQL turns a GPSReading field into SQL commands
 func (g GPSReading) toSQL(recordID string) string {
 	return fmt.Sprintf("INSERT INTO gpsReading (RecordID, Spd, SpdAcc, Head, GpsStat, GpsUTC, Lat, Lng, Alt, PosAcc, Pdop) VALUES ('%s', %v, %v, %v, %v, '%s', %.9f, %.9f, %v, %v, %v);\n", recordID, g.Spd, g.SpdAcc, g.Head, g.GpsStat, g.GpsUTC, g.Lat, g.Long, g.Alt, g.PosAcc, g.Pdop)
 }
 
+// toSQL turns a GPIOReading field into SQL commands
 func (g GPIOReading) toSQL(recordID string) string {
 	return fmt.Sprintf("INSERT INTO gpioReading (RecordID, DIn, DOut, DevStat) VALUES ('%s', %v, %v, %v);\n", recordID, g.DIn, g.DOut, g.DevStat)
 }
 
+// toSQL turns an AnalogueReading field into SQL commands
 func (a AnalogueReading) toSQL(recordID string) string {
 	return fmt.Sprintf("INSERT INTO analogueReading (RecordID, InternalBatteryVoltage, Temperature, LastGSMCQ, LoadedVoltage) VALUES ('%s', %v, %v, %v, %v);\n", recordID, a.InternalBatteryVoltage, a.Temperature, a.LastGSMCQ, a.LoadedVoltage)
 }
 
+// toSQL turns an TripTypeReading field into SQL commands
 func (t TripTypeReading) toSQL(recordID string) string {
 	return fmt.Sprintf("INSERT INTO tripTypeReading (RecordID, Tt, Trim) VALUES ('%s', %v, %v);\n", recordID, t.Tt, t.Trim)
 }
