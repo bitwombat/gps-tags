@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	// "github.com/bitwombat/gps-tags-cmd/target"
-	"github.com/bitwombat/gps-tags/cmd/migrate/target"
+	"github.com/bitwombat/gps-tags/types"
 )
 
 // These types are for reading the MongoDB export file, which is JSON.
@@ -138,8 +138,8 @@ func (r *RecordMongo) UnmarshalJSON(p []byte) error {
 	return nil
 }
 
-func (txs TxsMongo) convert() (target.TagTxs, error) {
-	var tts target.TagTxs
+func (txs TxsMongo) convert() (types.TagTxs, error) {
+	var tts types.TagTxs
 	for _, tx := range txs {
 		tt, err := tx.convert()
 		if err != nil {
@@ -151,8 +151,8 @@ func (txs TxsMongo) convert() (target.TagTxs, error) {
 	return tts, nil
 }
 
-func (i TxMongo) convert() (target.TagTx, error) {
-	var o target.TagTx
+func (i TxMongo) convert() (types.TagTx, error) {
+	var o types.TagTx
 
 	o.ID = i.ID.Oid
 	o.ProdID = int(i.ProdID)
@@ -163,14 +163,14 @@ func (i TxMongo) convert() (target.TagTx, error) {
 	var err error
 	o.Records, err = convertRecords(i.Records)
 	if err != nil {
-		return target.TagTx{}, fmt.Errorf("converting records: %w", err)
+		return types.TagTx{}, fmt.Errorf("converting records: %w", err)
 	}
 
 	return o, nil
 }
 
-func convertRecords(i []RecordMongo) ([]target.Record, error) {
-	var o []target.Record = make([]target.Record, len(i))
+func convertRecords(i []RecordMongo) ([]types.Record, error) {
+	var o []types.Record = make([]types.Record, len(i))
 	for k, r := range i {
 		o[k].DateUTC = r.DateUTC
 		o[k].SeqNo = int(r.SeqNo)
@@ -185,12 +185,12 @@ func convertRecords(i []RecordMongo) ([]target.Record, error) {
 	return o, nil
 }
 
-func convertFields(i []FieldMongo) ([]target.Field, error) {
-	var o []target.Field
+func convertFields(i []FieldMongo) ([]types.Field, error) {
+	var o []types.Field
 	for _, f := range i {
 		switch ft := f.(type) {
 		case FType0Mongo:
-			var nf target.GPSReading
+			var nf types.GPSReading
 			nf.Spd = int(ft.Spd)
 			nf.SpdAcc = int(ft.SpdAcc)
 			nf.Head = int(ft.Head)
@@ -204,14 +204,14 @@ func convertFields(i []FieldMongo) ([]target.Field, error) {
 			o = append(o, nf)
 
 		case FType2Mongo:
-			var nf target.GPIOReading
+			var nf types.GPIOReading
 			nf.DIn = int(ft.DIn)
 			nf.DOut = int(ft.DOut)
 			nf.DevStat = int(ft.DevStat)
 			o = append(o, nf)
 
 		case FType6Mongo:
-			var nf target.AnalogueReading
+			var nf types.AnalogueReading
 			nf.InternalBatteryVoltage = int(ft.AnalogueData.Num1)
 			nf.Temperature = int(ft.AnalogueData.Num3)
 			nf.LastGSMCQ = int(ft.AnalogueData.Num4)
@@ -219,7 +219,7 @@ func convertFields(i []FieldMongo) ([]target.Field, error) {
 			o = append(o, nf)
 
 		case FType15Mongo:
-			var nf target.TripTypeReading
+			var nf types.TripTypeReading
 			nf.Tt = int(ft.Tt)
 			nf.Trim = int(ft.Trim)
 			o = append(o, nf)

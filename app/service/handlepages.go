@@ -7,6 +7,7 @@ import (
 	"github.com/bitwombat/gps-tags/device"
 	"github.com/bitwombat/gps-tags/storage"
 	"github.com/bitwombat/gps-tags/substitute"
+	"github.com/bitwombat/gps-tags/types"
 )
 
 func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
@@ -22,15 +23,12 @@ func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *h
 			return
 		}
 
-		//for _, tag := range tags {
-		//name := idToName[tag.SerNo]
-
 		subs := make(map[string]string)
 
 		for _, tag := range pathpoints {
 			// Start the JavaScript array
 			pathpointStr := "["
-			name := idToName[tag.SerNo]
+			name := device.IdToName[tag.SerNo]
 			for i, pathpoint := range tag.PathPoints {
 				if i == 0 { // First point is most recent. Use this for the marker.
 					subs[name+"Lat"] = fmt.Sprintf("%.7f", pathpoint.Latitude)
@@ -81,16 +79,11 @@ func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 		subs := make(map[string]string)
 
 		for _, tag := range tags {
-			name := idToName[tag.SerNo]
-			reason, ok := device.ReasonToText[tag.Reason]
-			if !ok {
-				errorLogger.Printf("Error: Unknown reason code: %v\n", tag.Reason)
-				reason = "Unknown reason"
-			}
+			name := device.IdToName[tag.SerNo]
 			subs[name+"Lat"] = fmt.Sprintf("%.7f", tag.Latitude)
 			subs[name+"Lng"] = fmt.Sprintf("%.7f", tag.Longitude)
 			subs[name+"AccuracyRadius"] = fmt.Sprintf("%.7f", tag.PosAcc)
-			subs[name+"Note"] = "Last GPS: " + timeAgoAsText(tag.GpsUTC) + " ago<br>Last Checkin: " + timeAgoAsText(tag.DateUTC) + " ago<br>Reason: " + reason + "<br>Battery: " + fmt.Sprintf("%.2f", tag.Battery/1000) + "V"
+			subs[name+"Note"] = "Last GPS: " + timeAgoAsText(tag.GpsUTC) + " ago<br>Last Checkin: " + timeAgoAsText(tag.DateUTC) + " ago<br>Reason: " + types.ReasonCode(tag.Reason).String() + "<br>Battery: " + fmt.Sprintf("%.2f", tag.Battery/1000) + "V"
 			subs[name+"Colour"] = timeAgoInColour(tag.GpsUTC)
 		}
 

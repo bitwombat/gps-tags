@@ -1,6 +1,6 @@
 package device
 
-type Yabby3Commit struct {
+type TagTx struct {
 	SerNo   int      `json:"SerNo"`
 	Imei    string   `json:"IMEI"`
 	Iccid   string   `json:"ICCID"`
@@ -14,13 +14,6 @@ type Record struct {
 	Reason  int     `json:"Reason"`
 	DateUTC string  `json:"DateUTC"`
 	Fields  []Field `json:"Fields"`
-}
-
-type AnalogueData struct {
-	Num1 int `json:"1"`
-	Num3 int `json:"3"`
-	Num4 int `json:"4"`
-	Num5 int `json:"5"`
 }
 
 type Field struct {
@@ -41,10 +34,16 @@ type Field struct {
 	AnalogueData AnalogueData `json:"AnalogueData,omitempty"`
 }
 
-var ReasonToText = map[int64]string{
-	1:  "Start of trip",
-	2:  "End of trip",
-	3:  "Elapsed time",
-	6:  "Distance travelled",
-	11: "Heartbeat",
+type AnalogueData struct {
+	Num1 int `json:"1"`
+	Num3 int `json:"3"`
+	Num4 int `json:"4"`
+	Num5 int `json:"5"`
+}
+
+const AnalogueDataFType = 6
+
+var IdToName = map[float64]string{
+	810095: "rueger",
+	810243: "charlie",
 }

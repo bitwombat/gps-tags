@@ -1,5 +1,5 @@
 //go:generate stringer -type=ReasonCode
-package target
+package types
 
 import (
 	"fmt"
@@ -7,6 +7,16 @@ import (
 	"github.com/google/uuid"
 )
 
+// These types are the internal representation of GPS tag data. It's based on
+// the Yabby3 device (the first/only device supported so far).
+//
+// It only exists in this dir so that it can be a package and thus pulled in by
+// the cmd/migrate script. Since that script is basically a one-off, perhaps
+// delete it in the future and move this to live with main.go.
+//
+// It doesn't live in device/ because it's device independent, and its type
+// names would collide with the ones in yabby3.go.
+//
 // From the device, a Record's Fields may be one of several types. This isn't
 // great for downstream Go code, so these types here serve to provide a sane
 // internal type for use in code.
@@ -97,6 +107,7 @@ const (
 const MinReasonCode int = 1
 const MaxReasonCode int = 50
 
+// TODO: Is this needed, or can you just typecast an int to ReasonCode
 var ReasonMap = map[int]ReasonCode{
 	1:  StartOfTrip,
 	2:  EndOfTrip,

@@ -14,6 +14,7 @@ import (
 	oshotpkg "github.com/bitwombat/gps-tags/oneshot"
 	"github.com/bitwombat/gps-tags/poly"
 	"github.com/bitwombat/gps-tags/storage"
+	"github.com/bitwombat/gps-tags/types"
 	zonespkg "github.com/bitwombat/gps-tags/zones"
 )
 
@@ -74,7 +75,7 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 
 		debugLogger.Println(string(body))
 
-		var tagData TagTx
+		var tagData device.TagTx
 
 		err = json.Unmarshal(body, &tagData)
 		if err != nil {
@@ -83,13 +84,13 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 			return
 		}
 
-		dogName, ok := idToName[float64(tagData.SerNo)]
+		dogName, ok := device.IdToName[float64(tagData.SerNo)]
 		if !ok {
 			errorLogger.Printf("Unknown tag number: %v", tagData.SerNo)
 		}
 		dogName = strings.ToUpper(dogName) // Just looks better and stands out in notifications
 
-		var latestRecord Record
+		var latestRecord device.Record
 
 		// Process the records
 		for _, r := range tagData.Records {
@@ -104,13 +105,7 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 
 			thisZoneText = zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: gpsField.Lat, Longitude: gpsField.Long})
 
-			reason, ok := device.ReasonToText[int64(r.Reason)]
-			if !ok {
-				errorLogger.Printf("Error: Unknown reason code: %v\n", r.Reason)
-				reason = "Unknown reason"
-			}
-
-			infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC), reason, gpsField.GpsUTC, timeAgoAsText(gpsField.GpsUTC), gpsField.Lat, gpsField.Long, thisZoneText)
+			infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC), types.ReasonCode(r.Reason), gpsField.GpsUTC, timeAgoAsText(gpsField.GpsUTC), gpsField.Lat, gpsField.Long, thisZoneText)
 
 		}
 
@@ -138,11 +133,11 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 	}
 }
 
-func notifyAboutBattery(ctx context.Context, latestRecord Record, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
+func notifyAboutBattery(ctx context.Context, latestRecord device.Record, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
 	var batteryVoltage float64
 
 	for _, f := range latestRecord.Fields {
-		if f.FType == AnalogueDataFType {
+		if f.FType == device.AnalogueDataFType {
 			batteryVoltage = float64(f.AnalogueData.Num1) / 1000
 		}
 	}
@@ -171,7 +166,7 @@ func notifyAboutBattery(ctx context.Context, latestRecord Record, dogName string
 	}
 }
 
-func notifyAboutZones(ctx context.Context, latestRecord Record, NamedZones []zonespkg.Zone, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
+func notifyAboutZones(ctx context.Context, latestRecord device.Record, NamedZones []zonespkg.Zone, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
 	latestGPSRecord := latestRecord.Fields[0]
 
 	var thisZoneText string

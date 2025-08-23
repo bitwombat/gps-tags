@@ -325,7 +325,7 @@ func TestMongoFind(t *testing.T) {
 	require.Nil(t, err)
 	defer cur.Close(context.Background())
 
-	var results []device.Yabby3Commit
+	var results []device.TagTx
 	err = cur.All(context.Background(), &results)
 	require.Nil(t, err)
 	require.Equal(t, 810095, results[0].SerNo)
