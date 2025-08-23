@@ -9,7 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/bitwombat/gps-tags-cmd/target"
+	// "github.com/bitwombat/gps-tags-cmd/target"
+	"github.com/bitwombat/gps-tags/cmd/migrate/target"
 )
 
 type TxsJSON []TxJSON
