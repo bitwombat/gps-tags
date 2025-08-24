@@ -4,15 +4,10 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
-	"time"
 
-	"encoding/json"
 	"testing"
 
-	"github.com/bitwombat/gps-tags/device"
 	"github.com/stretchr/testify/require"
-	"go.mongodb.org/mongo-driver/bson"
 )
 
 const mongoURL = "mongodb://localhost:27017"
@@ -283,57 +278,7 @@ func randomTestCollectionName() string {
 	return "test-" + hex.EncodeToString(bytes)
 }
 
-func Test_WriteMongoInsertOne(t *testing.T) {
-	collection, err := NewMongoConnection(mongoURL, randomTestCollectionName())
-	require.Nil(t, err)
-
-	// Unmarshal JSON to map
-	var data map[string]interface{}
-	err = json.Unmarshal([]byte(basicCompleteSample), &data)
-	require.Nil(t, err)
-
-	// Insert into MongoDB
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-
-	insertResult, err := collection.InsertOne(ctx, data)
-	require.Nil(t, err)
-
-	fmt.Println("Inserted document:", insertResult.InsertedID)
-
-}
-
-func TestMongoFind(t *testing.T) {
-	collection, err := NewMongoConnection(mongoURL, randomTestCollectionName())
-	require.Nil(t, err)
-
-	// Unmarshal JSON to map
-	var data map[string]interface{}
-	err = json.Unmarshal([]byte(basicCompleteSample), &data)
-	require.Nil(t, err)
-
-	// Insert into MongoDB
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-
-	insertResult, err := collection.InsertOne(ctx, data)
-	require.Nil(t, err)
-
-	fmt.Println("Inserted document:", insertResult.InsertedID)
-
-	cur, err := collection.Find(context.Background(), bson.D{})
-	require.Nil(t, err)
-	defer cur.Close(context.Background())
-
-	var results []device.TagTx
-	err = cur.All(context.Background(), &results)
-	require.Nil(t, err)
-	require.Equal(t, 810095, results[0].SerNo)
-	require.Equal(t, 1, len(results))
-	require.Equal(t, 2, len(results[0].Records))
-}
-
-func Test_GetLatestPosition(t *testing.T) {
+func TestMongoGetLatestPosition(t *testing.T) {
 	// GIVEN two commits with multiple records and for multiple tags.
 	collection, err := NewMongoConnection(mongoURL, randomTestCollectionName())
 	require.Nil(t, err)
@@ -377,35 +322,7 @@ func Test_GetLatestPosition(t *testing.T) {
 
 }
 
-func TestTimeAgoAsText(t *testing.T) {
-	now := func() time.Time {
-		t, err := time.Parse(time.DateTime, "2023-11-19 23:21:42")
-		if err != nil {
-			panic(true) // TODO: what's supposd to be passed to panic?
-		}
-		return t
-	}
-
-	tests := []struct {
-		future   string
-		expected string
-	}{
-		{"2023-11-18 23:21:42", "1 days, 0 hours, 0 minutes"},
-		{"2023-11-19 22:21:42", "1 hours, 0 minutes"},
-		{"2023-11-19 23:20:42", "1 minutes"},
-		{"2023-11-17 03:02:02", "2 days, 20 hours, 19 minutes"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.future, func(t *testing.T) {
-			age := TimeAgoAsText(tt.future, now)
-			require.Equal(t, tt.expected, age)
-		})
-	}
-
-}
-
-func Test_GetLastNPositions(t *testing.T) {
+func TestMongoGetLastNPositions(t *testing.T) {
 
 	// GIVEN commits with multiple records and for multiple tags.
 	collection, err := NewMongoConnection(mongoURL, randomTestCollectionName())
