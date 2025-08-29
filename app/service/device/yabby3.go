@@ -6,6 +6,16 @@ import (
 )
 
 // TODO: do these field names need to be exported?
+
+// These types are a mix of JSON decoding types (DAOs?) and models. The
+// difference between the two (besides the JSON tags) is that I flatten the
+// []Fields from the device, with their optional members, into pointers to types
+// (thus optional). This works better with Go than having to have switch.(type)
+// statements in multiple places. Don't let the device's design leak into the
+// business logic.
+// I can only get away with this because of the irregular JSON decoding that
+// gives me a place to insert logic and make the Reading* elements as I want
+// them (pointers).
 type TagTx struct {
 	SerNo   int      `json:"SerNo"`
 	IMEI    string   `json:"IMEI"`
@@ -16,13 +26,14 @@ type TagTx struct {
 }
 
 type Record struct {
-	SeqNo   int     `json:"SeqNo"`
-	Reason  int     `json:"Reason"`
-	DateUTC string  `json:"DateUTC"`
-	Fields  []Field `json:"Fields"`
+	SeqNo           int    `json:"SeqNo"`
+	Reason          int    `json:"Reason"`
+	DateUTC         string `json:"DateUTC"`
+	GPSReading      *GPSReading
+	GPIOReading     *GPIOReading
+	AnalogueReading *AnalogueReading
+	TripTypeReading *TripTypeReading
 }
-
-type Field any
 
 type GPSReading struct { // FType0
 	Spd     int     `json:"Spd"`
@@ -91,29 +102,29 @@ func (r *Record) UnmarshalJSON(p []byte) error {
 
 		switch fType.FType {
 		case 0:
-			var ft0 GPSReading
-			if err := json.Unmarshal(rawField, &ft0); err != nil {
+			var f *GPSReading
+			if err := json.Unmarshal(rawField, &f); err != nil {
 				return fmt.Errorf("unmarshaling the field %v: %w", rawField, err)
 			}
-			r.Fields = append(r.Fields, ft0)
+			r.GPSReading = f
 		case 2:
-			var ft2 GPIOReading
-			if err := json.Unmarshal(rawField, &ft2); err != nil {
+			var f *GPIOReading
+			if err := json.Unmarshal(rawField, &f); err != nil {
 				return fmt.Errorf("unmarshaling the field %v: %w", rawField, err)
 			}
-			r.Fields = append(r.Fields, ft2)
+			r.GPIOReading = f
 		case 6:
-			var ft6 AnalogueReading
-			if err := json.Unmarshal(rawField, &ft6); err != nil {
+			var f *AnalogueReading
+			if err := json.Unmarshal(rawField, &f); err != nil {
 				return fmt.Errorf("unmarshaling the field %v: %w", rawField, err)
 			}
-			r.Fields = append(r.Fields, ft6)
+			r.AnalogueReading = f
 		case 15:
-			var ft15 TripTypeReading
-			if err := json.Unmarshal(rawField, &ft15); err != nil {
+			var f *TripTypeReading
+			if err := json.Unmarshal(rawField, &f); err != nil {
 				return fmt.Errorf("unmarshaling the field %v: %w", rawField, err)
 			}
-			r.Fields = append(r.Fields, ft15)
+			r.TripTypeReading = f
 		default:
 			return fmt.Errorf("unrecognised FType: %v", fType.FType)
 		}
