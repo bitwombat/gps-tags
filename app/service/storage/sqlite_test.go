@@ -1,5 +1,3 @@
-//go:build DELETEME
-
 package storage
 
 import (
