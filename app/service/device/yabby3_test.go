@@ -22,6 +22,7 @@ func TestUnmarshals(t *testing.T) {
 	require.NotNil(t, tx.Records[0].GPSReading, "GPSReading defined in record [0]")
 	require.NotNil(t, tx.Records[0].GPIOReading, "GPIOReading defined in record [0]")
 	require.NotNil(t, tx.Records[0].AnalogueReading, "AnalogueReading defined in record [0]")
+	require.Nil(t, tx.Records[0].TripTypeReading, "TripTypeReading not defined in record [0]")
 	require.NotNil(t, tx.Records[1].GPSReading, "GPSReading defined in record [1]")
 	require.NotNil(t, tx.Records[1].GPIOReading, "GPIOReading defined in record [1]")
 	require.NotNil(t, tx.Records[1].AnalogueReading, "AnalogueReading defined in record [1]")

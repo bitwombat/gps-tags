@@ -13,21 +13,18 @@ type Storage interface {
 }
 
 type PositionRecord struct {
-	SerNo     float64
-	SeqNo     float64
-	Reason    int64
+	SerNo     int32
+	SeqNo     int32
+	Reason    int32
 	Latitude  float64
 	Longitude float64
-	Altitude  float64
-	Speed     float64
+	Altitude  int32
+	Speed     int32
 	DateUTC   string
 	GpsUTC    string
-	SpeedAcc  float64
-	Heading   float64
-	PDOP      float64
-	PosAcc    float64
-	GpsStatus float64
-	Battery   float64
+	PosAcc    int32
+	GpsStatus int32
+	Battery   int32
 }
 
 type PathPoint struct {

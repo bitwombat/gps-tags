@@ -126,4 +126,4 @@ Follow instructions to install mongodb-database-tools from above, then:
 12. Notify when the collar hasn't GPS located in X hours.
 13. Report furthest distance travelled.
 14. Time window & slider for paths.
-
+15. Setup "pragma optimize;" and "pragma vacuum;" to run daily on sqlite3.

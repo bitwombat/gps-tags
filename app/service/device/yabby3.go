@@ -17,7 +17,12 @@ import (
 // I can only get away with this because of the irregular JSON decoding that
 // gives me a place to insert logic and make the Reading* elements as I want
 // them (pointers).
+// One place where this falls down is in the AnalogueReading, where voltages are
+// Num1..4, instead of InternalBatteryVoltage, Temperature, LastGSMCQ and
+// LoadedVoltage.
+
 type TagTx struct {
+	ID      string
 	SerNo   int      `json:"SerNo"`
 	IMEI    string   `json:"IMEI"`
 	ICCID   string   `json:"ICCID"`
@@ -27,6 +32,7 @@ type TagTx struct {
 }
 
 type Record struct {
+	ID              string
 	SeqNo           int    `json:"SeqNo"`
 	Reason          int    `json:"Reason"`
 	DateUTC         string `json:"DateUTC"`
