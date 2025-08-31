@@ -193,7 +193,12 @@ func TestGetLatestPosition(t *testing.T) {
 	err = migrate.Up(context.Background(), storer.db, migrations)
 	require.Nil(t, err)
 
-	_, err = storer.WriteTx(context.Background(), []device.TagTx{sampleTx1, sampleTx2})
+	txID, err := storer.WriteTx(context.Background(), sampleTx1)
+	require.Nil(t, err)
+	require.NotEmpty(t, txID)
+	txID, err = storer.WriteTx(context.Background(), sampleTx2)
+	require.Nil(t, err)
+	require.NotEmpty(t, txID)
 
 	// WHEN we get the latest position for all tags.
 	result, err := storer.GetLastPositions(context.Background())
@@ -211,6 +216,7 @@ func TestGetLatestPosition(t *testing.T) {
 			require.Equal(t, int32(5), r.Speed)
 			require.Equal(t, int32(10), r.PosAcc)
 			require.Equal(t, int32(7), r.GpsStatus)
+			require.Equal(t, int32(4641), r.Battery)
 			require.Equal(t, "2023-10-21 23:17:40", r.GpsUTC)
 		case 810243:
 			require.Equal(t, int32(7497), r.SeqNo)

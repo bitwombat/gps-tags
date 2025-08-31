@@ -35,14 +35,14 @@ import (
 // https://sqlite.org/wal.html#concurrency
 // https://www.reddit.com/r/golang/comments/16xswxd/concurrency_when_writing_data_into_sqlite/
 
-type sqlitestorer struct {
+type sqliteStorer struct {
 	db *sql.DB
 }
 
 // This exists only to take advantage of the sql.Null type, which I'm using
-// mostly out of caution and superstition. Having NOT NULL everywhere in the
-// database would be the smart way of enforcing data integrity. This is
-// mostly an invariant.
+// mostly out of caution rather than understanding a real threat of error.
+// Having NOT NULL everywhere in the database would be the smart way of
+// enforcing data integrity. This is mostly an invariant.
 // TODO: Make sure schema has NOT NULL for everything.
 type PositionRecordDAO struct {
 	SerNo     sql.NullInt32
@@ -59,67 +59,64 @@ type PositionRecordDAO struct {
 	Battery   sql.NullInt32 // TODO: Probably call this InternalBatteryVoltage, to match the db, or at least BatteryVoltage. Also, figure out if the LoadedVoltage field is more useful.
 }
 
-func NewSQLiteStorer(dataSourceName string) (sqlitestorer, error) {
+func NewSQLiteStorer(dataSourceName string) (sqliteStorer, error) {
 	db, err := sql.Open("sqlite", dataSourceName)
 	if err != nil {
-		return sqlitestorer{}, fmt.Errorf("opening database: %w", err)
+		return sqliteStorer{}, fmt.Errorf("opening database: %w", err)
 	}
-	var ss sqlitestorer
+	var ss sqliteStorer
 	ss.db = db
 
 	return ss, nil
 }
 
 // TODO: make sure to set PRAGMA foreign_keys = true for every connection.
-func (s sqlitestorer) WriteTx(ctx context.Context, txs []device.TagTx) (string, error) {
-	// get new GUID from stdlib
-	// uuid.SetRand(rand.New(rand.NewSource(1)))  // Make it deterministic for testing (saving this line for later)
+func (s sqliteStorer) WriteTx(ctx context.Context, tx device.TagTx) (string, error) {
+	// uuid.SetRand(rand.New(rand.NewSource(1)))  // TODO: Make it deterministic for testing (saving this line for later)
+	txID := uuid.NewString() // TODO: Maybe create this when unmarshaling? The field's there.
 
-	for _, tx := range txs {
-		txID := uuid.NewString() // TODO: Maybe create this when unmarshaling? The field's there.
+	// TODO: use fmt.Sprintf everywhere, or turn this into ? $1
+	_, err := s.db.ExecContext(ctx, fmt.Sprintf("INSERT INTO tx (ID, ProdID, Fw, SerNo, IMEI, ICCID) VALUES ('%s', %v, '%s', %v, '%s', '%s');", txID, tx.ProdID, tx.Fw, tx.SerNo, tx.IMEI, tx.ICCID)) // TODO: By not using query parameters, ? or $1, this code is subject to injection attack by the device.
+	if err != nil {
+		return "", err
+	}
 
-		_, err := s.db.ExecContext(ctx, fmt.Sprintf("INSERT INTO tx (ID, ProdID, Fw, SerNo, IMEI, ICCID) VALUES ('%s', %v, '%s', %v, '%s', '%s');", txID, tx.ProdID, tx.Fw, tx.SerNo, tx.IMEI, tx.ICCID)) // TODO: By not using query parameters, ? or $1, this code is subject to injection attack by the device.
+	for _, r := range tx.Records {
+		rId, err := insertRecord(r, ctx, s.db, txID)
 		if err != nil {
 			return "", err
 		}
-
-		for _, r := range tx.Records {
-			rId, err := insertRecord(r, ctx, s.db, txID)
+		if r.GPSReading != nil {
+			err := insertGPSReading(*r.GPSReading, ctx, s.db, rId)
 			if err != nil {
 				return "", err
 			}
-			if r.GPSReading != nil {
-				err := insertGPSReading(*r.GPSReading, ctx, s.db, rId)
-				if err != nil {
-					return "", err
-				}
+		}
+		if r.GPIOReading != nil {
+			err := insertGPIOReading(*r.GPIOReading, ctx, s.db, rId)
+			if err != nil {
+				return "", err
 			}
-			if r.GPIOReading != nil {
-				err := insertGPIOReading(*r.GPIOReading, ctx, s.db, rId)
-				if err != nil {
-					return "", err
-				}
+		}
+		if r.AnalogueReading != nil {
+			err := insertAnalogueReading(*r.AnalogueReading, ctx, s.db, rId)
+			if err != nil {
+				return "", err
 			}
-			if r.AnalogueReading != nil {
-				err := insertAnalogueReading(*r.AnalogueReading, ctx, s.db, rId)
-				if err != nil {
-					return "", err
-				}
-			}
-			if r.TripTypeReading != nil {
-				err := insertTripTypeReading(*r.TripTypeReading, ctx, s.db, rId)
-				if err != nil {
-					return "", err
-				}
+		}
+		if r.TripTypeReading != nil {
+			err := insertTripTypeReading(*r.TripTypeReading, ctx, s.db, rId)
+			if err != nil {
+				return "", err
 			}
 		}
 	}
-	return "", nil // TODO: What string is this supposed to return?
+	return txID, nil
 }
 
 func insertRecord(r device.Record, ctx context.Context, db *sql.DB, txID string) (string, error) {
-	// get new GUID from stdlib
-	// uuid.SetRand(rand.New(rand.NewSource(1)))  // Make it deterministic for testing (saving this line for later)
+	// uuid.SetRand(rand.New(rand.NewSource(1)))  // TODO: Make it deterministic
+	// for testing? (saving this line for later)
 	rID := uuid.NewString()
 	_, err := db.ExecContext(ctx, `INSERT INTO record (ID, TxID, DeviceDateTime, SeqNo, Reason) VALUES (?, ?, ?, ?, ?);`, rID, txID, r.DateUTC, r.SeqNo, r.Reason)
 
@@ -148,7 +145,7 @@ func insertTripTypeReading(t device.TripTypeReading, ctx context.Context, db *sq
 	return err
 }
 
-func (s sqlitestorer) GetLastPositions(ctx context.Context) ([]PositionRecord, error) {
+func (s sqliteStorer) GetLastPositions(ctx context.Context) ([]PositionRecord, error) {
 	query := `
 WITH RankedRecords AS (
     SELECT
@@ -246,6 +243,9 @@ LIMIT 5;
 	}
 
 	err = rows.Err()
+	if err != nil {
+		return []PositionRecord{}, fmt.Errorf("error after scanning rows: %w", err)
+	}
 
 	return prs, nil
 }
@@ -267,4 +267,4 @@ func isValid(pr PositionRecordDAO) bool {
 		pr.Battery.Valid)
 }
 
-func (s sqlitestorer) GetLastNPositions(int) ([]PathPointRecord, error) { return nil, nil }
+func (s sqliteStorer) GetLastNPositions(int) ([]PathPointRecord, error) { return nil, nil }
