@@ -17,3 +17,5 @@ app/service/cmd/migrate/dogs_pre_20250711.json
 app/service/cmd/migrate/dogs_pre_20250711.sql
 app/service/cmd/migrate/dogtags.db
 app/service/cmd/migrate/golden.txt
+app/service/dogtags.db
+app/service/storage/example_sql.go
