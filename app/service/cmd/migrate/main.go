@@ -2,6 +2,8 @@ package main
 
 import (
 	"bufio"
+	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -11,7 +13,11 @@ import (
 
 	// "github.com/bitwombat/gps-tags-cmd/target"
 	"github.com/bitwombat/gps-tags/types"
+	"maragu.dev/migrate"
+	_ "modernc.org/sqlite"
 )
+
+const dataSourceName = "dogtags.db"
 
 // These types are for reading the MongoDB export file, which is JSON.
 // The suffix types differentiates them from the internal type names.
@@ -227,10 +233,10 @@ func convertFields(i []FieldMongo) ([]types.Field, error) {
 		default:
 			return nil, errors.New("unknown field type")
 		}
-
 	}
 	return o, nil
 }
+
 func pretty(o any) {
 	var b []byte
 	b, _ = json.MarshalIndent(o, "", "  ")
@@ -267,7 +273,7 @@ func main() {
 
 	fmt.Printf("Read %v transmissions from JSON.\n", len(hardwareTxs))
 
-	//pretty(hardwareTxs)
+	// pretty(hardwareTxs)
 
 	txs, err := hardwareTxs.convert()
 	if err != nil {
@@ -276,7 +282,7 @@ func main() {
 	}
 
 	fmt.Printf("Converted %v JSON transmissions to own structure.\n", len(txs))
-	//pretty(txs)
+	// pretty(txs)
 
 	outfilename := strings.TrimSuffix(filepath.Base(filename), ".json") + ".sql"
 
@@ -303,4 +309,17 @@ func main() {
 	}
 
 	w.Flush()
+
+	// Make the database while we're here.
+	db, err := sql.Open("sqlite", dataSourceName)
+	if err != nil {
+		fmt.Println("error opening database: ", err)
+		os.Exit(1)
+	}
+	migrations := os.DirFS("../../migrations")
+	err = migrate.Up(context.Background(), db, migrations)
+	if err != nil {
+		fmt.Println("error migrating: ", err)
+		os.Exit(1)
+	}
 }
