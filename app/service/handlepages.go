@@ -36,7 +36,7 @@ func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *h
 				}
 				pathpointStr += fmt.Sprintf("{lat: %.7f, lng: %.7f},", pathpoint.Latitude, pathpoint.Longitude)
 			}
-			// Take the trailing comma off.
+			// Take the trailing comma off
 			pathpointStr = pathpointStr[:len(pathpointStr)-1]
 			// Close out the array
 			pathpointStr += "]"
@@ -59,7 +59,7 @@ func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *h
 			return
 		}
 
-		// Don't need this - it's taken care of by w.Write:  w.WriteHeader(http.StatusOK)
+		// Don't need w.WriteHeader(http.StatusOK) - it's taken care of by w.Write
 	}
 }
 
