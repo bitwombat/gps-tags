@@ -84,7 +84,7 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 			return
 		}
 
-		dogName, ok := device.IdToName[float64(tagData.SerNo)]
+		dogName, ok := device.SerNoToName[float64(tagData.SerNo)]
 		if !ok {
 			errorLogger.Printf("Unknown tag number: %v", tagData.SerNo)
 		}
