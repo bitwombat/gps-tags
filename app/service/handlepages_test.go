@@ -11,7 +11,7 @@ import (
 )
 
 func TestLastPositionPage(t *testing.T) {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprintln(w, "Hello, client")
 	}))
 	defer ts.Close()
@@ -23,8 +23,6 @@ func TestLastPositionPage(t *testing.T) {
 	greeting, err := io.ReadAll(res.Body)
 	res.Body.Close()
 	require.Nil(t, err)
-
-	fmt.Printf("%s", greeting)
 
 	require.Equal(t, "Hello, client\n", string(greeting))
 }

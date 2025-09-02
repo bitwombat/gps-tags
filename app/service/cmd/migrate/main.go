@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	// "github.com/bitwombat/gps-tags-cmd/target"
-	"github.com/bitwombat/gps-tags/types"
+	// "github.com/bitwombat/gps-tags-cmd/target".
+	"github.com/bitwombat/gps-tags/model"
 	"maragu.dev/migrate"
 	_ "modernc.org/sqlite"
 )
@@ -24,7 +24,7 @@ const dataSourceName = "dogtags.db"
 type TxsMongo []TxMongo
 
 type TxMongo struct {
-	ID      IdMongo       `json:"_id"`
+	ID      IDMongo       `json:"_id"`
 	ProdID  float64       `json:"ProdId"`
 	Fw      string        `json:"FW"`
 	Records []RecordMongo `json:"Records"`
@@ -33,7 +33,7 @@ type TxMongo struct {
 	Iccid   string        `json:"ICCID"`
 }
 
-type IdMongo struct {
+type IDMongo struct {
 	Oid string `json:"$oid"`
 }
 
@@ -144,8 +144,8 @@ func (r *RecordMongo) UnmarshalJSON(p []byte) error {
 	return nil
 }
 
-func (txs TxsMongo) convert() (types.TagTxs, error) {
-	var tts types.TagTxs
+func (txs TxsMongo) convert() (model.TagTxs, error) {
+	var tts model.TagTxs
 	for _, tx := range txs {
 		tt, err := tx.convert()
 		if err != nil {
@@ -157,8 +157,8 @@ func (txs TxsMongo) convert() (types.TagTxs, error) {
 	return tts, nil
 }
 
-func (i TxMongo) convert() (types.TagTx, error) {
-	var o types.TagTx
+func (i TxMongo) convert() (model.TagTx, error) {
+	var o model.TagTx
 
 	o.ID = i.ID.Oid
 	o.ProdID = int(i.ProdID)
@@ -169,14 +169,14 @@ func (i TxMongo) convert() (types.TagTx, error) {
 	var err error
 	o.Records, err = convertRecords(i.Records)
 	if err != nil {
-		return types.TagTx{}, fmt.Errorf("converting records: %w", err)
+		return model.TagTx{}, fmt.Errorf("converting records: %w", err)
 	}
 
 	return o, nil
 }
 
-func convertRecords(i []RecordMongo) ([]types.Record, error) {
-	var o []types.Record = make([]types.Record, len(i))
+func convertRecords(i []RecordMongo) ([]model.Record, error) {
+	o := make([]model.Record, len(i))
 	for k, r := range i {
 		o[k].DateUTC = r.DateUTC
 		o[k].SeqNo = int(r.SeqNo)
@@ -191,12 +191,12 @@ func convertRecords(i []RecordMongo) ([]types.Record, error) {
 	return o, nil
 }
 
-func convertFields(i []FieldMongo) ([]types.Field, error) {
-	var o []types.Field
+func convertFields(i []FieldMongo) ([]model.Field, error) {
+	var o []model.Field
 	for _, f := range i {
 		switch ft := f.(type) {
 		case FType0Mongo:
-			var nf types.GPSReading
+			var nf model.GPSReading
 			nf.Spd = int(ft.Spd)
 			nf.SpdAcc = int(ft.SpdAcc)
 			nf.Head = int(ft.Head)
@@ -210,14 +210,14 @@ func convertFields(i []FieldMongo) ([]types.Field, error) {
 			o = append(o, nf)
 
 		case FType2Mongo:
-			var nf types.GPIOReading
+			var nf model.GPIOReading
 			nf.DIn = int(ft.DIn)
 			nf.DOut = int(ft.DOut)
 			nf.DevStat = int(ft.DevStat)
 			o = append(o, nf)
 
 		case FType6Mongo:
-			var nf types.AnalogueReading
+			var nf model.AnalogueReading
 			nf.InternalBatteryVoltage = int(ft.AnalogueData.Num1)
 			nf.Temperature = int(ft.AnalogueData.Num3)
 			nf.LastGSMCQ = int(ft.AnalogueData.Num4)
@@ -225,7 +225,7 @@ func convertFields(i []FieldMongo) ([]types.Field, error) {
 			o = append(o, nf)
 
 		case FType15Mongo:
-			var nf types.TripTypeReading
+			var nf model.TripTypeReading
 			nf.Tt = int(ft.Tt)
 			nf.Trim = int(ft.Trim)
 			o = append(o, nf)
@@ -235,13 +235,6 @@ func convertFields(i []FieldMongo) ([]types.Field, error) {
 		}
 	}
 	return o, nil
-}
-
-func pretty(o any) {
-	var b []byte
-	b, _ = json.MarshalIndent(o, "", "  ")
-	os.Stdout.Write(b)
-	fmt.Println()
 }
 
 func main() {
@@ -273,8 +266,6 @@ func main() {
 
 	fmt.Printf("Read %v transmissions from JSON.\n", len(hardwareTxs))
 
-	// pretty(hardwareTxs)
-
 	txs, err := hardwareTxs.convert()
 	if err != nil {
 		fmt.Printf("converting data to target types: %v\n", err)
@@ -299,9 +290,9 @@ func main() {
 	fmt.Println("Writing to", outfilename)
 
 	for _, tx := range txs {
-		sql := tx.ToSQL()
+		sqlString := tx.ToSQL()
 
-		_, err = w.WriteString(sql)
+		_, err = w.WriteString(sqlString)
 		if err != nil {
 			fmt.Printf("error writing to %s: %v\n", outfilename, err)
 			os.Exit(1)

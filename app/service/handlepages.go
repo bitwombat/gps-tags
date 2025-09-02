@@ -6,13 +6,13 @@ import (
 	"net/http"
 
 	"github.com/bitwombat/gps-tags/device"
+	"github.com/bitwombat/gps-tags/model"
 	"github.com/bitwombat/gps-tags/storage"
 	"github.com/bitwombat/gps-tags/substitute"
-	"github.com/bitwombat/gps-tags/types"
 )
 
 func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		debugLogger.Println("Got a current map page request.")
 		lastWasHealthCheck = false
 
@@ -64,7 +64,7 @@ func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *h
 }
 
 func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		debugLogger.Println("Got a current map page request.")
 		lastWasHealthCheck = false
 
@@ -84,7 +84,7 @@ func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, 
 			subs[name+"Lat"] = fmt.Sprintf("%.7f", tag.Latitude)
 			subs[name+"Lng"] = fmt.Sprintf("%.7f", tag.Longitude)
 			subs[name+"AccuracyRadius"] = fmt.Sprintf("%v", tag.PosAcc)
-			subs[name+"Note"] = "Last GPS: " + timeAgoAsText(tag.GpsUTC) + " ago<br>Last Checkin: " + timeAgoAsText(tag.DateUTC) + " ago<br>Reason: " + types.ReasonCode(tag.Reason).String() + "<br>Battery: " + fmt.Sprintf("%.2f", float64(tag.Battery)/1000.) + "V"
+			subs[name+"Note"] = "Last GPS: " + timeAgoAsText(tag.GpsUTC) + " ago<br>Last Checkin: " + timeAgoAsText(tag.DateUTC) + " ago<br>Reason: " + model.ReasonCode(tag.Reason).String() + "<br>Battery: " + fmt.Sprintf("%.2f", float64(tag.Battery)/1000.) + "V"
 			subs[name+"Colour"] = timeAgoInColour(tag.GpsUTC)
 		}
 

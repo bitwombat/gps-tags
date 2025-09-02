@@ -28,7 +28,7 @@ func TestUnmarshals(t *testing.T) {
 	require.NotNil(t, tx.Records[1].AnalogueReading, "AnalogueReading defined in record [1]")
 	require.NotNil(t, tx.Records[1].TripTypeReading, "TripTypeReading defined in record [1]")
 
-	var expected TagTx = TagTx{
+	expected := TagTx{
 		SerNo:  810095,
 		IMEI:   "353785725680796",
 		ICCID:  "89610180004127201829",

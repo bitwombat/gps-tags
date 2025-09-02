@@ -1,5 +1,5 @@
 //go:generate stringer -type=ReasonCode
-package types
+package model
 
 import (
 	"fmt"
@@ -104,10 +104,12 @@ const (
 	BluetoothTagData        ReasonCode = 50
 )
 
-const MinReasonCode int = 1
-const MaxReasonCode int = 50
+const (
+	MinReasonCode int = 1
+	MaxReasonCode int = 50
+)
 
-// TODO: Is this needed, or can you just typecast an int to ReasonCode
+// TODO: Is this needed, or can you just typecast an int to ReasonCode.
 var ReasonMap = map[int]ReasonCode{
 	1:  StartOfTrip,
 	2:  EndOfTrip,
@@ -250,7 +252,7 @@ type TripTypeReading struct { // FType15
 	Trim int
 }
 
-// ToSQL creates a string of SQL commands for the given tag transmission
+// ToSQL creates a string of SQL commands for the given tag transmission.
 func (t TagTx) ToSQL() string {
 	s := fmt.Sprintf("INSERT INTO tx (ID, ProdID, Fw, SerNo, Imei, Iccid) VALUES ('%s', %v, '%s', %v, '%s', '%s');\n", t.ID, t.ProdID, t.Fw, t.SerNo, t.Imei, t.Iccid)
 
@@ -264,7 +266,7 @@ func (t TagTx) ToSQL() string {
 // toSQL turns a Record into SQL commands, iterating through its Fields.
 func (r Record) toSQL(txID string) string {
 	// get new GUID from stdlib
-	//uuid.SetRand(rand.New(rand.NewSource(1)))  // Make it deterministic for testing (saving this line for later)
+	// uuid.SetRand(rand.New(rand.NewSource(1)))  // Make it deterministic for testing (saving this line for later)
 	rID := uuid.NewString()
 	s := fmt.Sprintf("INSERT INTO record (ID, TXID, DeviceDateTime, SeqNo, Reason) VALUES ('%s', '%s', '%s', %v, %v);\n", rID, txID, r.DateUTC, r.SeqNo, r.Reason)
 	for _, f := range r.Fields {
@@ -274,22 +276,22 @@ func (r Record) toSQL(txID string) string {
 	return s
 }
 
-// toSQL turns a GPSReading field into SQL commands
+// toSQL turns a GPSReading field into SQL commands.
 func (g GPSReading) toSQL(recordID string) string {
 	return fmt.Sprintf("INSERT INTO gpsReading (RecordID, Spd, SpdAcc, Head, GpsStat, GpsUTC, Lat, Lng, Alt, PosAcc, Pdop) VALUES ('%s', %v, %v, %v, %v, '%s', %.9f, %.9f, %v, %v, %v);\n", recordID, g.Spd, g.SpdAcc, g.Head, g.GpsStat, g.GpsUTC, g.Lat, g.Long, g.Alt, g.PosAcc, g.Pdop)
 }
 
-// toSQL turns a GPIOReading field into SQL commands
+// toSQL turns a GPIOReading field into SQL commands.
 func (g GPIOReading) toSQL(recordID string) string {
 	return fmt.Sprintf("INSERT INTO gpioReading (RecordID, DIn, DOut, DevStat) VALUES ('%s', %v, %v, %v);\n", recordID, g.DIn, g.DOut, g.DevStat)
 }
 
-// toSQL turns an AnalogueReading field into SQL commands
+// toSQL turns an AnalogueReading field into SQL commands.
 func (a AnalogueReading) toSQL(recordID string) string {
 	return fmt.Sprintf("INSERT INTO analogueReading (RecordID, InternalBatteryVoltage, Temperature, LastGSMCQ, LoadedVoltage) VALUES ('%s', %v, %v, %v, %v);\n", recordID, a.InternalBatteryVoltage, a.Temperature, a.LastGSMCQ, a.LoadedVoltage)
 }
 
-// toSQL turns an TripTypeReading field into SQL commands
+// toSQL turns an TripTypeReading field into SQL commands.
 func (t TripTypeReading) toSQL(recordID string) string {
 	return fmt.Sprintf("INSERT INTO tripTypeReading (RecordID, Tt, Trim) VALUES ('%s', %v, %v);\n", recordID, t.Tt, t.Trim)
 }

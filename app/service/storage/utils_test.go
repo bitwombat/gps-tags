@@ -32,5 +32,4 @@ func TestTimeAgoAsText(t *testing.T) {
 			require.Equal(t, tt.expected, age)
 		})
 	}
-
 }

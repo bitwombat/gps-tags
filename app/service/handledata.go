@@ -10,17 +10,17 @@ import (
 	"time"
 
 	"github.com/bitwombat/gps-tags/device"
+	"github.com/bitwombat/gps-tags/model"
 	"github.com/bitwombat/gps-tags/notify"
 	oshotpkg "github.com/bitwombat/gps-tags/oneshot"
 	"github.com/bitwombat/gps-tags/poly"
 	"github.com/bitwombat/gps-tags/storage"
-	"github.com/bitwombat/gps-tags/types"
 	zonespkg "github.com/bitwombat/gps-tags/zones"
 )
 
 var lastWasHealthCheck bool // Used to clean up the log output.
 
-func makeNotifier(notifier notify.Notifier, ctx context.Context, title, message string) func() error {
+func makeNotifier(ctx context.Context, notifier notify.Notifier, title, message string) func() error {
 	return func() error {
 		err := notifier.Notify(ctx, title, message)
 		logIfErr(err)
@@ -38,7 +38,7 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 		defer cancel()
 
 		// Validate the request
@@ -104,9 +104,9 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 			if r.GPSReading != nil {
 				thisZoneText = zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: r.GPSReading.Lat, Longitude: r.GPSReading.Long})
 
-				infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC), types.ReasonCode(r.Reason), r.GPSReading.GpsUTC, timeAgoAsText(r.GPSReading.GpsUTC), r.GPSReading.Lat, r.GPSReading.Long, thisZoneText)
+				infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC), model.ReasonCode(r.Reason), r.GPSReading.GpsUTC, timeAgoAsText(r.GPSReading.GpsUTC), r.GPSReading.Lat, r.GPSReading.Long, thisZoneText)
 			} else {
-				infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC), types.ReasonCode(r.Reason))
+				infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC), model.ReasonCode(r.Reason))
 			}
 
 		}
@@ -152,15 +152,15 @@ func notifyAboutBattery(ctx context.Context, latestRecord device.Record, dogName
 	_ = oneShot.SetReset(dogName+"lowBattery", // TODO: Don't ignore return value
 		oshotpkg.Config{
 			SetIf:   (batteryVoltage < BatteryLowThreshold) && nowIsWakingHours,
-			OnSet:   makeNotifier(notifier, ctx, fmt.Sprintf("%s's battery low", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
+			OnSet:   makeNotifier(ctx, notifier, fmt.Sprintf("%s's battery low", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
 			ResetIf: batteryVoltage > BatteryLowThreshold+BatteryHysteresis,
-			OnReset: makeNotifier(notifier, ctx, fmt.Sprintf("New battery for %s detected", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
+			OnReset: makeNotifier(ctx, notifier, fmt.Sprintf("New battery for %s detected", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
 		})
 
 	_ = oneShot.SetReset(dogName+"criticalBattery", // TODO: Don't ignore return value
 		oshotpkg.Config{
 			SetIf:   (batteryVoltage < BatteryCriticalThreshold) && nowIsWakingHours,
-			OnSet:   makeNotifier(notifier, ctx, fmt.Sprintf("%s's battery critical", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
+			OnSet:   makeNotifier(ctx, notifier, fmt.Sprintf("%s's battery critical", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
 			ResetIf: batteryVoltage > BatteryLowThreshold,
 		})
 }
@@ -187,16 +187,16 @@ func notifyAboutZones(ctx context.Context, latestRecord device.Record, NamedZone
 	_ = oneShot.SetReset(dogName+"offProperty",
 		oshotpkg.Config{
 			SetIf:   isOutsidePropertyBoundary,
-			OnSet:   makeNotifier(notifier, ctx, fmt.Sprintf("%s is off the property", dogName), thisZoneText),
+			OnSet:   makeNotifier(ctx, notifier, fmt.Sprintf("%s is off the property", dogName), thisZoneText),
 			ResetIf: !isOutsidePropertyBoundary,
-			OnReset: makeNotifier(notifier, ctx, fmt.Sprintf("%s is now back on the property", dogName), thisZoneText),
+			OnReset: makeNotifier(ctx, notifier, fmt.Sprintf("%s is now back on the property", dogName), thisZoneText),
 		})
 
 	_ = oneShot.SetReset(dogName+"outsideSafeZone",
 		oshotpkg.Config{
 			SetIf:   isOutsideSafeZoneBoundary,
-			OnSet:   makeNotifier(notifier, ctx, fmt.Sprintf("%s is getting far from the house", dogName), thisZoneText),
+			OnSet:   makeNotifier(ctx, notifier, fmt.Sprintf("%s is getting far from the house", dogName), thisZoneText),
 			ResetIf: !isOutsideSafeZoneBoundary,
-			OnReset: makeNotifier(notifier, ctx, fmt.Sprintf("%s is now back close to the house", dogName), thisZoneText),
+			OnReset: makeNotifier(ctx, notifier, fmt.Sprintf("%s is now back close to the house", dogName), thisZoneText),
 		})
 }

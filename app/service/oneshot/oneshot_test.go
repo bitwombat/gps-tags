@@ -22,22 +22,22 @@ func TestOneShot(t *testing.T) {
 	var setActionCount int
 	var resetActionCount int
 
-	var SetFn = func() error {
+	SetFn := func() error {
 		setActionCount++
 		return nil
 	}
 
-	var SetFnWithError = func() error {
+	SetFnWithError := func() error {
 		setActionCount++
 		return someError
 	}
 
-	var ResetFn = func() error {
+	ResetFn := func() error {
 		resetActionCount++
 		return nil
 	}
 
-	var ResetFnWithError = func() error {
+	ResetFnWithError := func() error {
 		resetActionCount++
 		return someError
 	}
@@ -278,12 +278,12 @@ func TestEventsDontInterfere(t *testing.T) {
 	var setActionCount int
 	var resetActionCount int
 
-	var SetFn = func() error {
+	SetFn := func() error {
 		setActionCount++
 		return nil
 	}
 
-	var ResetFn = func() error {
+	ResetFn := func() error {
 		resetActionCount++
 		return nil
 	}
@@ -315,5 +315,4 @@ func TestEventsDontInterfere(t *testing.T) {
 	require.Nil(t, err)
 	require.Equal(t, 2, setActionCount)
 	require.Equal(t, 0, resetActionCount)
-
 }

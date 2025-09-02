@@ -12,16 +12,20 @@ import (
 	"github.com/bitwombat/gps-tags/storage"
 )
 
-const BatteryLowThreshold = 4.0
-const BatteryCriticalThreshold = 3.8
-const BatteryHysteresis = 0.1
+const (
+	BatteryLowThreshold      = 4.0
+	BatteryCriticalThreshold = 3.8
+	BatteryHysteresis        = 0.1
+)
 
 // systemd recognises these prefixes and colors accordingly. Also allows filtering priorities with journalctl.
-var fatalLogger = log.New(os.Stdout, "<2>", log.LstdFlags)
-var errorLogger = log.New(os.Stdout, "<3>", log.LstdFlags)
-var warningLogger = log.New(os.Stdout, "<4>", log.LstdFlags)
-var infoLogger = log.New(os.Stdout, "<6>", log.LstdFlags)
-var debugLogger = log.New(os.Stdout, "<7>", log.LstdFlags)
+var (
+	fatalLogger   = log.New(os.Stdout, "<2>", log.LstdFlags)
+	errorLogger   = log.New(os.Stdout, "<3>", log.LstdFlags)
+	warningLogger = log.New(os.Stdout, "<4>", log.LstdFlags)
+	infoLogger    = log.New(os.Stdout, "<6>", log.LstdFlags)
+	debugLogger   = log.New(os.Stdout, "<7>", log.LstdFlags)
+)
 
 func hostnameBasedFileServer() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -50,14 +54,13 @@ func hostnameBasedFileServer() http.Handler {
 func main() {
 	infoLogger.Println("Starting Dog Tag service.")
 
-	infoLogger.Println("Connecting to MongoDB.")
 	storer, err := storage.NewSQLiteStorer("dogs") // TODO: Get consistent between "dogs", "tags" and "dogtags" throughout codebase, including SQL
 	if err != nil {
 		fatalLogger.Fatal(fmt.Errorf("getting an sqlite storer: %w", err))
 	}
 
-	ntfySubscriptionId := os.Getenv("NTFY_SUBSCRIPTION_ID")
-	if ntfySubscriptionId == "" {
+	ntfySubscriptionID := os.Getenv("NTFY_SUBSCRIPTION_ID")
+	if ntfySubscriptionID == "" {
 		warningLogger.Print("WARNING: NTFY_SUBSCRIPTION_ID not set. Notifications will not be sent.")
 	}
 
@@ -69,7 +72,7 @@ func main() {
 		warningLogger.Print("WARNING: NONOTIFY env var set. Null notifier being used. No notifications will be sent.")
 		notifier = notify.NewNullNotifier()
 	} else {
-		notifier = notify.NewNtfyNotifier(ntfySubscriptionId)
+		notifier = notify.NewNtfyNotifier(ntfySubscriptionID)
 	}
 	loggingNotifier := notify.NewLoggingNotifier(notifier, debugLogger)
 

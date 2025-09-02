@@ -18,7 +18,6 @@ func NewOneShot() OneShot {
 }
 
 func (o OneShot) SetReset(event string, config Config) error {
-
 	var err error
 
 	if !o.storage[event] && config.SetIf {

@@ -10,7 +10,7 @@ import (
 
 	"github.com/bitwombat/gps-tags/device"
 	"github.com/google/uuid"
-	_ "modernc.org/sqlite"
+	_ "modernc.org/sqlite" // library code isn't used directly
 )
 
 // Concurrency support in sqlite is complicated.
@@ -37,7 +37,7 @@ import (
 // https://sqlite.org/wal.html#concurrency
 // https://www.reddit.com/r/golang/comments/16xswxd/concurrency_when_writing_data_into_sqlite/
 
-type sqliteStorer struct {
+type SqliteStorer struct {
 	db *sql.DB
 }
 
@@ -69,19 +69,19 @@ type PointRecordDAO struct {
 	Longitude sql.NullFloat64
 }
 
-func NewSQLiteStorer(dataSourceName string) (sqliteStorer, error) {
+func NewSQLiteStorer(dataSourceName string) (SqliteStorer, error) {
 	db, err := sql.Open("sqlite", dataSourceName)
 	if err != nil {
-		return sqliteStorer{}, fmt.Errorf("opening database: %w", err)
+		return SqliteStorer{}, fmt.Errorf("opening database: %w", err)
 	}
-	var ss sqliteStorer
+	var ss SqliteStorer
 	ss.db = db
 
 	return ss, nil
 }
 
 // TODO: make sure to set PRAGMA foreign_keys = true for every connection.
-func (s sqliteStorer) WriteTx(ctx context.Context, tx device.TagTx) (string, error) {
+func (s SqliteStorer) WriteTx(ctx context.Context, tx device.TagTx) (string, error) {
 	// uuid.SetRand(rand.New(rand.NewSource(1)))  // TODO: Make it deterministic for testing (saving this line for later)
 	txID := uuid.NewString() // TODO: Maybe create this when unmarshaling? The field's there.
 
@@ -92,30 +92,30 @@ func (s sqliteStorer) WriteTx(ctx context.Context, tx device.TagTx) (string, err
 	}
 
 	for _, r := range tx.Records {
-		rId, err := insertRecord(r, ctx, s.db, txID)
+		rID, err := insertRecord(ctx, r, s.db, txID)
 		if err != nil {
 			return "", err
 		}
 		if r.GPSReading != nil {
-			err := insertGPSReading(*r.GPSReading, ctx, s.db, rId)
+			err := insertGPSReading(ctx, *r.GPSReading, s.db, rID)
 			if err != nil {
 				return "", err
 			}
 		}
 		if r.GPIOReading != nil {
-			err := insertGPIOReading(*r.GPIOReading, ctx, s.db, rId)
+			err := insertGPIOReading(ctx, *r.GPIOReading, s.db, rID)
 			if err != nil {
 				return "", err
 			}
 		}
 		if r.AnalogueReading != nil {
-			err := insertAnalogueReading(*r.AnalogueReading, ctx, s.db, rId)
+			err := insertAnalogueReading(ctx, *r.AnalogueReading, s.db, rID)
 			if err != nil {
 				return "", err
 			}
 		}
 		if r.TripTypeReading != nil {
-			err := insertTripTypeReading(*r.TripTypeReading, ctx, s.db, rId)
+			err := insertTripTypeReading(ctx, *r.TripTypeReading, s.db, rID)
 			if err != nil {
 				return "", err
 			}
@@ -124,7 +124,7 @@ func (s sqliteStorer) WriteTx(ctx context.Context, tx device.TagTx) (string, err
 	return txID, nil
 }
 
-func insertRecord(r device.Record, ctx context.Context, db *sql.DB, txID string) (string, error) {
+func insertRecord(ctx context.Context, r device.Record, db *sql.DB, txID string) (string, error) {
 	// uuid.SetRand(rand.New(rand.NewSource(1)))  // TODO: Make it deterministic
 	// for testing? (saving this line for later)
 	rID := uuid.NewString()
@@ -133,29 +133,29 @@ func insertRecord(r device.Record, ctx context.Context, db *sql.DB, txID string)
 	return rID, err
 }
 
-func insertGPSReading(g device.GPSReading, ctx context.Context, db *sql.DB, recordID string) error {
+func insertGPSReading(ctx context.Context, g device.GPSReading, db *sql.DB, recordID string) error {
 	_, err := db.ExecContext(ctx, `INSERT INTO gpsReading (RecordID, Spd, SpdAcc, Head, GpsStat, GpsUTC, Lat, Lng, Alt, PosAcc, PDOP) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`, recordID, g.Spd, g.SpdAcc, g.Head, g.GpsStat, g.GpsUTC, g.Lat, g.Long, g.Alt, g.PosAcc, g.PDOP)
 	return err
 }
 
-func insertGPIOReading(g device.GPIOReading, ctx context.Context, db *sql.DB, recordID string) error {
+func insertGPIOReading(ctx context.Context, g device.GPIOReading, db *sql.DB, recordID string) error {
 	_, err := db.ExecContext(ctx, `INSERT INTO gpioReading (RecordID, DIn, DOut, DevStat) VALUES (?, ?, ?, ?);`, recordID, g.DIn, g.DOut, g.DevStat)
 	return err
 }
 
-func insertAnalogueReading(a device.AnalogueReading, ctx context.Context, db *sql.DB, recordID string) error {
+func insertAnalogueReading(ctx context.Context, a device.AnalogueReading, db *sql.DB, recordID string) error {
 	_, err := db.ExecContext(ctx, `INSERT INTO analogueReading (RecordID, InternalBatteryVoltage, Temperature, LastGSMCQ, LoadedVoltage) VALUES ($1, $2, $3, $4, $5);`, recordID, a.AnalogueData.Num1, a.AnalogueData.Num3, a.AnalogueData.Num4, a.AnalogueData.Num5) // TODO: Leakage from device into business domain. Map these to better names like old tx.go had.
 	// TODO: Wrong number of parameters fails silently - record not inserted.
 	// Sprintf would complain... but then injection attacks?
 	return err
 }
 
-func insertTripTypeReading(t device.TripTypeReading, ctx context.Context, db *sql.DB, recordID string) error {
+func insertTripTypeReading(ctx context.Context, t device.TripTypeReading, db *sql.DB, recordID string) error {
 	_, err := db.ExecContext(ctx, `INSERT INTO tripTypeReading (RecordID, Tt, Trim) VALUES (?, ?, ?);`, recordID, t.Tt, t.Trim)
 	return err
 }
 
-func (s sqliteStorer) GetLastPositions(ctx context.Context) ([]PositionRecord, error) {
+func (s SqliteStorer) GetLastPositions(ctx context.Context) ([]PositionRecord, error) {
 	query := `
 WITH RankedRecords AS (
     SELECT
@@ -213,7 +213,7 @@ LIMIT 5;
 
 	for rows.Next() {
 		var prDAO PositionRecordDAO
-		err := rows.Scan(
+		err = rows.Scan(
 			&prDAO.SerNo,
 			&prDAO.SeqNo,
 			&prDAO.Reason,
@@ -262,7 +262,7 @@ LIMIT 5;
 
 // checkValidity checks validity of everything in a PositionRecordDAO except
 // SeqNo, which we check separately so we can include it to provide better errors
-// when another field is NULL
+// when another field is NULL.
 func isValid(pr PositionRecordDAO) bool {
 	return (pr.SerNo.Valid &&
 		pr.Reason.Valid &&
@@ -277,7 +277,7 @@ func isValid(pr PositionRecordDAO) bool {
 		pr.Battery.Valid)
 }
 
-func (s sqliteStorer) GetLastNPositions(ctx context.Context, n int) ([]PathPointRecord, error) {
+func (s SqliteStorer) GetLastNPositions(ctx context.Context, n int) ([]PathPointRecord, error) {
 	query := `
 WITH NumberedRecords AS (
     SELECT
@@ -309,7 +309,7 @@ ORDER BY
 `
 	query = fmt.Sprintf(query, n)
 
-	var pps = make(map[int32][]PathPoint) // TODO: Make PathPointRecord type this map so the later conversion isn't necessary
+	pps := make(map[int32][]PathPoint) // TODO: Make PathPointRecord type this map so the later conversion isn't necessary
 
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
@@ -331,7 +331,7 @@ ORDER BY
 		if !prDAO.SeqNo.Valid {
 			return []PathPointRecord{}, errors.New("SeqNo in record is NULL")
 		}
-		if !(prDAO.Latitude.Valid && prDAO.Longitude.Valid) {
+		if !prDAO.Latitude.Valid || !prDAO.Longitude.Valid {
 			return []PathPointRecord{}, fmt.Errorf("one of the fields of database row for SeqNo %v is NULL", prDAO.SeqNo.Int32)
 		}
 
@@ -346,13 +346,13 @@ ORDER BY
 		return []PathPointRecord{}, fmt.Errorf("error after scanning rows: %w", err)
 	}
 
-	var pprs []PathPointRecord
-
 	keys := maps.Keys(pps) // only need them sorted for testing. TODO: Fix test.
 	keysSlice := slices.Sorted(keys)
 
-	for _, k := range keysSlice {
-		pprs = append(pprs, PathPointRecord{SerNo: int32(k), PathPoints: pps[int32(k)]})
+	pprs := make([]PathPointRecord, len(keysSlice))
+
+	for i, k := range keysSlice {
+		pprs[i] = PathPointRecord{SerNo: k, PathPoints: pps[k]}
 	}
 
 	return pprs, nil

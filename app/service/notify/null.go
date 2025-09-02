@@ -4,8 +4,7 @@ import (
 	"context"
 )
 
-type NullNotifier struct {
-}
+type NullNotifier struct{}
 
 func NewNullNotifier() Notifier {
 	return NullNotifier{}

@@ -29,5 +29,4 @@ func ContentsOf(path string, subs map[string]string) (string, error) {
 	}
 
 	return buf.String(), nil
-
 }

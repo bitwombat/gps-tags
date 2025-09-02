@@ -136,10 +136,12 @@ const (
 	BluetoothTagData        ReasonCode = 50
 )
 
-const MinReasonCode int = 1
-const MaxReasonCode int = 50
+const (
+	MinReasonCode int = 1
+	MaxReasonCode int = 50
+)
 
-// TODO: Is this needed, or can you just typecast an int to ReasonCode
+// TODO: Is this needed, or can you just typecast an int to ReasonCode.
 var ReasonMap = map[int]ReasonCode{
 	1:  StartOfTrip,
 	2:  EndOfTrip,

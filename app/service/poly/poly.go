@@ -10,7 +10,7 @@ type line struct {
 	p1, p2 Point
 }
 
-// onLine checks if a point is on a line
+// onLine checks if a point is on a line.
 func onLine(l line, p Point) bool {
 	return p.X <= max(l.p1.X, l.p2.X) &&
 		p.X >= min(l.p1.X, l.p2.X) &&
@@ -18,7 +18,7 @@ func onLine(l line, p Point) bool {
 		p.Y >= min(l.p1.Y, l.p2.Y)
 }
 
-// direction calculates the turn direction of the sequence of 3 points
+// direction calculates the turn direction of the sequence of 3 points.
 func direction(a, b, c Point) int {
 	val := (b.Y-a.Y)*(c.X-b.X) - (b.X-a.X)*(c.Y-b.Y)
 	if val == 0 {
@@ -29,7 +29,7 @@ func direction(a, b, c Point) int {
 	return 1 // Clockwise direction
 }
 
-// isIntersect checks if two lines intersect
+// isIntersect checks if two lines intersect.
 func isIntersect(l1, l2 line) bool {
 	dir1 := direction(l1.p1, l1.p2, l2.p1)
 	dir2 := direction(l1.p1, l1.p2, l2.p2)
@@ -51,7 +51,7 @@ func isIntersect(l1, l2 line) bool {
 	return false
 }
 
-// isInside checks if a point is inside a polygon
+// isInside checks if a point is inside a polygon.
 func IsInside(poly []Point, p Point) bool {
 	n := len(poly)
 	if n < 3 {
@@ -81,7 +81,7 @@ func IsInside(poly []Point, p Point) bool {
 	return count&1 != 0
 }
 
-// Helper functions: max and min
+// Helper functions: max and min.
 func max(a, b float64) float64 {
 	if a > b {
 		return a

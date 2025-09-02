@@ -9,7 +9,7 @@ import (
 	"github.com/bitwombat/gps-tags/notify"
 )
 
-func handleHealthCheck(w http.ResponseWriter, r *http.Request) {
+func handleHealthCheck(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	fmt.Fprintf(w, "OK")
 	if !lastWasHealthCheck {
@@ -22,7 +22,7 @@ func handleHealthCheck(w http.ResponseWriter, r *http.Request) {
 func newTestNotifyHandler(n notify.Notifier) func(http.ResponseWriter, *http.Request) {
 	notifier := n
 
-	return func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, _ *http.Request) {
 		debugLogger.Println("Got a request to send a test notification.")
 
 		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
