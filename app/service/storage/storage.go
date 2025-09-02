@@ -10,8 +10,8 @@ import (
 
 type Storage interface {
 	WriteTx(context.Context, device.TagTx) (string, error)
-	GetLastPositions() ([]PositionRecord, error)
-	GetLastNPositions(int) ([]PathPointRecord, error)
+	GetLastPositions(context.Context) ([]PositionRecord, error)
+	GetLastNPositions(context.Context, int) ([]PathPointRecord, error)
 }
 
 type PositionRecord struct {

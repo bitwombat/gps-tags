@@ -349,12 +349,9 @@ ORDER BY
 	var pprs []PathPointRecord
 
 	keys := maps.Keys(pps) // only need them sorted for testing. TODO: Fix test.
-	fmt.Println(keys)
 	keysSlice := slices.Sorted(keys)
-	fmt.Println(keysSlice)
 
 	for _, k := range keysSlice {
-		fmt.Println(k)
 		pprs = append(pprs, PathPointRecord{SerNo: int32(k), PathPoints: pps[int32(k)]})
 	}
 

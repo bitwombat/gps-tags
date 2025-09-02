@@ -308,7 +308,7 @@ func (r *Record) UnmarshalJSON(p []byte) error {
 
 const AnalogueDataFType = 6
 
-var SerNoToName = map[float64]string{
+var SerNoToName = map[int32]string{
 	810095: "rueger",
 	810243: "charlie",
 }

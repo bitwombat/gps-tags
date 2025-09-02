@@ -50,15 +50,10 @@ func hostnameBasedFileServer() http.Handler {
 func main() {
 	infoLogger.Println("Starting Dog Tag service.")
 
-	mongoURL := os.Getenv("MONGO_URL")
-	if mongoURL == "" {
-		fatalLogger.Fatal("MONGO_URL not set")
-	}
-
 	infoLogger.Println("Connecting to MongoDB.")
-	collection, err := storage.NewMongoConnection(mongoURL, "dogs")
+	storer, err := storage.NewSQLiteStorer("dogs") // TODO: Get consistent between "dogs", "tags" and "dogtags" throughout codebase, including SQL
 	if err != nil {
-		fatalLogger.Fatal(fmt.Errorf("getting a Mongo connection: %w", err))
+		fatalLogger.Fatal(fmt.Errorf("getting an sqlite storer: %w", err))
 	}
 
 	ntfySubscriptionId := os.Getenv("NTFY_SUBSCRIPTION_ID")
@@ -68,8 +63,6 @@ func main() {
 
 	// Set up endpoints
 	httpsMux := http.NewServeMux()
-
-	storer := storage.NewMongoStorer(collection)
 
 	var notifier notify.Notifier
 	if os.Getenv("NONOTIFY") != "" {

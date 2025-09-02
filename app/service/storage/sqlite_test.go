@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"fmt"
 	"os"
 	"testing"
 
@@ -332,8 +331,6 @@ func TestGetLastNPositions(t *testing.T) {
 	require.Nil(t, err)
 	require.Len(t, result, 2, "length of result array")
 
-	fmt.Println(result[0].SerNo)
-	fmt.Println(result[1].SerNo)
 	// THEN we get the latest position's values for both known tags.
 	require.Equal(t, int32(810095), result[0].SerNo)
 	require.Equal(t, 108.0, result[0].PathPoints[0].Latitude)
