@@ -35,7 +35,7 @@ type PathPoint struct {
 }
 
 type PathPointRecord struct {
-	SerNo      float64
+	SerNo      int32
 	PathPoints []PathPoint
 }
 

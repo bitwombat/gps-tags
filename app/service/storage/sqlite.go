@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"maps"
+	"slices"
 
 	"github.com/bitwombat/gps-tags/device"
 	"github.com/google/uuid"
@@ -43,6 +45,7 @@ type sqliteStorer struct {
 // mostly out of caution rather than understanding a real threat of error.
 // Having NOT NULL everywhere in the database would be the smart way of
 // enforcing data integrity. This is mostly an invariant.
+// Its at this level because the verification functions need it.
 // TODO: Make sure schema has NOT NULL for everything.
 type PositionRecordDAO struct {
 	SerNo     sql.NullInt32
@@ -57,6 +60,13 @@ type PositionRecordDAO struct {
 	PosAcc    sql.NullInt32
 	GpsStatus sql.NullInt32
 	Battery   sql.NullInt32 // TODO: Probably call this InternalBatteryVoltage, to match the db, or at least BatteryVoltage. Also, figure out if the LoadedVoltage field is more useful.
+}
+
+type PointRecordDAO struct {
+	SerNo     sql.NullInt32
+	SeqNo     sql.NullInt32
+	Latitude  sql.NullFloat64
+	Longitude sql.NullFloat64
 }
 
 func NewSQLiteStorer(dataSourceName string) (sqliteStorer, error) {
@@ -267,4 +277,86 @@ func isValid(pr PositionRecordDAO) bool {
 		pr.Battery.Valid)
 }
 
-func (s sqliteStorer) GetLastNPositions(int) ([]PathPointRecord, error) { return nil, nil }
+func (s sqliteStorer) GetLastNPositions(ctx context.Context, n int) ([]PathPointRecord, error) {
+	query := `
+WITH NumberedRecords AS (
+    SELECT
+		tx.SerNo,
+		record.SeqNo,
+		gpsReading.Lat,
+		gpsReading.Lng,
+        record.DeviceDateTime,
+        ROW_NUMBER() OVER (PARTITION BY tx.SerNo ORDER BY record.SeqNo DESC) AS rn
+    FROM
+        tx
+    JOIN
+        record ON record.TxID = tx.ID
+	JOIN
+        gpsReading ON gpsReading.RecordID = record.ID
+)
+SELECT
+    SerNo,
+	SeqNo,
+    Lat,
+	Lng
+FROM
+    NumberedRecords
+WHERE
+    rn <= %d
+ORDER BY
+    SerNo, DeviceDateTime DESC
+;
+`
+	query = fmt.Sprintf(query, n)
+
+	var pps = make(map[int32][]PathPoint) // TODO: Make PathPointRecord type this map so the later conversion isn't necessary
+
+	rows, err := s.db.QueryContext(ctx, query)
+	if err != nil {
+		return []PathPointRecord{}, fmt.Errorf("error querying database for last N positions: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var prDAO PointRecordDAO
+		err := rows.Scan(
+			&prDAO.SerNo,
+			&prDAO.SeqNo,
+			&prDAO.Latitude,
+			&prDAO.Longitude,
+		)
+		if err != nil {
+			return []PathPointRecord{}, fmt.Errorf("error scanning row: %w", err)
+		}
+		if !prDAO.SeqNo.Valid {
+			return []PathPointRecord{}, errors.New("SeqNo in record is NULL")
+		}
+		if !(prDAO.Latitude.Valid && prDAO.Longitude.Valid) {
+			return []PathPointRecord{}, fmt.Errorf("one of the fields of database row for SeqNo %v is NULL", prDAO.SeqNo.Int32)
+		}
+
+		pps[prDAO.SerNo.Int32] = append(pps[prDAO.SerNo.Int32], PathPoint{
+			Latitude:  prDAO.Latitude.Float64,
+			Longitude: prDAO.Longitude.Float64,
+		})
+	}
+
+	err = rows.Err()
+	if err != nil {
+		return []PathPointRecord{}, fmt.Errorf("error after scanning rows: %w", err)
+	}
+
+	var pprs []PathPointRecord
+
+	keys := maps.Keys(pps) // only need them sorted for testing. TODO: Fix test.
+	fmt.Println(keys)
+	keysSlice := slices.Sorted(keys)
+	fmt.Println(keysSlice)
+
+	for _, k := range keysSlice {
+		fmt.Println(k)
+		pprs = append(pprs, PathPointRecord{SerNo: int32(k), PathPoints: pps[int32(k)]})
+	}
+
+	return pprs, nil
+}

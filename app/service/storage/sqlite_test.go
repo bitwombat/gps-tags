@@ -2,8 +2,8 @@ package storage
 
 import (
 	"context"
+	"fmt"
 	"os"
-
 	"testing"
 
 	"github.com/bitwombat/gps-tags/device"
@@ -183,12 +183,95 @@ var sampleTx2 device.TagTx = device.TagTx{
 	},
 }
 
+var nSamples = []device.TagTx{
+	{
+		SerNo: 810095,
+		Records: []device.Record{
+			{
+				SeqNo: 1,
+				GPSReading: &device.GPSReading{
+					Lat:  100,
+					Long: 101,
+				},
+			},
+			{
+				SeqNo: 2,
+				GPSReading: &device.GPSReading{
+					Lat:  102,
+					Long: 103,
+				},
+			},
+			{
+				SeqNo: 3,
+				GPSReading: &device.GPSReading{
+					Lat:  104,
+					Long: 105,
+				},
+			},
+			{
+				SeqNo: 4,
+				GPSReading: &device.GPSReading{
+					Lat:  106,
+					Long: 107,
+				},
+			},
+			{
+				SeqNo: 5,
+				GPSReading: &device.GPSReading{
+					Lat:  108,
+					Long: 109,
+				},
+			},
+		},
+	},
+	{
+		SerNo: 810243,
+		Records: []device.Record{
+			{
+				SeqNo: 2,
+				GPSReading: &device.GPSReading{
+					Lat:  110,
+					Long: 111,
+				},
+			},
+			{
+				SeqNo: 4,
+				GPSReading: &device.GPSReading{
+					Lat:  112,
+					Long: 113,
+				},
+			},
+			{
+				SeqNo: 6,
+				GPSReading: &device.GPSReading{
+					Lat:  114,
+					Long: 115,
+				},
+			},
+			{
+				SeqNo: 8,
+				GPSReading: &device.GPSReading{
+					Lat:  116,
+					Long: 117,
+				},
+			},
+			{
+				SeqNo: 10,
+				GPSReading: &device.GPSReading{
+					Lat:  118,
+					Long: 119,
+				},
+			},
+		},
+	},
+}
+
 func TestGetLatestPosition(t *testing.T) {
-	// GIVEN a two transmissions for two tags with multiple records
+	// GIVEN two transmissions for two tags with multiple records
 	storer, err := NewSQLiteStorer(":memory:")
 	require.Nil(t, err)
 
-	var migrations = os.DirFS("../migrations")
+	migrations := os.DirFS("../migrations")
 
 	err = migrate.Up(context.Background(), storer.db, migrations)
 	require.Nil(t, err)
@@ -226,50 +309,45 @@ func TestGetLatestPosition(t *testing.T) {
 			t.Fatalf("Unmatched serNo: %v", r.SerNo)
 		}
 	}
-
 }
 
-// func TestGetLastNPositions(t *testing.T) {
+func TestGetLastNPositions(t *testing.T) {
+	// GIVEN commits with multiple records and for multiple tags.
+	storer, err := NewSQLiteStorer(":memory:")
+	require.Nil(t, err)
 
-// 	// GIVEN commits with multiple records and for multiple tags.
-// 	collection, err := NewMongoConnection(mongoURL, randomTestCollectionName())
-// 	require.Nil(t, err)
+	migrations := os.DirFS("../migrations")
 
-// 	storer := NewMongoStorer(collection)
+	err = migrate.Up(context.Background(), storer.db, migrations)
+	require.Nil(t, err)
 
-// 	for _, r := range nSamples {
-// 		if s, ok := r.(string); ok {
-// 			_, err = storer.WriteTx(context.Background(), s)
-// 			require.Nil(t, err)
-// 		} else {
-// 			t.Fatal("type assertion failed")
-// 		}
-// 	}
+	for _, r := range nSamples {
+		txID, err := storer.WriteTx(context.Background(), r)
+		require.Nil(t, err)
+		require.NotEmpty(t, txID)
+	}
 
-// 	// WHEN we get the last 3 position for all tags.
-// 	result, err := storer.GetLastNPositions(3)
-// 	require.Nil(t, err)
+	// WHEN we get the last 3 position for all tags.
+	result, err := storer.GetLastNPositions(context.Background(), 3)
+	require.Nil(t, err)
+	require.Len(t, result, 2, "length of result array")
 
-// 	// THEN we get the latest position's values for both known tags.
-// 	for _, r := range result {
-// 		switch r.SerNo {
-// 		case 810095:
-// 			require.Equal(t, 108.0, r.PathPoints[0].Latitude)
-// 			require.Equal(t, 109.0, r.PathPoints[0].Longitude)
-// 			require.Equal(t, 106.0, r.PathPoints[1].Latitude)
-// 			require.Equal(t, 107.0, r.PathPoints[1].Longitude)
-// 			require.Equal(t, 104.0, r.PathPoints[2].Latitude)
-// 			require.Equal(t, 105.0, r.PathPoints[2].Longitude)
-// 		case 810243:
-// 			require.Equal(t, 118.0, r.PathPoints[0].Latitude)
-// 			require.Equal(t, 119.0, r.PathPoints[0].Longitude)
-// 			require.Equal(t, 116.0, r.PathPoints[1].Latitude)
-// 			require.Equal(t, 117.0, r.PathPoints[1].Longitude)
-// 			require.Equal(t, 114.0, r.PathPoints[2].Latitude)
-// 			require.Equal(t, 115.0, r.PathPoints[2].Longitude)
-// 		default:
-// 			t.Fatalf("Unmatched serNo: %v", r.SerNo)
-// 		}
-// 	}
+	fmt.Println(result[0].SerNo)
+	fmt.Println(result[1].SerNo)
+	// THEN we get the latest position's values for both known tags.
+	require.Equal(t, int32(810095), result[0].SerNo)
+	require.Equal(t, 108.0, result[0].PathPoints[0].Latitude)
+	require.Equal(t, 109.0, result[0].PathPoints[0].Longitude)
+	require.Equal(t, 106.0, result[0].PathPoints[1].Latitude)
+	require.Equal(t, 107.0, result[0].PathPoints[1].Longitude)
+	require.Equal(t, 104.0, result[0].PathPoints[2].Latitude)
+	require.Equal(t, 105.0, result[0].PathPoints[2].Longitude)
 
-// }
+	require.Equal(t, int32(810243), result[1].SerNo)
+	require.Equal(t, 118.0, result[1].PathPoints[0].Latitude)
+	require.Equal(t, 119.0, result[1].PathPoints[0].Longitude)
+	require.Equal(t, 116.0, result[1].PathPoints[1].Latitude)
+	require.Equal(t, 117.0, result[1].PathPoints[1].Longitude)
+	require.Equal(t, 114.0, result[1].PathPoints[2].Latitude)
+	require.Equal(t, 115.0, result[1].PathPoints[2].Longitude)
+}
