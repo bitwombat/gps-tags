@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/bitwombat/gps-tags/notify"
 	"github.com/bitwombat/gps-tags/storage"
@@ -101,12 +101,6 @@ func main() {
 	httpMux := http.NewServeMux()
 	httpMux.HandleFunc("/health", handleHealthCheck)
 
-	httpMux.HandleFunc("/owntracks", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		body, _ := io.ReadAll(r.Body)
-		debugLogger.Println(string(body))
-	})
-
 	// Static file serving
 	httpsMux.Handle("/", hostnameBasedFileServer())
 
@@ -115,8 +109,9 @@ func main() {
 
 	go func() {
 		server1 := &http.Server{
-			Addr:    ":80",
-			Handler: httpMux,
+			Addr:              ":80",
+			Handler:           httpMux,
+			ReadHeaderTimeout: 10 * time.Second,
 		}
 		infoLogger.Println("Server running on :80")
 		fatalLogger.Fatal(server1.ListenAndServe())
@@ -124,8 +119,9 @@ func main() {
 
 	go func() {
 		server2 := &http.Server{
-			Addr:    ":443",
-			Handler: httpsMux,
+			Addr:              ":443",
+			Handler:           httpsMux,
+			ReadHeaderTimeout: 10 * time.Second,
 		}
 		infoLogger.Println("Server running on :443")
 		fatalLogger.Fatal(server2.ListenAndServe())

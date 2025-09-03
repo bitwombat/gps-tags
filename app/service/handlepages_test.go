@@ -17,7 +17,7 @@ func TestLastPositionPage(t *testing.T) {
 	defer ts.Close()
 
 	client := ts.Client()
-	res, err := client.Get(ts.URL)
+	res, err := client.Get(ts.URL) //nolint:noctx // just test code
 	require.Nil(t, err)
 
 	greeting, err := io.ReadAll(res.Body)

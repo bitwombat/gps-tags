@@ -82,14 +82,14 @@ func IsInside(poly []Point, p Point) bool {
 }
 
 // Helper functions: max and min.
-func max(a, b float64) float64 {
+func max(a, b float64) float64 { //nolint:all // I don't care that this overrides built-in max.
 	if a > b {
 		return a
 	}
 	return b
 }
 
-func min(a, b float64) float64 {
+func min(a, b float64) float64 { //nolint:all // I don't care that this overrides built-in min.
 	if a < b {
 		return a
 	}

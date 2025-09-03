@@ -84,7 +84,7 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 			return
 		}
 
-		dogName, ok := device.SerNoToName[int32(tagData.SerNo)]
+		dogName, ok := device.SerNoToName[tagData.SerNo]
 		if !ok {
 			errorLogger.Printf("Unknown tag number: %v", tagData.SerNo)
 		}
@@ -149,23 +149,33 @@ func notifyAboutBattery(ctx context.Context, latestRecord device.Record, dogName
 	// We don't want to hear about low battery in the middle of the night.
 	nowIsWakingHours := time.Now().Hour() >= 8 && time.Now().Hour() <= 22
 
-	_ = oneShot.SetReset(dogName+"lowBattery", // TODO: Don't ignore return value
+	err := oneShot.SetReset(dogName+"lowBattery",
 		oshotpkg.Config{
 			SetIf:   (batteryVoltage < BatteryLowThreshold) && nowIsWakingHours,
 			OnSet:   makeNotifier(ctx, notifier, fmt.Sprintf("%s's battery low", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
 			ResetIf: batteryVoltage > BatteryLowThreshold+BatteryHysteresis,
 			OnReset: makeNotifier(ctx, notifier, fmt.Sprintf("New battery for %s detected", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
 		})
+	if err != nil {
+		debugLogger.Println("error when setting: ", err) // TODO: Should this return an error?
 
-	_ = oneShot.SetReset(dogName+"criticalBattery", // TODO: Don't ignore return value
+		return
+	}
+
+	err = oneShot.SetReset(dogName+"criticalBattery", // TODO: Don't ignore return value
 		oshotpkg.Config{
 			SetIf:   (batteryVoltage < BatteryCriticalThreshold) && nowIsWakingHours,
 			OnSet:   makeNotifier(ctx, notifier, fmt.Sprintf("%s's battery critical", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
 			ResetIf: batteryVoltage > BatteryLowThreshold,
 		})
+	if err != nil {
+		debugLogger.Println("error when setting: ", err) // TODO: Should this return an error?
+
+		return
+	}
 }
 
-func notifyAboutZones(ctx context.Context, latestRecord device.Record, NamedZones []zonespkg.Zone, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
+func notifyAboutZones(ctx context.Context, latestRecord device.Record, namedZones []zonespkg.Zone, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
 	if latestRecord.GPSReading == nil {
 		debugLogger.Println("No GPS reading in record") // TODO: Should this return an error?
 
@@ -174,8 +184,8 @@ func notifyAboutZones(ctx context.Context, latestRecord device.Record, NamedZone
 
 	var thisZoneText string
 
-	if NamedZones != nil {
-		thisZoneText = "Last seen " + zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: latestRecord.GPSReading.Lat, Longitude: latestRecord.GPSReading.Long})
+	if namedZones != nil {
+		thisZoneText = "Last seen " + zonespkg.NameThatZone(namedZones, zonespkg.Point{Latitude: latestRecord.GPSReading.Lat, Longitude: latestRecord.GPSReading.Long})
 	} else {
 		thisZoneText = "<No zones loaded>"
 	}
@@ -184,19 +194,29 @@ func notifyAboutZones(ctx context.Context, latestRecord device.Record, NamedZone
 	isOutsidePropertyBoundary := !poly.IsInside(propertyBoundary, currentLocation)
 	isOutsideSafeZoneBoundary := !poly.IsInside(safeZoneBoundary, currentLocation)
 
-	_ = oneShot.SetReset(dogName+"offProperty",
+	err := oneShot.SetReset(dogName+"offProperty",
 		oshotpkg.Config{
 			SetIf:   isOutsidePropertyBoundary,
 			OnSet:   makeNotifier(ctx, notifier, fmt.Sprintf("%s is off the property", dogName), thisZoneText),
 			ResetIf: !isOutsidePropertyBoundary,
 			OnReset: makeNotifier(ctx, notifier, fmt.Sprintf("%s is now back on the property", dogName), thisZoneText),
 		})
+	if err != nil {
+		debugLogger.Println("error when setting: ", err) // TODO: Should this return an error?
 
-	_ = oneShot.SetReset(dogName+"outsideSafeZone",
+		return
+	}
+
+	err = oneShot.SetReset(dogName+"outsideSafeZone",
 		oshotpkg.Config{
 			SetIf:   isOutsideSafeZoneBoundary,
 			OnSet:   makeNotifier(ctx, notifier, fmt.Sprintf("%s is getting far from the house", dogName), thisZoneText),
 			ResetIf: !isOutsideSafeZoneBoundary,
 			OnReset: makeNotifier(ctx, notifier, fmt.Sprintf("%s is now back close to the house", dogName), thisZoneText),
 		})
+	if err != nil {
+		debugLogger.Println("error when setting: ", err) // TODO: Should this return an error?
+
+		return
+	}
 }
