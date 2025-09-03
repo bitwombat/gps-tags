@@ -22,10 +22,10 @@ func handleHealthCheck(w http.ResponseWriter, _ *http.Request) {
 func newTestNotifyHandler(n notify.Notifier) func(http.ResponseWriter, *http.Request) {
 	notifier := n
 
-	return func(w http.ResponseWriter, _ *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		debugLogger.Println("Got a request to send a test notification.")
 
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 		defer cancel()
 
 		err := notifier.Notify(ctx, "Test notification", "This is a test notification.")

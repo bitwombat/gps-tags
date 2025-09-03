@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/bitwombat/gps-tags/device"
 	"github.com/bitwombat/gps-tags/model"
@@ -12,11 +13,13 @@ import (
 )
 
 func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, _ *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		debugLogger.Println("Got a current map page request.")
 		lastWasHealthCheck = false
 
-		ctx := context.Background() // TODO: Correct? Should this be coming in from somewhere?
+		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
+		defer cancel()
+
 		pathpoints, err := storer.GetLastNPositions(ctx, 30)
 		if err != nil {
 			errorLogger.Printf("Error getting last N positions from storage: %v\n", err)
@@ -64,11 +67,12 @@ func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *h
 }
 
 func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, _ *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
 		debugLogger.Println("Got a current map page request.")
 		lastWasHealthCheck = false
 
-		ctx := context.Background() // TODO: Correct? Should this be coming in from somewhere?
+		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
+		defer cancel()
 
 		tags, err := storer.GetLastPositions(ctx)
 		if err != nil {
