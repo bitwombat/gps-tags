@@ -82,13 +82,13 @@ func main() {
 	}
 
 	// Current location map page
-	httpsMux.HandleFunc("/current", newCurrentMapPageHandler(storer))
+	httpsMux.HandleFunc("/current", newCurrentMapPageHandler(storer, time.Now))
 
 	// Paths travelled page
-	httpsMux.HandleFunc("/paths", newPathsMapPageHandler(storer))
+	httpsMux.HandleFunc("/paths", newPathsMapPageHandler(storer, time.Now))
 
 	// Data upload endpoint
-	dataPostHandler := newDataPostHandler(storer, loggingNotifier, tagAuthKey)
+	dataPostHandler := newDataPostHandler(storer, loggingNotifier, tagAuthKey, time.Now)
 	httpsMux.HandleFunc("/upload", dataPostHandler)
 
 	// Notification testing endpoint and aliases

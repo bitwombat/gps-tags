@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/bitwombat/gps-tags/storage"
 	"github.com/stretchr/testify/require"
@@ -50,7 +51,15 @@ func TestCurrentMapPageHandler(t *testing.T) {
 		},
 	}
 
-	handler := newCurrentMapPageHandler(storer)
+	now := func() time.Time {
+		t, err := time.Parse(time.DateTime, "2025-09-04 23:21:42")
+		if err != nil {
+			panic(true) // TODO: what's supposd to be passed to panic?
+		}
+		return t
+	}
+
+	handler := newCurrentMapPageHandler(storer, now)
 	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
 	w := httptest.NewRecorder()
 	handler(w, req)
