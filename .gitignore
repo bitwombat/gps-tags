@@ -19,3 +19,4 @@ app/service/cmd/migrate/dogtags.db
 app/service/cmd/migrate/golden.txt
 app/service/dogtags.db
 app/service/storage/example_sql.go
+app/service/test-output/current_page.html

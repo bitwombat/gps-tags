@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"hash/crc32"
 	"io"
 	"net/http/httptest"
 	"os"
@@ -70,5 +73,31 @@ func TestCurrentMapPageHandler(t *testing.T) {
 	resp.Body.Close()
 	require.Nil(t, err)
 
-	require.Equal(t, "Hello, client\n", string(body))
+	//require.Equal(t, "Hello, client\n", string(body))
+
+	// earlier fail than later checks
+	require.Contains(t, string(body), "Rueger")
+
+	golden, err := os.ReadFile("service/test-output/current_page.golden.html")
+	if errors.Is(err, os.ErrNotExist) {
+		t.Fatal("test-output/current_page.golden.html does not exist")
+	}
+	if err != nil {
+		t.Fatalf("error reading current_page.golden.html: %v", err)
+	}
+
+	// (and write the report for reference)
+	err = os.WriteFile("service/test-output/current_page.html", body, 0644)
+	if err != nil {
+		t.Fatalf("Couldn't write html file: %v", err)
+	}
+
+	require.Equal(t, string(golden), string(body))
+
+}
+
+func RequireEqualCRC32(t *testing.T, text string, reportName string, wantChecksum string) {
+	checksum := crc32.ChecksumIEEE([]byte(text))
+	gotChecksum := fmt.Sprintf("%08x", checksum)
+	require.Equal(t, wantChecksum, gotChecksum)
 }
