@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"fmt"
-	"hash/crc32"
 	"io"
 	"net/http/httptest"
 	"os"
@@ -73,31 +71,29 @@ func TestCurrentMapPageHandler(t *testing.T) {
 	resp.Body.Close()
 	require.Nil(t, err)
 
-	//require.Equal(t, "Hello, client\n", string(body))
-
-	// earlier fail than later checks
+	// early, clearer fail than later checks
 	require.Contains(t, string(body), "Rueger")
 
-	golden, err := os.ReadFile("service/test-output/current_page.golden.html")
-	if errors.Is(err, os.ErrNotExist) {
-		t.Fatal("test-output/current_page.golden.html does not exist")
-	}
-	if err != nil {
-		t.Fatalf("error reading current_page.golden.html: %v", err)
-	}
-
-	// (and write the report for reference)
-	err = os.WriteFile("service/test-output/current_page.html", body, 0644)
-	if err != nil {
-		t.Fatalf("Couldn't write html file: %v", err)
-	}
-
-	require.Equal(t, string(golden), string(body))
-
+	assertGolden(t, "current_page", string(body))
 }
 
-func RequireEqualCRC32(t *testing.T, text string, reportName string, wantChecksum string) {
-	checksum := crc32.ChecksumIEEE([]byte(text))
-	gotChecksum := fmt.Sprintf("%08x", checksum)
-	require.Equal(t, wantChecksum, gotChecksum)
+func assertGolden(t *testing.T, fileBasename string, got string) {
+	// We always want a current file, so write it out first, before we have a
+	// possibility of bailing if the golden file isn't found.
+	currentFilename := "service/test-output/" + fileBasename + ".html"
+	err := os.WriteFile(currentFilename, []byte(got), 0644)
+	if err != nil {
+		t.Fatalf("Couldn't write html file %s: %v", currentFilename, err)
+	}
+
+	goldenFilename := "service/test-output/" + fileBasename + ".golden.html"
+	golden, err := os.ReadFile(goldenFilename)
+	if errors.Is(err, os.ErrNotExist) {
+		t.Fatal(goldenFilename + " does not exist. Copy it from " + currentFilename)
+	}
+	if err != nil {
+		t.Fatalf("error reading %s: %v", goldenFilename, err)
+	}
+
+	require.Equal(t, string(golden), got)
 }
