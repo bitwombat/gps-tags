@@ -10,6 +10,7 @@ import (
 
 	"github.com/bitwombat/gps-tags/notify"
 	"github.com/bitwombat/gps-tags/storage"
+	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -20,7 +21,11 @@ const (
 
 // systemd recognises these prefixes and colors accordingly. Also allows filtering priorities with journalctl.
 var (
-	fatalLogger   = log.New(os.Stdout, "<2>", log.LstdFlags)
+	fatalLog = func(errcode int, msg string) int {
+		log.New(os.Stdout, "<2>", log.LstdFlags).Print(msg)
+
+		return errcode
+	}
 	errorLogger   = log.New(os.Stdout, "<3>", log.LstdFlags)
 	warningLogger = log.New(os.Stdout, "<4>", log.LstdFlags)
 	infoLogger    = log.New(os.Stdout, "<6>", log.LstdFlags)
@@ -49,14 +54,18 @@ func hostnameBasedFileServer() http.Handler {
 	})
 }
 
+func main() {
+	os.Exit(run())
+}
+
 // Start the service - connect to Mongo, set up notification, set up endpoints,
 // and start the HTTP servers.
-func main() {
+func run() int {
 	infoLogger.Println("Starting Dog Tag service.")
 
 	storer, err := storage.NewSQLiteStorer("dogs") // TODO: Get consistent between "dogs", "tags" and "dogtags" throughout codebase, including SQL
 	if err != nil {
-		fatalLogger.Fatal(fmt.Errorf("getting an sqlite storer: %w", err))
+		return fatalLog(1, fmt.Sprintf("getting an sqlite storer: %v", err))
 	}
 
 	ntfySubscriptionID := os.Getenv("NTFY_SUBSCRIPTION_ID")
@@ -78,7 +87,7 @@ func main() {
 
 	tagAuthKey := os.Getenv("TAG_AUTH_KEY")
 	if tagAuthKey == "" {
-		fatalLogger.Fatal("TAG_AUTH_KEY not set")
+		fatalLog(1, "TAG_AUTH_KEY not set")
 	}
 
 	// Current location map page
@@ -107,25 +116,32 @@ func main() {
 	// Start servers
 	infoLogger.Println("Starting servers.")
 
-	go func() {
+	var g errgroup.Group
+
+	g.Go(func() error {
 		server1 := &http.Server{
 			Addr:              ":80",
 			Handler:           httpMux,
 			ReadHeaderTimeout: 10 * time.Second,
 		}
 		infoLogger.Println("Server running on :80")
-		fatalLogger.Fatal(server1.ListenAndServe())
-	}()
 
-	go func() {
+		return server1.ListenAndServe()
+	})
+
+	g.Go(func() error {
 		server2 := &http.Server{
 			Addr:              ":443",
 			Handler:           httpsMux,
 			ReadHeaderTimeout: 10 * time.Second,
 		}
 		infoLogger.Println("Server running on :443")
-		fatalLogger.Fatal(server2.ListenAndServe())
-	}()
+		return server2.ListenAndServe()
+	})
+
+	if err := g.Wait(); err != nil {
+		return fatalLog(2, fmt.Sprintf("error starting one of the servers: %v", err))
+	}
 
 	// Block forever
 	select {}
