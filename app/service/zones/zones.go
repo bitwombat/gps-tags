@@ -33,7 +33,11 @@ func (c *Coordinates) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error
 
 	for _, str := range strings.Fields(value) {
 		var p Point
-		fmt.Sscanf(str, "%f,%f,%f", &p.Longitude, &p.Latitude, &p.Altitude)
+		_, err := fmt.Sscanf(str, "%f,%f,%f", &p.Longitude, &p.Latitude, &p.Altitude)
+		if err != nil {
+			panic("Sscanf failed")
+		}
+
 		c.Points = append(c.Points, p)
 	}
 	return nil
@@ -79,9 +83,9 @@ func ReadKMLDir(path string) ([]Zone, error) {
 }
 
 func (z *Zone) IsInside(p Point) bool {
-	var poly []polypkg.Point
-	for _, point := range z.Polygon.Points {
-		poly = append(poly, polypkg.Point{X: point.Longitude, Y: point.Latitude})
+	poly := make([]polypkg.Point, len(z.Polygon.Points))
+	for i, point := range z.Polygon.Points {
+		poly[i] = polypkg.Point{X: point.Longitude, Y: point.Latitude}
 	}
 
 	point := polypkg.Point{X: p.Longitude, Y: p.Latitude}

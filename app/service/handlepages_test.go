@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
@@ -20,7 +21,7 @@ func TestCurrentMapPageHandler(t *testing.T) {
 	storer := FakeStorer{
 		fnGetLastPositions: func(_ context.Context) ([]storage.PositionRecord, error) {
 			return []storage.PositionRecord{
-				storage.PositionRecord{
+				{
 					SerNo:     810095,
 					SeqNo:     1,
 					Reason:    3,
@@ -34,7 +35,7 @@ func TestCurrentMapPageHandler(t *testing.T) {
 					GpsStatus: 23,
 					Battery:   27,
 				},
-				storage.PositionRecord{
+				{
 					SerNo:     810243,
 					SeqNo:     11,
 					Reason:    13,
@@ -55,13 +56,13 @@ func TestCurrentMapPageHandler(t *testing.T) {
 	now := func() time.Time {
 		t, err := time.Parse(time.DateTime, "2025-09-04 23:21:42")
 		if err != nil {
-			panic(true) // TODO: what's supposd to be passed to panic?
+			panic("parsing time")
 		}
 		return t
 	}
 
 	handler := newCurrentMapPageHandler(storer, now)
-	req := httptest.NewRequest("GET", "http://example.com/foo", nil)
+	req := httptest.NewRequest(http.MethodGet, "http://example.com/foo", http.NoBody)
 	w := httptest.NewRecorder()
 	handler(w, req)
 
@@ -77,23 +78,25 @@ func TestCurrentMapPageHandler(t *testing.T) {
 	assertGolden(t, "current_page", string(body))
 }
 
-func assertGolden(t *testing.T, fileBasename string, got string) {
+func assertGolden(tb testing.TB, fileBasename, got string) {
+	tb.Helper()
+
 	// We always want a current file, so write it out first, before we have a
 	// possibility of bailing if the golden file isn't found.
 	currentFilename := "service/test-output/" + fileBasename + ".html"
-	err := os.WriteFile(currentFilename, []byte(got), 0644)
+	err := os.WriteFile(currentFilename, []byte(got), 0o644) //nolint:gosec  // Test code, don't care
 	if err != nil {
-		t.Fatalf("Couldn't write html file %s: %v", currentFilename, err)
+		tb.Fatalf("Couldn't write html file %s: %v", currentFilename, err)
 	}
 
 	goldenFilename := "service/test-output/" + fileBasename + ".golden.html"
 	golden, err := os.ReadFile(goldenFilename)
 	if errors.Is(err, os.ErrNotExist) {
-		t.Fatal(goldenFilename + " does not exist. Copy it from " + currentFilename)
+		tb.Fatal(goldenFilename + " does not exist. Copy it from " + currentFilename)
 	}
 	if err != nil {
-		t.Fatalf("error reading %s: %v", goldenFilename, err)
+		tb.Fatalf("error reading %s: %v", goldenFilename, err)
 	}
 
-	require.Equal(t, string(golden), got)
+	require.Equal(tb, string(golden), got)
 }

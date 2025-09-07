@@ -85,7 +85,7 @@ func main() {
 	httpsMux.HandleFunc("/current", newCurrentMapPageHandler(storer, time.Now))
 
 	// Paths travelled page
-	httpsMux.HandleFunc("/paths", newPathsMapPageHandler(storer, time.Now))
+	httpsMux.HandleFunc("/paths", newPathsMapPageHandler(storer))
 
 	// Data upload endpoint
 	dataPostHandler := newDataPostHandler(storer, loggingNotifier, tagAuthKey, time.Now)

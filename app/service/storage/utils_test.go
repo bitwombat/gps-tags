@@ -11,7 +11,7 @@ func TestTimeAgoAsText(t *testing.T) {
 	now := func() time.Time {
 		t, err := time.Parse(time.DateTime, "2023-11-19 23:21:42")
 		if err != nil {
-			panic(true) // TODO: what's supposd to be passed to panic?
+			panic("parsing time")
 		}
 		return t
 	}

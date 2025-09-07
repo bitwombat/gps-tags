@@ -12,7 +12,7 @@ import (
 	"github.com/bitwombat/gps-tags/substitute"
 )
 
-func newPathsMapPageHandler(storer storage.Storage, now func() time.Time) func(http.ResponseWriter, *http.Request) {
+func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		debugLogger.Println("Got a current map page request.")
 		lastWasHealthCheck = false

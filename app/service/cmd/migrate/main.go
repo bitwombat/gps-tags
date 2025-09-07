@@ -19,8 +19,7 @@ import (
 
 const dataSourceName = "dogtags.db"
 
-// These types are for reading the MongoDB export file, which is JSON.
-// The suffix types differentiates them from the internal type names.
+// TxsMongo and friends are for reading the MongoDB export file, which is JSON.
 type TxsMongo []TxMongo
 
 type TxMongo struct {
@@ -295,7 +294,7 @@ func main() {
 		_, err = w.WriteString(sqlString)
 		if err != nil {
 			fmt.Printf("error writing to %s: %v\n", outfilename, err)
-			os.Exit(1)
+			os.Exit(1) //nolint:gocritic // one-off CLI util, don't care
 		}
 	}
 
