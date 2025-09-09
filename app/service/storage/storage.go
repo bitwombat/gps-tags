@@ -22,8 +22,8 @@ type PositionRecord struct {
 	Longitude float64
 	Altitude  int32
 	Speed     int32
-	DateUTC   string
-	GpsUTC    string
+	DateUTC   time.Time
+	GpsUTC    time.Time
 	PosAcc    int32
 	GpsStatus int32
 	Battery   int32
@@ -39,13 +39,16 @@ type PathPointRecord struct {
 	PathPoints []PathPoint
 }
 
-func TimeAgoAsText(timeStr string, now func() time.Time) string {
+func StrTimeAgoAsText(ts string, now func() time.Time) string {
 	// Parse the given time string
-	t, err := time.Parse(time.DateTime, timeStr)
+	t, err := time.Parse(time.DateTime, ts)
 	if err != nil {
 		return "<time parsing error>"
 	}
+	return TimeAgoAsText(t, now)
+}
 
+func TimeAgoAsText(t time.Time, now func() time.Time) string {
 	// Calculate the difference
 	diff := now().Sub(t)
 
@@ -66,27 +69,15 @@ func TimeAgoAsText(timeStr string, now func() time.Time) string {
 	return fmt.Sprintf("%d days, %d hours, %d minutes", days, hours, minutes)
 }
 
-func TimeAgoInMinutes(timeStr string, now func() time.Time) int {
-	// Parse the given time string
-	t, err := time.Parse(time.DateTime, timeStr)
-	if err != nil {
-		return 9999
-	}
-
+func TimeAgoInMinutes(t time.Time, now func() time.Time) int {
 	// Calculate the difference
 	diff := now().Sub(t)
 
 	return int(diff.Minutes())
 }
 
-func TimeAgoInColour(timeStr string, now func() time.Time) string {
+func TimeAgoInColour(t time.Time, now func() time.Time) string {
 	const heartBeatTime = 10 * time.Minute
-
-	// Parse the given time string
-	t, err := time.Parse(time.DateTime, timeStr)
-	if err != nil {
-		return "black"
-	}
 
 	// Calculate the difference
 	diff := now().Sub(t)

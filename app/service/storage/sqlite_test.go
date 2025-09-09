@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/bitwombat/gps-tags/device"
 	"github.com/stretchr/testify/require"
@@ -20,9 +21,9 @@ var sampleTx1 device.TagTx = device.TagTx{
 		{
 			SeqNo:   7494,
 			Reason:  11,
-			DateUTC: "2023-10-21 23:21:42",
+			DateUTC: "2023-10-21T23:21:42.000Z",
 			GPSReading: &device.GPSReading{
-				GpsUTC:  "2023-10-21 23:17:40",
+				GpsUTC:  "2023-10-21T23:17:40.000Z",
 				Lat:     -31.4577084,
 				Long:    152.64215,
 				Alt:     35,
@@ -58,9 +59,9 @@ var sampleTx1 device.TagTx = device.TagTx{
 		{
 			SeqNo:   7495,
 			Reason:  2,
-			DateUTC: "2023-10-21 23:23:36",
+			DateUTC: "2023-10-21T23:23:36.000Z",
 			GPSReading: &device.GPSReading{
-				GpsUTC:  "2023-10-21 23:17:40",
+				GpsUTC:  "2023-10-21T23:17:40.000Z",
 				Lat:     -31.4577084,
 				Long:    152.64215,
 				Alt:     35,
@@ -106,9 +107,9 @@ var sampleTx2 device.TagTx = device.TagTx{
 		{
 			SeqNo:   7496,
 			Reason:  11,
-			DateUTC: "2023-10-21 23:21:42",
+			DateUTC: "2023-10-21T23:21:42.000Z",
 			GPSReading: &device.GPSReading{
-				GpsUTC:  "2023-10-21 23:17:40",
+				GpsUTC:  "2023-10-21T23:17:40.000Z",
 				Lat:     -31.4577084,
 				Long:    152.64215,
 				Alt:     35,
@@ -144,9 +145,9 @@ var sampleTx2 device.TagTx = device.TagTx{
 		{
 			SeqNo:   7497,
 			Reason:  2,
-			DateUTC: "2023-10-21 23:23:36",
+			DateUTC: "2023-10-21T23:23:36.000Z",
 			GPSReading: &device.GPSReading{
-				GpsUTC:  "2023-10-21 23:17:40",
+				GpsUTC:  "2023-10-21T23:17:40.000Z",
 				Lat:     -31.99,
 				Long:    152.99,
 				Alt:     35,
@@ -299,7 +300,7 @@ func TestGetLatestPosition(t *testing.T) {
 			require.Equal(t, int32(10), r.PosAcc)
 			require.Equal(t, int32(7), r.GpsStatus)
 			require.Equal(t, int32(4641), r.Battery)
-			require.Equal(t, "2023-10-21 23:17:40", r.GpsUTC)
+			require.Equal(t, "2023-10-21 23:17:40", r.GpsUTC.Format(time.DateTime))
 		case 810243:
 			require.Equal(t, int32(7497), r.SeqNo)
 			require.Equal(t, -31.99, r.Latitude)

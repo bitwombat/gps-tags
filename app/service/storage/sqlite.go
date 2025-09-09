@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	"github.com/bitwombat/gps-tags/device"
+	"github.com/bitwombat/gps-tags/model"
 	"github.com/google/uuid"
 	_ "modernc.org/sqlite" // library code isn't used directly
 )
@@ -55,8 +56,8 @@ type PositionRecordDAO struct {
 	Longitude sql.NullFloat64
 	Altitude  sql.NullInt32
 	Speed     sql.NullInt32
-	DateUTC   sql.NullString
-	GpsUTC    sql.NullString
+	DateUTC   model.Time // TODO: Oops, probably shouldn't be using a model type in a DAO? model.Time should be in this package, as it's only used in this DAO.
+	GpsUTC    model.Time //
 	PosAcc    sql.NullInt32
 	GpsStatus sql.NullInt32
 	Battery   sql.NullInt32 // TODO: Probably call this InternalBatteryVoltage, to match the db, or at least BatteryVoltage. Also, figure out if the LoadedVoltage field is more useful.
@@ -244,8 +245,8 @@ LIMIT 5;
 			Longitude: prDAO.Longitude.Float64,
 			Altitude:  prDAO.Altitude.Int32,
 			Speed:     prDAO.Speed.Int32,
-			DateUTC:   prDAO.DateUTC.String,
-			GpsUTC:    prDAO.GpsUTC.String,
+			DateUTC:   prDAO.DateUTC.T,
+			GpsUTC:    prDAO.GpsUTC.T,
 			PosAcc:    prDAO.PosAcc.Int32,
 			GpsStatus: prDAO.GpsStatus.Int32,
 			Battery:   prDAO.Battery.Int32,
@@ -260,9 +261,11 @@ LIMIT 5;
 	return prs, nil
 }
 
-// checkValidity checks validity of everything in a PositionRecordDAO except
-// SeqNo, which we check separately so we can include it to provide better errors
-// when another field is NULL.
+// checkValidity checks validity of everything in a PositionRecordDAO except:
+//   - SeqNo, which we check separately so we can include it in other fields' error
+//     messages.
+//   - DateUTC and GpsUTC which are of type model.Time, and are validated in the
+//     Time.Scan() method.
 func isValid(pr PositionRecordDAO) bool {
 	return (pr.SerNo.Valid &&
 		pr.Reason.Valid &&
@@ -270,8 +273,6 @@ func isValid(pr PositionRecordDAO) bool {
 		pr.Longitude.Valid &&
 		pr.Altitude.Valid &&
 		pr.Speed.Valid &&
-		pr.DateUTC.Valid &&
-		pr.GpsUTC.Valid &&
 		pr.PosAcc.Valid &&
 		pr.GpsStatus.Valid &&
 		pr.Battery.Valid)

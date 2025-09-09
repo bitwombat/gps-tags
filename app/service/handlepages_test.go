@@ -14,6 +14,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func mkTime(ts string) time.Time {
+	t, err := time.Parse(time.DateTime, ts)
+	if err != nil {
+		panic("parsing time")
+	}
+	return t
+}
+
 func TestCurrentMapPageHandler(t *testing.T) {
 	err := os.Chdir("..")
 	require.Nil(t, err, "changing directory to where public_html is")
@@ -29,8 +37,8 @@ func TestCurrentMapPageHandler(t *testing.T) {
 					Longitude: 7.0,
 					Altitude:  11,
 					Speed:     13,
-					DateUTC:   "2025-09-02 10:07:00",
-					GpsUTC:    "2025-09-03 11:08:01",
+					DateUTC:   mkTime("2025-09-02 10:07:00"),
+					GpsUTC:    mkTime("2025-09-03 11:08:01"),
 					PosAcc:    17,
 					GpsStatus: 23,
 					Battery:   27,
@@ -43,8 +51,8 @@ func TestCurrentMapPageHandler(t *testing.T) {
 					Longitude: 17.0,
 					Altitude:  111,
 					Speed:     113,
-					DateUTC:   "2024-09-02 10:07:00",
-					GpsUTC:    "2024-09-03 11:08:01",
+					DateUTC:   mkTime("2024-09-02 10:07:00"),
+					GpsUTC:    mkTime("2024-09-03 11:08:01"),
 					PosAcc:    117,
 					GpsStatus: 123,
 					Battery:   127,

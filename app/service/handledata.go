@@ -104,9 +104,9 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 			if r.GPSReading != nil {
 				thisZoneText = zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: r.GPSReading.Lat, Longitude: r.GPSReading.Long})
 
-				infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, storage.TimeAgoAsText(r.DateUTC, now), model.ReasonCode(r.Reason), r.GPSReading.GpsUTC, storage.TimeAgoAsText(r.GPSReading.GpsUTC, now), r.GPSReading.Lat, r.GPSReading.Long, thisZoneText)
+				infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, storage.StrTimeAgoAsText(r.DateUTC, now), model.ReasonCode(r.Reason), r.GPSReading.GpsUTC, storage.StrTimeAgoAsText(r.GPSReading.GpsUTC, now), r.GPSReading.Lat, r.GPSReading.Long, thisZoneText)
 			} else {
-				infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"\n", tagData.SerNo, dogName, r.DateUTC, storage.TimeAgoAsText(r.DateUTC, now), model.ReasonCode(r.Reason))
+				infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"\n", tagData.SerNo, dogName, r.DateUTC, storage.StrTimeAgoAsText(r.DateUTC, now), model.ReasonCode(r.Reason))
 			}
 
 		}

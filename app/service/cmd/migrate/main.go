@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	// "github.com/bitwombat/gps-tags-cmd/target".
 	"github.com/bitwombat/gps-tags/model"
@@ -174,13 +175,19 @@ func (i TxMongo) convert() (model.TagTx, error) {
 	return o, nil
 }
 
+// Most of these convert functions are just typecasting.
 func convertRecords(i []RecordMongo) ([]model.Record, error) {
 	o := make([]model.Record, len(i))
 	for k, r := range i {
-		o[k].DateUTC = r.DateUTC
+
+		parsedT, err := time.Parse(time.DateTime, r.DateUTC)
+		if err != nil {
+			return nil, fmt.Errorf("parsing time %s: %w", r.DateUTC, err)
+		}
+
+		o[k].DateUTC = model.Time{T: parsedT}
 		o[k].SeqNo = int(r.SeqNo)
 		o[k].Reason = int(r.Reason)
-		var err error
 		o[k].Fields, err = convertFields(r.Fields)
 		if err != nil {
 			return nil, fmt.Errorf("converting fields: %w", err)
@@ -196,11 +203,16 @@ func convertFields(i []FieldMongo) ([]model.Field, error) {
 		switch ft := f.(type) {
 		case FType0Mongo:
 			var nf model.GPSReading
+			parsedT, err := time.Parse(time.DateTime, ft.GpsUTC)
+			if err != nil {
+				return nil, fmt.Errorf("parsing time %s: %w", ft.GpsUTC, err)
+			}
+
 			nf.Spd = int(ft.Spd)
 			nf.SpdAcc = int(ft.SpdAcc)
 			nf.Head = int(ft.Head)
 			nf.GpsStat = int(ft.GpsStat)
-			nf.GpsUTC = ft.GpsUTC
+			nf.GpsUTC = model.Time{T: parsedT}
 			nf.Lat = ft.Lat
 			nf.Long = ft.Long
 			nf.Alt = int(ft.Alt)
@@ -249,6 +261,7 @@ func main() {
 		os.Exit(1)
 	}
 
+	fmt.Println("Reading JSON")
 	text, err := os.ReadFile(filename)
 	if err != nil {
 		fmt.Printf("reading input json file: %v\n", err)
@@ -265,6 +278,7 @@ func main() {
 
 	fmt.Printf("Read %v transmissions from JSON.\n", len(hardwareTxs))
 
+	fmt.Println("Converting types")
 	txs, err := hardwareTxs.convert()
 	if err != nil {
 		fmt.Printf("converting data to target types: %v\n", err)
@@ -272,7 +286,6 @@ func main() {
 	}
 
 	fmt.Printf("Converted %v JSON transmissions to own structure.\n", len(txs))
-	// pretty(txs)
 
 	outfilename := strings.TrimSuffix(filepath.Base(filename), ".json") + ".sql"
 
@@ -300,6 +313,7 @@ func main() {
 
 	w.Flush()
 
+	fmt.Println("Creating the database and setting up schema")
 	// Make the database while we're here.
 	db, err := sql.Open("sqlite", dataSourceName)
 	if err != nil {
@@ -312,4 +326,6 @@ func main() {
 		fmt.Println("error migrating: ", err)
 		os.Exit(1)
 	}
+
+	fmt.Println("Done.")
 }

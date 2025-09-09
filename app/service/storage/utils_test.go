@@ -28,7 +28,7 @@ func TestTimeAgoAsText(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.future, func(t *testing.T) {
-			age := TimeAgoAsText(tt.future, now)
+			age := StrTimeAgoAsText(tt.future, now)
 			require.Equal(t, tt.expected, age)
 		})
 	}

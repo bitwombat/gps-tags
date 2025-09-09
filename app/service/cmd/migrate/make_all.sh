@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 DBNAME="dogtags.db"
 JSON="dogs_pre_20250711.json"
 SQL=$(basename "$JSON" .json).sql

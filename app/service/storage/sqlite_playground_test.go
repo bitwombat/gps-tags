@@ -7,6 +7,7 @@ import (
 	"database/sql"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	_ "modernc.org/sqlite"
@@ -37,11 +38,16 @@ func TestSqliteInsertOne(t *testing.T) {
 	require.Nil(t, err)
 	require.NotNil(t, result)
 
+	deviceTime, err := time.Parse(time.DateTime, "2025-09-04 23:21:42")
+	if err != nil {
+		panic("parsing time")
+	}
+
 	result, err = db.ExecContext(ctx,
 		"INSERT INTO tx (ProdID, Fw, created_at) VALUES ($1, $2, $3)",
 		27,
 		"gopher",
-		"2025-08-24",
+		deviceTime,
 	)
 
 	require.Nil(t, err)

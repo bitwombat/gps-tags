@@ -2,9 +2,12 @@
 package model
 
 import (
+	"database/sql/driver"
 	"fmt"
+	"time"
 
 	"github.com/google/uuid"
+	"maragu.dev/errors"
 )
 
 // These types are the internal representation of GPS tag data. It's based on
@@ -43,7 +46,7 @@ type TagTx struct {
 }
 
 type Record struct {
-	DateUTC string
+	DateUTC Time
 	SeqNo   int
 	Reason  int
 	Fields  []Field
@@ -226,7 +229,7 @@ type GPSReading struct { // FType0
 	SpdAcc  int
 	Head    int
 	GpsStat int
-	GpsUTC  string
+	GpsUTC  Time
 	Lat     float64
 	Long    float64
 	Alt     int
@@ -267,8 +270,14 @@ func (t TagTx) ToSQL() string {
 func (r Record) toSQL(txID string) string {
 	// get new GUID from stdlib
 	// uuid.SetRand(rand.New(rand.NewSource(1)))  // Make it deterministic for testing (saving this line for later)
+
+	// TODO: If the r.DateUTC is using model.Time. Should it be using plain
+	// time.Time? I thought I made that change already. Is there more than one
+	// model that I'm not remembering?
+
 	rID := uuid.NewString()
-	s := fmt.Sprintf("INSERT INTO record (ID, TXID, DeviceDateTime, SeqNo, Reason) VALUES ('%s', '%s', '%s', %v, %v);\n", rID, txID, r.DateUTC, r.SeqNo, r.Reason)
+	dateStr, _ := r.DateUTC.Value() //nolint:errcheck // our implementation of Value() always returns nil error
+	s := fmt.Sprintf("INSERT INTO record (ID, TXID, DeviceDateTime, SeqNo, Reason) VALUES ('%s', '%s', '%s', %v, %v);\n", rID, txID, dateStr, r.SeqNo, r.Reason)
 	for _, f := range r.Fields {
 		s += f.toSQL(rID)
 	}
@@ -278,7 +287,8 @@ func (r Record) toSQL(txID string) string {
 
 // toSQL turns a GPSReading field into SQL commands.
 func (g GPSReading) toSQL(recordID string) string {
-	return fmt.Sprintf("INSERT INTO gpsReading (RecordID, Spd, SpdAcc, Head, GpsStat, GpsUTC, Lat, Lng, Alt, PosAcc, Pdop) VALUES ('%s', %v, %v, %v, %v, '%s', %.9f, %.9f, %v, %v, %v);\n", recordID, g.Spd, g.SpdAcc, g.Head, g.GpsStat, g.GpsUTC, g.Lat, g.Long, g.Alt, g.PosAcc, g.Pdop)
+	dateStr, _ := g.GpsUTC.Value() //nolint:errcheck // our implementation of Value() always returns nil error
+	return fmt.Sprintf("INSERT INTO gpsReading (RecordID, Spd, SpdAcc, Head, GpsStat, GpsUTC, Lat, Lng, Alt, PosAcc, Pdop) VALUES ('%s', %v, %v, %v, %v, '%s', %.9f, %.9f, %v, %v, %v);\n", recordID, g.Spd, g.SpdAcc, g.Head, g.GpsStat, dateStr, g.Lat, g.Long, g.Alt, g.PosAcc, g.Pdop)
 }
 
 // toSQL turns a GPIOReading field into SQL commands.
@@ -294,4 +304,39 @@ func (a AnalogueReading) toSQL(recordID string) string {
 // toSQL turns an TripTypeReading field into SQL commands.
 func (t TripTypeReading) toSQL(recordID string) string {
 	return fmt.Sprintf("INSERT INTO tripTypeReading (RecordID, Tt, Trim) VALUES ('%s', %v, %v);\n", recordID, t.Tt, t.Trim)
+}
+
+type Time struct {
+	T time.Time
+}
+
+// rfc3339Milli is like time.RFC3339Nano, but with millisecond precision, and
+// fractional seconds do not have trailing zeros removed.
+// Hat tip to https://www.golang.dk/articles/go-and-sqlite-in-the-cloud
+const rfc3339Milli = "2006-01-02T15:04:05.000Z07:00"
+
+// Value satisfies driver.Valuer interface.
+func (t *Time) Value() (driver.Value, error) {
+	return t.T.UTC().Format(rfc3339Milli), nil
+}
+
+// Scan satisfies sql.Scanner interface.
+func (t *Time) Scan(src any) error {
+	if src == nil {
+		return nil
+	}
+
+	s, ok := src.(string)
+	if !ok {
+		return errors.Newf("error scanning time, got %+v", src)
+	}
+
+	parsedT, err := time.Parse(rfc3339Milli, s)
+	if err != nil {
+		return err
+	}
+
+	t.T = parsedT.UTC()
+
+	return nil
 }
