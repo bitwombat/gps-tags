@@ -268,9 +268,6 @@ func (t TagTx) ToSQL() string {
 
 // toSQL turns a Record into SQL commands, iterating through its Fields.
 func (r Record) toSQL(txID string) string {
-	// get new GUID from stdlib
-	// uuid.SetRand(rand.New(rand.NewSource(1)))  // Make it deterministic for testing (saving this line for later)
-
 	// TODO: If the r.DateUTC is using model.Time. Should it be using plain
 	// time.Time? I thought I made that change already. Is there more than one
 	// model that I'm not remembering?

@@ -84,8 +84,7 @@ func NewSQLiteStorer(dataSourceName string) (SqliteStorer, error) {
 func (s SqliteStorer) WriteTx(ctx context.Context, tx device.TagTx) (string, error) {
 	txID := uuid.NewString() // Not unmarshalling $oid for no real reason. Zero trust that it's unique this way.
 
-	// TODO: use fmt.Sprintf everywhere, or turn this into ? $1
-	_, err := s.db.ExecContext(ctx, fmt.Sprintf("INSERT INTO tx (ID, ProdID, Fw, SerNo, IMEI, ICCID) VALUES ('%s', %v, '%s', %v, '%s', '%s');", txID, tx.ProdID, tx.Fw, tx.SerNo, tx.IMEI, tx.ICCID)) // TODO: By not using query parameters, ? or $1, this code is subject to injection attack by the device.
+	_, err := s.db.ExecContext(ctx, "INSERT INTO tx (ID, ProdID, Fw, SerNo, IMEI, ICCID) VALUES (?, ?, ?, ?, ?, ?);", txID, tx.ProdID, tx.Fw, tx.SerNo, tx.IMEI, tx.ICCID)
 	if err != nil {
 		return "", err
 	}
@@ -124,8 +123,6 @@ func (s SqliteStorer) WriteTx(ctx context.Context, tx device.TagTx) (string, err
 }
 
 func insertRecord(ctx context.Context, r device.Record, db *sql.DB, txID string) (string, error) {
-	// uuid.SetRand(rand.New(rand.NewSource(1)))  // TODO: Make it deterministic
-	// for testing? (saving this line for later)
 	rID := uuid.NewString()
 	_, err := db.ExecContext(ctx, `INSERT INTO record (ID, TxID, DeviceUTC, SeqNo, Reason) VALUES (?, ?, ?, ?, ?);`, rID, txID, r.DateUTC, r.SeqNo, r.Reason)
 
@@ -143,9 +140,7 @@ func insertGPIOReading(ctx context.Context, g device.GPIOReading, db *sql.DB, re
 }
 
 func insertAnalogueReading(ctx context.Context, a device.AnalogueReading, db *sql.DB, recordID string) error {
-	_, err := db.ExecContext(ctx, `INSERT INTO analogueReading (RecordID, InternalBatteryVoltage, Temperature, LastGSMCQ, LoadedVoltage) VALUES ($1, $2, $3, $4, $5);`, recordID, a.AnalogueData.Num1, a.AnalogueData.Num3, a.AnalogueData.Num4, a.AnalogueData.Num5) // TODO: Leakage from device into business domain. Map these to better names like old tx.go had.
-	// TODO: Wrong number of parameters fails silently - record not inserted.
-	// Sprintf would complain... but then injection attacks?
+	_, err := db.ExecContext(ctx, `INSERT INTO analogueReading (RecordID, InternalBatteryVoltage, Temperature, LastGSMCQ, LoadedVoltage) VALUES (?, ?, ?, ?, ?);`, recordID, a.AnalogueData.Num1, a.AnalogueData.Num3, a.AnalogueData.Num4, a.AnalogueData.Num5) // TODO: Leakage from device into business domain. Map these to better names like old tx.go had.
 	return err
 }
 
@@ -320,16 +315,14 @@ SELECT
 FROM
     NumberedRecords
 WHERE
-    rn <= %d
+    rn <= ?
 ORDER BY
     SerNo, DeviceUTC DESC
 ;
 `
-	query = fmt.Sprintf(query, n)
-
 	pps := make(map[int32][]PathPoint) // TODO: Make PathPointRecord type this map so the later conversion isn't necessary
 
-	rows, err := s.db.QueryContext(ctx, query)
+	rows, err := s.db.QueryContext(ctx, query, n)
 	if err != nil {
 		return []PathPointRecord{}, fmt.Errorf("error querying database for last N positions: %w", err)
 	}
