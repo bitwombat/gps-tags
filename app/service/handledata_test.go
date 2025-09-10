@@ -124,7 +124,7 @@ func TestPostDataHandler(t *testing.T) {
 	handler(w, req)
 
 	resp := w.Result()
-	require.Equal(t, 200, resp.StatusCode, "HTTP status")
+	require.Equal(t, http.StatusOK, resp.StatusCode, "HTTP status")
 
 	assert.Equal(t, "RUEGER's battery low", notifier.notifications[0].title)
 	assert.Equal(t, "Battery voltage: 1.641 V", notifier.notifications[0].message)
@@ -132,6 +132,54 @@ func TestPostDataHandler(t *testing.T) {
 	assert.Equal(t, "Battery voltage: 1.641 V", notifier.notifications[1].message)
 	assert.Equal(t, "RUEGER is off the property", notifier.notifications[2].title)
 	assert.Equal(t, "Last seen Not in any known zone.", notifier.notifications[2].message)
+
+	_ = os.Chdir(cwd)
+}
+
+func TestPostDataHandlerAuth(t *testing.T) {
+	cwd, _ := os.Getwd()
+	err := os.Chdir("..")
+	require.Nil(t, err, "changing directory to where zone kml's are")
+
+	storer := &FakeStorer{}
+
+	now := func() time.Time {
+		return time.Time{}
+	}
+
+	notifier := &FakeNotifier{}
+	handler := newDataPostHandler(storer, notifier, "xxxx", now)
+	req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", http.NoBody)
+
+	t.Run("no auth header", func(t *testing.T) {
+		w := httptest.NewRecorder()
+		handler(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusUnauthorized, resp.StatusCode, "HTTP status")
+	})
+
+	t.Run("empty auth", func(t *testing.T) {
+		header := http.Header{}
+		header.Add("auth", "")
+		req.Header = header
+		w := httptest.NewRecorder()
+		handler(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusUnauthorized, resp.StatusCode, "HTTP status")
+	})
+
+	t.Run("wrong auth", func(t *testing.T) {
+		header := http.Header{}
+		header.Add("auth", "xxxy")
+		req.Header = header
+		w := httptest.NewRecorder()
+		handler(w, req)
+
+		resp := w.Result()
+		require.Equal(t, http.StatusUnauthorized, resp.StatusCode, "HTTP status")
+	})
 
 	_ = os.Chdir(cwd)
 }

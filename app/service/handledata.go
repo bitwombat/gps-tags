@@ -48,7 +48,14 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 			return
 		}
 
-		authKey := r.Header[http.CanonicalHeaderKey("auth")][0]
+		auths, ok := r.Header[http.CanonicalHeaderKey("auth")]
+		if !ok || len(auths) != 1 {
+			errorLogger.Printf("Auth key not set in header, or too many set\n")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		authKey := auths[0]
 
 		if authKey == "" {
 			errorLogger.Printf("Got an empty auth key: %v\n", authKey)
