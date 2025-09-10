@@ -4,6 +4,9 @@ SHELL=/bin/bash
 test:
 	gotestsum ./...
 
+lint:
+	golangci-lint run ./...
+
 test-watch:
 		find . -name '*.go' -o -name '*.html' | entr sh -c 'gotestsum --max-fails 1 ./...'
 
