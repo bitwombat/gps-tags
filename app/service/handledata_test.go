@@ -98,7 +98,7 @@ const basicCompleteSample = `{
 }`
 
 func TestPostDataHandler(t *testing.T) {
-	cwd, _ := os.Getwd()
+	cwd, _ := os.Getwd() //nolint:errcheck // don't care
 	err := os.Chdir("..")
 	require.Nil(t, err, "changing directory to where zone kml's are")
 
@@ -133,11 +133,11 @@ func TestPostDataHandler(t *testing.T) {
 	assert.Equal(t, "RUEGER is off the property", notifier.notifications[2].title)
 	assert.Equal(t, "Last seen Not in any known zone.", notifier.notifications[2].message)
 
-	_ = os.Chdir(cwd)
+	_ = os.Chdir(cwd) //nolint:errcheck // don't care
 }
 
 func TestPostDataHandlerAuth(t *testing.T) {
-	cwd, _ := os.Getwd()
+	cwd, _ := os.Getwd() //nolint:errcheck // don't care
 	err := os.Chdir("..")
 	require.Nil(t, err, "changing directory to where zone kml's are")
 
@@ -181,5 +181,5 @@ func TestPostDataHandlerAuth(t *testing.T) {
 		require.Equal(t, http.StatusUnauthorized, resp.StatusCode, "HTTP status")
 	})
 
-	_ = os.Chdir(cwd)
+	_ = os.Chdir(cwd) //nolint:errcheck // don't care
 }

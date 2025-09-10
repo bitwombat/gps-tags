@@ -14,7 +14,7 @@ type FakeStorer struct {
 	fnGetLastNPositions func(context.Context, int) ([]storage.PathPointRecord, error)
 }
 
-func (s *FakeStorer) WriteTx(ctx context.Context, tagTx device.TagTx) (string, error) {
+func (s *FakeStorer) WriteTx(_ context.Context, tagTx device.TagTx) (string, error) {
 	s.writtenTx = tagTx
 	return "", nil
 }
@@ -38,7 +38,7 @@ type FakeNotifier struct {
 
 // TODO: title and message should be types. "string, string" in interface not
 // very explicative.
-func (n *FakeNotifier) Notify(_ context.Context, title string, message string) error {
+func (n *FakeNotifier) Notify(_ context.Context, title, message string) error {
 	fmt.Println("FAKE notification ", title, message)
 	n.notifications = append(n.notifications, notification{title: title, message: message})
 

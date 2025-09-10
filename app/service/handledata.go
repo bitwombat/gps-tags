@@ -80,8 +80,6 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 			return
 		}
 
-		debugLogger.Println(string(body))
-
 		var tagData device.TagTx
 
 		err = json.Unmarshal(body, &tagData)
@@ -97,18 +95,34 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 		}
 		dogName = strings.ToUpper(dogName) // Just looks better and stands out in notifications
 
-		var latestRecord device.Record
+		type latestARType struct {
+			ar    device.AnalogueReading
+			seqNo int
+		}
+
+		type latestGPSType struct {
+			gr    device.GPSReading
+			seqNo int
+		}
+
+		var latestAnalogue latestARType
+		var latestGPS latestGPSType
 
 		// Process the records
 		for _, r := range tagData.Records {
 			var thisZoneText string
 
-			// Figure out the most recent record for notifications later
-			if r.SeqNo > latestRecord.SeqNo { // TODO: Totally wrong. Need to independently track the Reading* fields.
-				latestRecord = r
-			}
-
+			// Figure out the most recent records for notifications later
 			if r.GPSReading != nil {
+				if r.GPSReading.Lat == 0 || r.GPSReading.Long == 0 { // Oddball, bogus GPS result.
+					errorLogger.Print("Got 0 for lat or long... not committing record")
+					continue
+				}
+
+				if r.SeqNo > latestGPS.seqNo {
+					latestGPS.seqNo = r.SeqNo
+					latestGPS.gr = *r.GPSReading
+				}
 				thisZoneText = zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: r.GPSReading.Lat, Longitude: r.GPSReading.Long})
 
 				infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, storage.StrTimeAgoAsText(r.DateUTC, now), model.ReasonCode(r.Reason), r.GPSReading.GpsUTC, storage.StrTimeAgoAsText(r.GPSReading.GpsUTC, now), r.GPSReading.Lat, r.GPSReading.Long, thisZoneText)
@@ -116,19 +130,18 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 				infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"\n", tagData.SerNo, dogName, r.DateUTC, storage.StrTimeAgoAsText(r.DateUTC, now), model.ReasonCode(r.Reason))
 			}
 
-		}
+			if r.AnalogueReading != nil {
+				if r.SeqNo > latestAnalogue.seqNo {
+					latestAnalogue.seqNo = r.SeqNo
+					latestAnalogue.ar = *r.AnalogueReading
+				}
+			}
 
-		if latestRecord.GPSReading.Lat == 0 || latestRecord.GPSReading.Long == 0 { // Oddball, bogus GPS result.
-			errorLogger.Print("Got 0 for lat or long... not committing record")
-			// TODO: nil out the pointer in the Record, rather than returning
-			// early - there are other records to go through in the loop
-			w.WriteHeader(http.StatusOK) // Say "OK" because we don't want the system re-sending this record.  // TODO: Delete this
-			return
 		}
 
 		// Send notifications
-		notifyAboutBattery(ctx, now, latestRecord, dogName, oneShot, notifier)
-		notifyAboutZones(ctx, latestRecord, NamedZones, dogName, oneShot, notifier)
+		notifyAboutBattery(ctx, now, latestAnalogue.ar, dogName, oneShot, notifier)
+		notifyAboutZones(ctx, latestGPS.gr, NamedZones, dogName, oneShot, notifier)
 
 		// Insert the document into storage
 		id, err := storer.WriteTx(ctx, tagData)
@@ -144,10 +157,13 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 	}
 }
 
-func notifyAboutBattery(ctx context.Context, now func() time.Time, latestRecord device.Record, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
-	var batteryVoltage float64
+func notifyAboutBattery(ctx context.Context, now func() time.Time, latestAnalogue device.AnalogueReading, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
+	if latestAnalogue.AnalogueData.Num1 == 0 { // TODO: nil?
+		return
+	}
 
-	batteryVoltage = float64(latestRecord.AnalogueReading.AnalogueData.Num1) / 1000 // TODO: Remove this extra level of structure.
+	batteryVoltage := float64(latestAnalogue.AnalogueData.Num1) / 1000 // TODO: Remove this extra level of structure.
+
 	// We don't want to hear about low battery in the middle of the night.
 	nowIsWakingHours := now().Hour() >= 8 && now().Hour() <= 22
 
@@ -164,7 +180,7 @@ func notifyAboutBattery(ctx context.Context, now func() time.Time, latestRecord 
 		return
 	}
 
-	err = oneShot.SetReset(dogName+"criticalBattery", // TODO: Don't ignore return value
+	err = oneShot.SetReset(dogName+"criticalBattery",
 		oshotpkg.Config{
 			SetIf:   (batteryVoltage < BatteryCriticalThreshold) && nowIsWakingHours,
 			OnSet:   makeNotifier(ctx, notifier, fmt.Sprintf("%s's battery critical", dogName), fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
@@ -177,8 +193,8 @@ func notifyAboutBattery(ctx context.Context, now func() time.Time, latestRecord 
 	}
 }
 
-func notifyAboutZones(ctx context.Context, latestRecord device.Record, namedZones []zonespkg.Zone, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
-	if latestRecord.GPSReading == nil {
+func notifyAboutZones(ctx context.Context, latestGPS device.GPSReading, namedZones []zonespkg.Zone, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
+	if latestGPS.Lat == 0 { // TODO: nil?
 		debugLogger.Println("No GPS reading in record") // TODO: Should this return an error?
 
 		return
@@ -187,12 +203,12 @@ func notifyAboutZones(ctx context.Context, latestRecord device.Record, namedZone
 	var thisZoneText string
 
 	if namedZones != nil {
-		thisZoneText = "Last seen " + zonespkg.NameThatZone(namedZones, zonespkg.Point{Latitude: latestRecord.GPSReading.Lat, Longitude: latestRecord.GPSReading.Long})
+		thisZoneText = "Last seen " + zonespkg.NameThatZone(namedZones, zonespkg.Point{Latitude: latestGPS.Lat, Longitude: latestGPS.Long})
 	} else {
 		thisZoneText = "<No zones loaded>"
 	}
 
-	currentLocation := poly.Point{X: latestRecord.GPSReading.Lat, Y: latestRecord.GPSReading.Long}
+	currentLocation := poly.Point{X: latestGPS.Lat, Y: latestGPS.Long}
 	isOutsidePropertyBoundary := !poly.IsInside(propertyBoundary, currentLocation)
 	isOutsideSafeZoneBoundary := !poly.IsInside(safeZoneBoundary, currentLocation)
 
