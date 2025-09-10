@@ -42,26 +42,6 @@ type SqliteStorer struct {
 	db *sql.DB
 }
 
-// This type exists only to take advantage of the sql.Null type, which I'm using
-// mostly out of caution rather than understanding a real threat of error. NOT
-// NULL is on every column in the database. integrity. This is mostly an
-// invariant. Its at this level of the file (rather than with the query) because
-// the verification functions need it.
-type PositionRecordDAO struct {
-	SerNo     sql.NullInt32
-	SeqNo     sql.NullInt32
-	Reason    sql.NullInt32
-	Latitude  sql.NullFloat64
-	Longitude sql.NullFloat64
-	Altitude  sql.NullInt32
-	Speed     sql.NullInt32
-	DateUTC   model.Time // TODO: Oops, probably shouldn't be using a model type in a DAO? model.Time should be in this package, as it's only used in this DAO.
-	GpsUTC    model.Time //
-	PosAcc    sql.NullInt32
-	GpsStatus sql.NullInt32
-	Battery   sql.NullInt32 // TODO: Probably call this InternalBatteryVoltage, to match the db, or at least BatteryVoltage. Also, figure out if the LoadedVoltage field is more useful.
-}
-
 type PointRecordDAO struct {
 	SerNo     sql.NullInt32
 	SeqNo     sql.NullInt32
@@ -156,6 +136,37 @@ func insertTripTypeReading(ctx context.Context, t device.TripTypeReading, db *sq
 }
 
 func (s SqliteStorer) GetLastPositions(ctx context.Context) ([]PositionRecord, error) {
+	// This type exists only to take advantage of the sql.Null type, which I'm using
+	// mostly out of caution rather than understanding a real threat of error. NOT
+	// NULL is on every column in the database. integrity.
+	type PositionRecordDAO struct {
+		SerNo     sql.NullInt32
+		SeqNo     sql.NullInt32
+		Reason    sql.NullInt32
+		Latitude  sql.NullFloat64
+		Longitude sql.NullFloat64
+		Altitude  sql.NullInt32
+		Speed     sql.NullInt32
+		DateUTC   model.Time // TODO: Oops, probably shouldn't be using a model type in a DAO? model.Time should be in this package, as it's only used in this DAO.
+		GpsUTC    model.Time //
+		PosAcc    sql.NullInt32
+		GpsStatus sql.NullInt32
+		Battery   sql.NullInt32 // TODO: Probably call this InternalBatteryVoltage, to match the db, or at least BatteryVoltage. Also, figure out if the LoadedVoltage field is more useful.
+	}
+
+	isValid := func(pr PositionRecordDAO) bool {
+		// seqNo checked separately so error message can use it.
+		return (pr.SerNo.Valid &&
+			pr.Reason.Valid &&
+			pr.Latitude.Valid &&
+			pr.Longitude.Valid &&
+			pr.Altitude.Valid &&
+			pr.Speed.Valid &&
+			pr.PosAcc.Valid &&
+			pr.GpsStatus.Valid &&
+			pr.Battery.Valid)
+	}
+
 	query := `
 WITH RankedRecords AS (
     SELECT
@@ -265,18 +276,6 @@ LIMIT 5;
 //     messages.
 //   - DateUTC and GpsUTC which are of type model.Time, and are validated in the
 //     Time.Scan() method.
-func isValid(pr PositionRecordDAO) bool {
-	return (pr.SerNo.Valid &&
-		pr.Reason.Valid &&
-		pr.Latitude.Valid &&
-		pr.Longitude.Valid &&
-		pr.Altitude.Valid &&
-		pr.Speed.Valid &&
-		pr.PosAcc.Valid &&
-		pr.GpsStatus.Valid &&
-		pr.Battery.Valid)
-}
-
 func (s SqliteStorer) GetLastNPositions(ctx context.Context, n int) ([]PathPointRecord, error) {
 	query := `
 WITH NumberedRecords AS (
