@@ -66,6 +66,7 @@ func TestCurrentMapPageHandler(t *testing.T) {
 		if err != nil {
 			panic("parsing time")
 		}
+
 		return t
 	}
 
@@ -80,7 +81,7 @@ func TestCurrentMapPageHandler(t *testing.T) {
 	resp.Body.Close()
 	require.Nil(t, err)
 
-	// early, clearer fail than later checks
+	// This is just an early, clearer fail
 	require.Contains(t, string(body), "Rueger")
 
 	assertGolden(t, "current_page", string(body))

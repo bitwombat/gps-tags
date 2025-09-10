@@ -42,12 +42,11 @@ type SqliteStorer struct {
 	db *sql.DB
 }
 
-// This exists only to take advantage of the sql.Null type, which I'm using
-// mostly out of caution rather than understanding a real threat of error.
-// Having NOT NULL everywhere in the database would be the smart way of
-// enforcing data integrity. This is mostly an invariant.
-// Its at this level because the verification functions need it.
-// TODO: Make sure schema has NOT NULL for everything.
+// This type exists only to take advantage of the sql.Null type, which I'm using
+// mostly out of caution rather than understanding a real threat of error. NOT
+// NULL is on every column in the database. integrity. This is mostly an
+// invariant. Its at this level of the file (rather than with the query) because
+// the verification functions need it.
 type PositionRecordDAO struct {
 	SerNo     sql.NullInt32
 	SeqNo     sql.NullInt32
@@ -129,7 +128,7 @@ func insertRecord(ctx context.Context, r device.Record, db *sql.DB, txID string)
 	// uuid.SetRand(rand.New(rand.NewSource(1)))  // TODO: Make it deterministic
 	// for testing? (saving this line for later)
 	rID := uuid.NewString()
-	_, err := db.ExecContext(ctx, `INSERT INTO record (ID, TxID, DeviceDateTime, SeqNo, Reason) VALUES (?, ?, ?, ?, ?);`, rID, txID, r.DateUTC, r.SeqNo, r.Reason)
+	_, err := db.ExecContext(ctx, `INSERT INTO record (ID, TxID, DeviceUTC, SeqNo, Reason) VALUES (?, ?, ?, ?, ?);`, rID, txID, r.DateUTC, r.SeqNo, r.Reason)
 
 	return rID, err
 }
@@ -170,9 +169,9 @@ WITH RankedRecords AS (
 		gpsReading.GpsUTC,
 		gpsReading.PosAcc,
 		gpsReading.GpsStat,
-        record.DeviceDateTime,
+        record.DeviceUTC,
 		analogueReading.InternalBatteryVoltage,
-        ROW_NUMBER() OVER (PARTITION BY tx.SerNo ORDER BY record.DeviceDateTime DESC) as rn
+        ROW_NUMBER() OVER (PARTITION BY tx.SerNo ORDER BY record.DeviceUTC DESC) as rn
     FROM
         tx
     JOIN
@@ -190,7 +189,7 @@ SELECT
 	Lng,
 	Alt,
 	Spd,
-	DeviceDateTime,
+	DeviceUTC,
 	GpsUTC,
 	PosAcc,
 	GpsStat,
@@ -200,7 +199,7 @@ FROM
 WHERE
     rn = 1
 ORDER BY
-    DeviceDateTime DESC
+    DeviceUTC DESC
 LIMIT 5;
 `
 
@@ -286,7 +285,7 @@ WITH NumberedRecords AS (
 		record.SeqNo,
 		gpsReading.Lat,
 		gpsReading.Lng,
-        record.DeviceDateTime,
+        record.DeviceUTC,
         ROW_NUMBER() OVER (PARTITION BY tx.SerNo ORDER BY record.SeqNo DESC) AS rn
     FROM
         tx
@@ -305,7 +304,7 @@ FROM
 WHERE
     rn <= %d
 ORDER BY
-    SerNo, DeviceDateTime DESC
+    SerNo, DeviceUTC DESC
 ;
 `
 	query = fmt.Sprintf(query, n)

@@ -277,7 +277,7 @@ func (r Record) toSQL(txID string) string {
 
 	rID := uuid.NewString()
 	dateStr, _ := r.DateUTC.Value() //nolint:errcheck // our implementation of Value() always returns nil error
-	s := fmt.Sprintf("INSERT INTO record (ID, TXID, DeviceDateTime, SeqNo, Reason) VALUES ('%s', '%s', '%s', %v, %v);\n", rID, txID, dateStr, r.SeqNo, r.Reason)
+	s := fmt.Sprintf("INSERT INTO record (ID, TXID, DeviceUTC, SeqNo, Reason) VALUES ('%s', '%s', '%s', %v, %v);\n", rID, txID, dateStr, r.SeqNo, r.Reason)
 	for _, f := range r.Fields {
 		s += f.toSQL(rID)
 	}

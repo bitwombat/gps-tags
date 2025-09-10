@@ -1,67 +1,64 @@
 CREATE TABLE tx (
-    ID TEXT PRIMARY KEY,
-    ProdID INTEGER,
-    Fw TEXT,
-    SerNo INTEGER,
-    Imei TEXT,
-    Iccid TEXT,
-    CreatedAt TEXT,
-    json TEXT
-);
+    ID TEXT PRIMARY KEY NOT NULL,
+    ProdID INTEGER NOT NULL,
+    Fw TEXT NOT NULL,
+    SerNo INTEGER NOT NULL,
+    Imei TEXT NOT NULL,
+    Iccid TEXT NOT NULL
+) STRICT;
 
 CREATE TABLE record (
-    ID TEXT PRIMARY KEY,
+    ID TEXT PRIMARY KEY NOT NULL,
     TxID TEXT NOT NULL,
-    DeviceDateTime TEXT,
-    SeqNo INTEGER,
-    Reason INTEGER,
+    DeviceUTC TEXT NOT NULL,
+    SeqNo INTEGER NOT NULL,
+    Reason INTEGER NOT NULL,
     FOREIGN KEY (TxID) REFERENCES tx(ID)
-);
+) STRICT;
 
 CREATE TABLE gpsReading (
-    ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     RecordID TEXT NOT NULL,
-    Spd INTEGER,
-    SpdAcc INTEGER,
-    Head INTEGER,
-    GpsStat INTEGER,
-    GpsUTC TEXT,
-    Lat REAL,
-    Lng REAL,
-    Alt INTEGER,
-    PosAcc INTEGER,
-    Pdop INTEGER,
+    Spd INTEGER NOT NULL,
+    SpdAcc INTEGER NOT NULL,
+    Head INTEGER NOT NULL,
+    GpsStat INTEGER NOT NULL,
+    GpsUTC TEXT NOT NULL,
+    Lat REAL NOT NULL,
+    Lng REAL NOT NULL,
+    Alt INTEGER NOT NULL,
+    PosAcc INTEGER NOT NULL,
+    Pdop INTEGER NOT NULL,
     FOREIGN KEY (RecordID) REFERENCES record(ID)
-);
+) STRICT;
 
 CREATE TABLE gpioReading (
-    ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     RecordID TEXT NOT NULL,
-    DIn INTEGER,
-    DOut INTEGER,
-    DevStat INTEGER,
+    DIn INTEGER NOT NULL,
+    DOut INTEGER NOT NULL,
+    DevStat INTEGER NOT NULL,
     FOREIGN KEY (RecordID) REFERENCES record(ID)
-);
+) STRICT;
 
 CREATE TABLE analogueReading (
-    ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     RecordID TEXT NOT NULL,
-    InternalBatteryVoltage INTEGER,
-    Temperature INTEGER,
-    LastGSMCQ INTEGER,
-    LoadedVoltage INTEGER,
+    InternalBatteryVoltage INTEGER NOT NULL,
+    Temperature INTEGER NOT NULL,
+    LastGSMCQ INTEGER NOT NULL,
+    LoadedVoltage INTEGER NOT NULL,
     FOREIGN KEY (RecordID) REFERENCES record(ID)
-);
+) STRICT;
 
 CREATE TABLE tripTypeReading (
-    ID INTEGER PRIMARY KEY AUTOINCREMENT,
+    ID INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
     RecordID TEXT NOT NULL,
-    Tt INTEGER,
-    Trim INTEGER,
+    Tt INTEGER NOT NULL,
+    Trim INTEGER NOT NULL,
     FOREIGN KEY (RecordID) REFERENCES record(ID)
-);
+) STRICT;
 
-CREATE INDEX tx_idx ON tx (createdAt);
 CREATE INDEX rec_idx ON record (TxID);
 CREATE INDEX gps_idx ON gpsReading (RecordID);
 CREATE INDEX gpi_idx ON gpioReading (RecordID);
@@ -69,4 +66,3 @@ CREATE INDEX ana_idx ON analogueReading (RecordID);
 CREATE INDEX tri_idx ON tripTypeReading (RecordID);
 
 PRAGMA main.INTEGRITY_CHECK;
-
