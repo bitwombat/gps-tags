@@ -82,8 +82,7 @@ func NewSQLiteStorer(dataSourceName string) (SqliteStorer, error) {
 }
 
 func (s SqliteStorer) WriteTx(ctx context.Context, tx device.TagTx) (string, error) {
-	// uuid.SetRand(rand.New(rand.NewSource(1)))  // TODO: Make it deterministic for testing (saving this line for later)
-	txID := uuid.NewString() // TODO: Maybe create this when unmarshaling? The field's there.
+	txID := uuid.NewString() // Not unmarshalling $oid for no real reason. Zero trust that it's unique this way.
 
 	// TODO: use fmt.Sprintf everywhere, or turn this into ? $1
 	_, err := s.db.ExecContext(ctx, fmt.Sprintf("INSERT INTO tx (ID, ProdID, Fw, SerNo, IMEI, ICCID) VALUES ('%s', %v, '%s', %v, '%s', '%s');", txID, tx.ProdID, tx.Fw, tx.SerNo, tx.IMEI, tx.ICCID)) // TODO: By not using query parameters, ? or $1, this code is subject to injection attack by the device.

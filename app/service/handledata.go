@@ -97,7 +97,7 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 			var thisZoneText string
 
 			// Figure out the most recent record for notifications later
-			if r.SeqNo > latestRecord.SeqNo {
+			if r.SeqNo > latestRecord.SeqNo { // TODO: Totally wrong. Need to independently track the Reading* fields.
 				latestRecord = r
 			}
 
@@ -113,7 +113,9 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 
 		if latestRecord.GPSReading.Lat == 0 || latestRecord.GPSReading.Long == 0 { // Oddball, bogus GPS result.
 			errorLogger.Print("Got 0 for lat or long... not committing record")
-			w.WriteHeader(http.StatusOK) // Say "OK" because we don't want the system re-sending this record.
+			// TODO: nil out the pointer in the Record, rather than returning
+			// early - there are other records to go through in the loop
+			w.WriteHeader(http.StatusOK) // Say "OK" because we don't want the system re-sending this record.  // TODO: Delete this
 			return
 		}
 
