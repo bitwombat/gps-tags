@@ -95,18 +95,18 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 		}
 		dogName = strings.ToUpper(dogName) // Just looks better and stands out in notifications
 
-		type latestARType struct {
+		type AnalogueRecord struct {
 			ar    device.AnalogueReading
 			seqNo int
 		}
 
-		type latestGPSType struct {
+		type GPSRecord struct {
 			gr    device.GPSReading
 			seqNo int
 		}
 
-		var latestAnalogue latestARType
-		var latestGPS latestGPSType
+		var latestAnalogue AnalogueRecord
+		var latestGPS GPSRecord
 
 		// Process the records
 		for _, r := range tagData.Records {

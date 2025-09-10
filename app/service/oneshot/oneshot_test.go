@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type stepType struct {
+type step struct {
 	config                   Config
 	expectedSetActionCount   int
 	expectedResetActionCount int
@@ -44,11 +44,11 @@ func TestOneShot(t *testing.T) {
 
 	for _, tc := range []struct {
 		description string
-		steps       []stepType
+		steps       []step
 	}{
 		{
 			description: "doesn't run any actions when no conditions true (FF)",
-			steps: []stepType{
+			steps: []step{
 				{
 					config: Config{
 						SetIf:   false,
@@ -64,7 +64,7 @@ func TestOneShot(t *testing.T) {
 		},
 		{
 			description: "runs just the set action when just SetIf is true (TF)",
-			steps: []stepType{
+			steps: []step{
 				{
 					config: Config{
 						SetIf:   true,
@@ -80,7 +80,7 @@ func TestOneShot(t *testing.T) {
 		},
 		{
 			description: "does not run the reset action if it hasn't been set (FT)",
-			steps: []stepType{
+			steps: []step{
 				{
 					config: Config{
 						SetIf:   false,
@@ -96,7 +96,7 @@ func TestOneShot(t *testing.T) {
 		},
 		{
 			description: "does run the reset action if it has been set",
-			steps: []stepType{
+			steps: []step{
 				{
 					config: Config{
 						SetIf:   true,
@@ -123,7 +123,7 @@ func TestOneShot(t *testing.T) {
 		},
 		{
 			description: "runs both actions when both Ifs are true simultaneously (TT)",
-			steps: []stepType{
+			steps: []step{
 				{
 					config: Config{
 						SetIf:   true,
@@ -139,7 +139,7 @@ func TestOneShot(t *testing.T) {
 		},
 		{
 			description: "remains reset when both Ifs are true (TT)",
-			steps: []stepType{
+			steps: []step{
 				{
 					config: Config{
 						SetIf:   true,
@@ -166,7 +166,7 @@ func TestOneShot(t *testing.T) {
 		},
 		{
 			description: "one-shots properly (doesn't fire twice)",
-			steps: []stepType{
+			steps: []step{
 				{
 					config: Config{
 						SetIf:   true,
@@ -193,7 +193,7 @@ func TestOneShot(t *testing.T) {
 		},
 		{
 			description: "doesn't set if action errors",
-			steps: []stepType{
+			steps: []step{
 				{
 					config: Config{
 						SetIf:   true,
@@ -220,7 +220,7 @@ func TestOneShot(t *testing.T) {
 		},
 		{
 			description: "doesn't reset if action errors",
-			steps: []stepType{
+			steps: []step{
 				{
 					config: Config{
 						SetIf:   true,
