@@ -50,17 +50,37 @@ type PointRecordDAO struct {
 }
 
 func NewSQLiteStorer(dataSourceName string) (SqliteStorer, error) {
-	db, err := sql.Open("sqlite", dataSourceName)
+	var dsn string
+	if dataSourceName == ":memory:" {
+		dsn = dataSourceName
+	} else {
+		dsn = "file://" + dataSourceName + "?_pragma=foreign_keys(1)"
+	}
+
+	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		return SqliteStorer{}, fmt.Errorf("opening database: %w", err)
 	}
+
+	// NOTE: We really should check that the pragma has been set, because the
+	// driver has to be compiled with support for it. The below code returns
+	// <nil> for all three values, so that may indicate this driver doesn't have
+	// support compiled in (though the docs indicate all pragmas are supported,
+	// and use this one as an example:
+	// https://pkg.go.dev/modernc.org/sqlite#Driver.Open
+	// Perhaps try one of the other drivers someday, eg. "github.com/mattn/go-sqlite3"
+	// as used by https://www.golang.dk/articles/go-and-sqlite-in-the-cloud
+	// result, err := db.ExecContext(context.Background(), "PRAGMA foreign_keys;")
+	// fmt.Println(err)
+	// fmt.Println(result.LastInsertId())
+	// fmt.Println(result.RowsAffected())
+
 	var ss SqliteStorer
 	ss.db = db
 
 	return ss, nil
 }
 
-// TODO: make sure to set PRAGMA foreign_keys = true for every connection.
 func (s SqliteStorer) WriteTx(ctx context.Context, tx device.TagTx) (string, error) {
 	// uuid.SetRand(rand.New(rand.NewSource(1)))  // TODO: Make it deterministic for testing (saving this line for later)
 	txID := uuid.NewString() // TODO: Maybe create this when unmarshaling? The field's there.
