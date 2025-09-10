@@ -138,12 +138,6 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 func notifyAboutBattery(ctx context.Context, latestRecord device.Record, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
 	var batteryVoltage float64
 
-	if latestRecord.AnalogueReading == nil {
-		debugLogger.Println("No battery voltage in record") // TODO: Should this return an error?
-
-		return
-	}
-
 	batteryVoltage = float64(latestRecord.AnalogueReading.AnalogueData.Num1) / 1000 // TODO: Remove this extra level of structure.
 
 	// We don't want to hear about low battery in the middle of the night.
