@@ -120,7 +120,7 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 		}
 
 		// Send notifications
-		notifyAboutBattery(ctx, latestRecord, dogName, oneShot, notifier)
+		notifyAboutBattery(ctx, now, latestRecord, dogName, oneShot, notifier)
 		notifyAboutZones(ctx, latestRecord, NamedZones, dogName, oneShot, notifier)
 
 		// Insert the document into storage
@@ -137,13 +137,12 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 	}
 }
 
-func notifyAboutBattery(ctx context.Context, latestRecord device.Record, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
+func notifyAboutBattery(ctx context.Context, now func() time.Time, latestRecord device.Record, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
 	var batteryVoltage float64
 
 	batteryVoltage = float64(latestRecord.AnalogueReading.AnalogueData.Num1) / 1000 // TODO: Remove this extra level of structure.
-
 	// We don't want to hear about low battery in the middle of the night.
-	nowIsWakingHours := time.Now().Hour() >= 8 && time.Now().Hour() <= 22
+	nowIsWakingHours := now().Hour() >= 8 && now().Hour() <= 22
 
 	err := oneShot.SetReset(dogName+"lowBattery",
 		oshotpkg.Config{
