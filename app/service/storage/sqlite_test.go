@@ -6,23 +6,23 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitwombat/gps-tags/device"
+	"github.com/bitwombat/gps-tags/model"
 	"github.com/stretchr/testify/require"
 	"maragu.dev/migrate"
 )
 
-var sampleTx1 device.TagTx = device.TagTx{
+var sampleTx1 model.TagTx = model.TagTx{
 	SerNo:  810095,
 	IMEI:   "353785725680796",
 	ICCID:  "89610180004127201829",
 	ProdID: 97,
 	Fw:     "97.2.1.11",
-	Records: []device.Record{
+	Records: []model.Record{
 		{
 			SeqNo:   7494,
 			Reason:  11,
 			DateUTC: "2023-10-21T23:21:42.000Z",
-			GPSReading: &device.GPSReading{
+			GPSReading: &model.GPSReading{
 				GpsUTC:  "2023-10-21T23:17:40.000Z",
 				Lat:     -31.4577084,
 				Long:    152.64215,
@@ -33,34 +33,28 @@ var sampleTx1 device.TagTx = device.TagTx{
 				PDOP:    17,
 				PosAcc:  10,
 				GpsStat: 7,
-				FType:   0,
 			},
-			GPIOReading: &device.GPIOReading{
+			GPIOReading: &model.GPIOReading{
 				DIn:     1,
 				DOut:    0,
 				DevStat: 1,
-				FType:   2,
 			},
-			AnalogueReading: &device.AnalogueReading{
-				AnalogueData: device.AnalogueData{
-					Num1: 4641,
-					Num3: 3500,
-					Num4: 8,
-					Num5: 4500,
-				},
-				FType: 6,
+			AnalogueReading: &model.AnalogueReading{
+				InternalBatteryVoltage: 4641,
+				Temperature:            3500,
+				LastGSMCQ:              8,
+				LoadedVoltage:          4500,
 			},
-			TripTypeReading: &device.TripTypeReading{
-				Tt:    2,
-				Trim:  300,
-				FType: 15,
+			TripTypeReading: &model.TripTypeReading{
+				Tt:   2,
+				Trim: 300,
 			},
 		},
 		{
 			SeqNo:   7495,
 			Reason:  2,
 			DateUTC: "2023-10-21T23:23:36.000Z",
-			GPSReading: &device.GPSReading{
+			GPSReading: &model.GPSReading{
 				GpsUTC:  "2023-10-21T23:17:40.000Z",
 				Lat:     -31.4577084,
 				Long:    152.64215,
@@ -71,44 +65,38 @@ var sampleTx1 device.TagTx = device.TagTx{
 				PDOP:    17,
 				PosAcc:  10,
 				GpsStat: 7,
-				FType:   0,
 			},
-			TripTypeReading: &device.TripTypeReading{
-				Tt:    2,
-				Trim:  300,
-				FType: 15,
+			TripTypeReading: &model.TripTypeReading{
+				Tt:   2,
+				Trim: 300,
 			},
-			GPIOReading: &device.GPIOReading{
+			GPIOReading: &model.GPIOReading{
 				DIn:     0,
 				DOut:    0,
 				DevStat: 0,
-				FType:   2,
 			},
-			AnalogueReading: &device.AnalogueReading{
-				AnalogueData: device.AnalogueData{
-					Num1: 4641,
-					Num3: 3400,
-					Num4: 8,
-					Num5: 4504,
-				},
-				FType: 6,
+			AnalogueReading: &model.AnalogueReading{
+				InternalBatteryVoltage: 4641,
+				Temperature:            3400,
+				LastGSMCQ:              8,
+				LoadedVoltage:          4504,
 			},
 		},
 	},
 }
 
-var sampleTx2 device.TagTx = device.TagTx{
+var sampleTx2 model.TagTx = model.TagTx{
 	SerNo:  810243,
 	IMEI:   "353785725680796",
 	ICCID:  "89610180004127201829",
 	ProdID: 97,
 	Fw:     "97.2.1.11",
-	Records: []device.Record{
+	Records: []model.Record{
 		{
 			SeqNo:   7496,
 			Reason:  11,
 			DateUTC: "2023-10-21T23:21:42.000Z",
-			GPSReading: &device.GPSReading{
+			GPSReading: &model.GPSReading{
 				GpsUTC:  "2023-10-21T23:17:40.000Z",
 				Lat:     -31.4577084,
 				Long:    152.64215,
@@ -119,34 +107,28 @@ var sampleTx2 device.TagTx = device.TagTx{
 				PDOP:    17,
 				PosAcc:  10,
 				GpsStat: 7,
-				FType:   0,
 			},
-			GPIOReading: &device.GPIOReading{
+			GPIOReading: &model.GPIOReading{
 				DIn:     1,
 				DOut:    0,
 				DevStat: 1,
-				FType:   2,
 			},
-			AnalogueReading: &device.AnalogueReading{
-				AnalogueData: device.AnalogueData{
-					Num1: 4641,
-					Num3: 3500,
-					Num4: 8,
-					Num5: 4500,
-				},
-				FType: 6,
+			AnalogueReading: &model.AnalogueReading{
+				InternalBatteryVoltage: 4641,
+				Temperature:            3500,
+				LastGSMCQ:              8,
+				LoadedVoltage:          4500,
 			},
-			TripTypeReading: &device.TripTypeReading{
-				Tt:    2,
-				Trim:  300,
-				FType: 15,
+			TripTypeReading: &model.TripTypeReading{
+				Tt:   2,
+				Trim: 300,
 			},
 		},
 		{
 			SeqNo:   7497,
 			Reason:  2,
 			DateUTC: "2023-10-21T23:23:36.000Z",
-			GPSReading: &device.GPSReading{
+			GPSReading: &model.GPSReading{
 				GpsUTC:  "2023-10-21T23:17:40.000Z",
 				Lat:     -31.99,
 				Long:    152.99,
@@ -157,67 +139,61 @@ var sampleTx2 device.TagTx = device.TagTx{
 				PDOP:    17,
 				PosAcc:  10,
 				GpsStat: 7,
-				FType:   0,
 			},
-			TripTypeReading: &device.TripTypeReading{
-				Tt:    2,
-				Trim:  300,
-				FType: 15,
+			TripTypeReading: &model.TripTypeReading{
+				Tt:   2,
+				Trim: 300,
 			},
-			GPIOReading: &device.GPIOReading{
+			GPIOReading: &model.GPIOReading{
 				DIn:     0,
 				DOut:    0,
 				DevStat: 0,
-				FType:   2,
 			},
-			AnalogueReading: &device.AnalogueReading{
-				AnalogueData: device.AnalogueData{
-					Num1: 4641,
-					Num3: 3400,
-					Num4: 8,
-					Num5: 4504,
-				},
-				FType: 6,
+			AnalogueReading: &model.AnalogueReading{
+				InternalBatteryVoltage: 4641,
+				Temperature:            3400,
+				LastGSMCQ:              8,
+				LoadedVoltage:          4504,
 			},
 		},
 	},
 }
 
-var nSamples = []device.TagTx{
+var nSamples = []model.TagTx{
 	{
 		SerNo: 810095,
-		Records: []device.Record{
+		Records: []model.Record{
 			{
 				SeqNo: 1,
-				GPSReading: &device.GPSReading{
+				GPSReading: &model.GPSReading{
 					Lat:  100,
 					Long: 101,
 				},
 			},
 			{
 				SeqNo: 2,
-				GPSReading: &device.GPSReading{
+				GPSReading: &model.GPSReading{
 					Lat:  102,
 					Long: 103,
 				},
 			},
 			{
 				SeqNo: 3,
-				GPSReading: &device.GPSReading{
+				GPSReading: &model.GPSReading{
 					Lat:  104,
 					Long: 105,
 				},
 			},
 			{
 				SeqNo: 4,
-				GPSReading: &device.GPSReading{
+				GPSReading: &model.GPSReading{
 					Lat:  106,
 					Long: 107,
 				},
 			},
 			{
 				SeqNo: 5,
-				GPSReading: &device.GPSReading{
+				GPSReading: &model.GPSReading{
 					Lat:  108,
 					Long: 109,
 				},
@@ -226,38 +202,38 @@ var nSamples = []device.TagTx{
 	},
 	{
 		SerNo: 810243,
-		Records: []device.Record{
+		Records: []model.Record{
 			{
 				SeqNo: 2,
-				GPSReading: &device.GPSReading{
+				GPSReading: &model.GPSReading{
 					Lat:  110,
 					Long: 111,
 				},
 			},
 			{
 				SeqNo: 4,
-				GPSReading: &device.GPSReading{
+				GPSReading: &model.GPSReading{
 					Lat:  112,
 					Long: 113,
 				},
 			},
 			{
 				SeqNo: 6,
-				GPSReading: &device.GPSReading{
+				GPSReading: &model.GPSReading{
 					Lat:  114,
 					Long: 115,
 				},
 			},
 			{
 				SeqNo: 8,
-				GPSReading: &device.GPSReading{
+				GPSReading: &model.GPSReading{
 					Lat:  116,
 					Long: 117,
 				},
 			},
 			{
 				SeqNo: 10,
-				GPSReading: &device.GPSReading{
+				GPSReading: &model.GPSReading{
 					Lat:  118,
 					Long: 119,
 				},

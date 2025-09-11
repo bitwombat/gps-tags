@@ -4,17 +4,17 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/bitwombat/gps-tags/device"
+	"github.com/bitwombat/gps-tags/model"
 	"github.com/bitwombat/gps-tags/storage"
 )
 
 type FakeStorer struct {
-	writtenTx           device.TagTx
+	writtenTx           model.TagTx
 	fnGetLastPositions  func(context.Context) ([]storage.PositionRecord, error)
 	fnGetLastNPositions func(context.Context, int) ([]storage.PathPointRecord, error)
 }
 
-func (s *FakeStorer) WriteTx(_ context.Context, tagTx device.TagTx) (string, error) {
+func (s *FakeStorer) WriteTx(_ context.Context, tagTx model.TagTx) (string, error) {
 	s.writtenTx = tagTx
 	return "", nil
 }

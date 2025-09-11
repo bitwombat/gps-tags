@@ -9,26 +9,12 @@ import (
 	"maragu.dev/errors"
 )
 
-// These types are the internal representation of GPS tag data. It's based on
-// the Yabby3 device (the first/only device supported so far).
-//
-// It only exists in this dir so that it can be a package and thus pulled in by
-// the cmd/migrate script. Since that script is basically a one-off, perhaps
-// delete it in the future and move this to live with main.go.
-//
-// It doesn't live in device/ because it's device independent, and its type
-// names would collide with the ones in yabby3.go.
-//
 // From the device, a Record's Fields may be one of several types. This isn't
 // great for downstream Go code, so these types here serve to provide a sane
 // internal type for use in code.
 //
-// These types are also used for the one-off migration from MongoDB. Records
-// read from MongoDB have floats where integers should be. These types here have
-// ints in the correct places.
-//
-// Most field names are kept the same as the device to reduce mental effort if
-// mapping these back to the raw device data.
+// For the one-off migration from MongoDB, records read from MongoDB have floats
+// where integers should be. These types here have ints in the correct places.
 //
 // Reminder on the structure: A Tx has Records which have Fields
 

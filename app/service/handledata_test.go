@@ -102,8 +102,6 @@ func TestPostDataHandler(t *testing.T) {
 	err := os.Chdir("..")
 	require.Nil(t, err, "changing directory to where zone kml's are")
 
-	storer := &FakeStorer{}
-
 	now := func() time.Time {
 		t, err := time.Parse(time.DateTime, "2025-09-04 13:21:42") // midday so battery notification happens
 		if err != nil {
@@ -113,14 +111,19 @@ func TestPostDataHandler(t *testing.T) {
 		return t
 	}
 
+	storer := &FakeStorer{}
 	notifier := &FakeNotifier{}
 	handler := newDataPostHandler(storer, notifier, "xxxx", now)
+
 	body := strings.NewReader(basicCompleteSample)
+
 	req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", body)
 	header := http.Header{}
 	header.Add("auth", "xxxx")
 	req.Header = header
+
 	w := httptest.NewRecorder()
+
 	handler(w, req)
 
 	resp := w.Result()

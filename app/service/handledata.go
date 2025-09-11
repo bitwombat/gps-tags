@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -80,28 +79,26 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 			return
 		}
 
-		var tagData device.TagTx
-
-		err = json.Unmarshal(body, &tagData)
+		tagData, err := device.Unmarshal(body)
 		if err != nil {
-			errorLogger.Printf("Error unmarshalling JSON: %v", err)
+			errorLogger.Printf("%v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		dogName, ok := device.SerNoToName[tagData.SerNo]
+		dogName, ok := model.SerNoToName[tagData.SerNo]
 		if !ok {
 			errorLogger.Printf("Unknown tag number: %v", tagData.SerNo)
 		}
 		dogName = strings.ToUpper(dogName) // Just looks better and stands out in notifications
 
 		type AnalogueRecord struct {
-			ar    device.AnalogueReading
+			ar    model.AnalogueReading
 			seqNo int
 		}
 
 		type GPSRecord struct {
-			gr    device.GPSReading
+			gr    model.GPSReading
 			seqNo int
 		}
 
@@ -157,12 +154,12 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 	}
 }
 
-func notifyAboutBattery(ctx context.Context, now func() time.Time, latestAnalogue device.AnalogueReading, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
-	if latestAnalogue.AnalogueData.Num1 == 0 { // TODO: nil?
+func notifyAboutBattery(ctx context.Context, now func() time.Time, latestAnalogue model.AnalogueReading, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
+	if latestAnalogue.InternalBatteryVoltage == 0 { // TODO: nil?
 		return
 	}
 
-	batteryVoltage := float64(latestAnalogue.AnalogueData.Num1) / 1000 // TODO: Remove this extra level of structure.
+	batteryVoltage := float64(latestAnalogue.InternalBatteryVoltage) / 1000 // TODO: Remove this extra level of structure.
 
 	// We don't want to hear about low battery in the middle of the night.
 	nowIsWakingHours := now().Hour() >= 8 && now().Hour() <= 22
@@ -193,7 +190,7 @@ func notifyAboutBattery(ctx context.Context, now func() time.Time, latestAnalogu
 	}
 }
 
-func notifyAboutZones(ctx context.Context, latestGPS device.GPSReading, namedZones []zonespkg.Zone, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
+func notifyAboutZones(ctx context.Context, latestGPS model.GPSReading, namedZones []zonespkg.Zone, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
 	if latestGPS.Lat == 0 { // TODO: nil?
 		debugLogger.Println("No GPS reading in record") // TODO: Should this return an error?
 

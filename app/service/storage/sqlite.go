@@ -8,7 +8,6 @@ import (
 	"maps"
 	"slices"
 
-	"github.com/bitwombat/gps-tags/device"
 	"github.com/bitwombat/gps-tags/model"
 	"github.com/google/uuid"
 	_ "modernc.org/sqlite" // library code isn't used directly
@@ -81,7 +80,7 @@ func NewSQLiteStorer(dataSourceName string) (SqliteStorer, error) {
 	return ss, nil
 }
 
-func (s SqliteStorer) WriteTx(ctx context.Context, tx device.TagTx) (string, error) {
+func (s SqliteStorer) WriteTx(ctx context.Context, tx model.TagTx) (string, error) {
 	txID := uuid.NewString() // Not unmarshalling $oid for no real reason. Zero trust that it's unique this way.
 
 	_, err := s.db.ExecContext(ctx, "INSERT INTO tx (ID, ProdID, Fw, SerNo, IMEI, ICCID) VALUES (?, ?, ?, ?, ?, ?);", txID, tx.ProdID, tx.Fw, tx.SerNo, tx.IMEI, tx.ICCID)
@@ -122,29 +121,29 @@ func (s SqliteStorer) WriteTx(ctx context.Context, tx device.TagTx) (string, err
 	return txID, nil
 }
 
-func insertRecord(ctx context.Context, r device.Record, db *sql.DB, txID string) (string, error) {
+func insertRecord(ctx context.Context, r model.Record, db *sql.DB, txID string) (string, error) {
 	rID := uuid.NewString()
 	_, err := db.ExecContext(ctx, `INSERT INTO record (ID, TxID, DeviceUTC, SeqNo, Reason) VALUES (?, ?, ?, ?, ?);`, rID, txID, r.DateUTC, r.SeqNo, r.Reason)
 
 	return rID, err
 }
 
-func insertGPSReading(ctx context.Context, g device.GPSReading, db *sql.DB, recordID string) error {
+func insertGPSReading(ctx context.Context, g model.GPSReading, db *sql.DB, recordID string) error {
 	_, err := db.ExecContext(ctx, `INSERT INTO gpsReading (RecordID, Spd, SpdAcc, Head, GpsStat, GpsUTC, Lat, Lng, Alt, PosAcc, PDOP) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`, recordID, g.Spd, g.SpdAcc, g.Head, g.GpsStat, g.GpsUTC, g.Lat, g.Long, g.Alt, g.PosAcc, g.PDOP)
 	return err
 }
 
-func insertGPIOReading(ctx context.Context, g device.GPIOReading, db *sql.DB, recordID string) error {
+func insertGPIOReading(ctx context.Context, g model.GPIOReading, db *sql.DB, recordID string) error {
 	_, err := db.ExecContext(ctx, `INSERT INTO gpioReading (RecordID, DIn, DOut, DevStat) VALUES (?, ?, ?, ?);`, recordID, g.DIn, g.DOut, g.DevStat)
 	return err
 }
 
-func insertAnalogueReading(ctx context.Context, a device.AnalogueReading, db *sql.DB, recordID string) error {
-	_, err := db.ExecContext(ctx, `INSERT INTO analogueReading (RecordID, InternalBatteryVoltage, Temperature, LastGSMCQ, LoadedVoltage) VALUES (?, ?, ?, ?, ?);`, recordID, a.AnalogueData.Num1, a.AnalogueData.Num3, a.AnalogueData.Num4, a.AnalogueData.Num5) // TODO: Leakage from device into business domain. Map these to better names like old tx.go had.
+func insertAnalogueReading(ctx context.Context, a model.AnalogueReading, db *sql.DB, recordID string) error {
+	_, err := db.ExecContext(ctx, `INSERT INTO analogueReading (RecordID, InternalBatteryVoltage, Temperature, LastGSMCQ, LoadedVoltage) VALUES (?, ?, ?, ?, ?);`, recordID, a.InternalBatteryVoltage, a.Temperature, a.LastGSMCQ, a.LoadedVoltage)
 	return err
 }
 
-func insertTripTypeReading(ctx context.Context, t device.TripTypeReading, db *sql.DB, recordID string) error {
+func insertTripTypeReading(ctx context.Context, t model.TripTypeReading, db *sql.DB, recordID string) error {
 	_, err := db.ExecContext(ctx, `INSERT INTO tripTypeReading (RecordID, Tt, Trim) VALUES (?, ?, ?);`, recordID, t.Tt, t.Trim)
 	return err
 }

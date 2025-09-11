@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/bitwombat/gps-tags/device"
+	"github.com/bitwombat/gps-tags/model"
 )
 
 type Storage interface {
-	WriteTx(context.Context, device.TagTx) (string, error)
+	WriteTx(context.Context, model.TagTx) (string, error)
 	GetLastPositions(context.Context) ([]PositionRecord, error)
 	GetLastNPositions(context.Context, int) ([]PathPointRecord, error)
 }
