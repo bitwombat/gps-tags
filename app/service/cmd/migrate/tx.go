@@ -130,7 +130,7 @@ type Time struct {
 const rfc3339Milli = "2006-01-02T15:04:05.000Z07:00"
 
 // Value satisfies driver.Valuer interface.
-func (t *Time) Value() (driver.Value, error) {
+func (t *Time) Value() (driver.Value, error) { //nolint:unparam // error is always nil, but we're implementing an interface, so nothing we can do.
 	return t.T.UTC().Format(rfc3339Milli), nil
 }
 

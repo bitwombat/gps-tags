@@ -23,7 +23,7 @@ import (
 // TODO: Maybe? It would be better if Record had []Fields, which were of type
 // any, like I had in a previous version. Then this file would be straight JSON
 // decoding (though with the irregular JSON fun). Then the convert function here
-// would flatten the structure and use the pointeres. This would have the
+// would flatten the structure and use the pointers. This would have the
 // responsibilities more accurately contained/partitioned.
 
 type TagTx struct {
@@ -260,7 +260,7 @@ func convertTripTypeReading(tt *TripTypeReading) *model.TripTypeReading {
 	return &mr
 }
 
-// TODO: Is this used? (unused checker doesn't always catch these)
+// TODO: Is this used? (unused checker doesn't always catch these).
 var SerNoToName = map[int]string{
 	810095: "rueger",
 	810243: "charlie",
