@@ -17,7 +17,7 @@ type Time struct {
 const rfc3339Milli = "2006-01-02T15:04:05.000Z07:00"
 
 // Value satisfies driver.Valuer interface.
-func (t *Time) Value() (driver.Value, error) {
+func (t Time) Value() (driver.Value, error) {
 	return t.T.UTC().Format(rfc3339Milli), nil
 }
 
@@ -40,4 +40,12 @@ func (t *Time) Scan(src any) error {
 	t.T = parsedT.UTC()
 
 	return nil
+}
+
+func TimeFromString(s string) (Time, error) {
+	parsedT, err := time.Parse(time.DateTime, s)
+	if err != nil {
+		return Time{}, err
+	}
+	return Time{T: parsedT}, err
 }

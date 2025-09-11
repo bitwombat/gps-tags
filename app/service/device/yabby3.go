@@ -195,7 +195,12 @@ func convertRecord(r Record) model.Record {
 	mr.ID = r.ID
 	mr.SeqNo = r.SeqNo
 	mr.Reason = r.Reason
-	mr.DateUTC = r.DateUTC
+
+	t, err := model.TimeFromString(r.DateUTC)
+	if err != nil {
+		panic(fmt.Sprintf("failed scanning time string %s: %v", r.DateUTC, err))
+	}
+	mr.DateUTC = t
 
 	mr.GPSReading = convertGPSReading(r.GPSReading)
 	mr.GPIOReading = convertGPIOReading(r.GPIOReading)
@@ -214,7 +219,13 @@ func convertGPSReading(gr *GPSReading) *model.GPSReading {
 	mr.SpdAcc = gr.SpdAcc
 	mr.Head = gr.Head
 	mr.GpsStat = gr.GpsStat
-	mr.GpsUTC = gr.GpsUTC
+
+	t, err := model.TimeFromString(gr.GpsUTC)
+	if err != nil {
+		panic(fmt.Sprintf("failed scanning time string %s: %v", gr.GpsUTC, err))
+	}
+	mr.GpsUTC = t
+
 	mr.Lat = gr.Lat
 	mr.Long = gr.Long
 	mr.Alt = gr.Alt
