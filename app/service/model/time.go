@@ -7,6 +7,14 @@ import (
 	"maragu.dev/errors"
 )
 
+// Time implements the driver.Valuer and sql.Scanner interfaces so that we can
+// read and write proper time.Times to/from sqlite3 database.
+// It lives here in model, but DAOs will need to use it, since that's the point
+// of it. Yet, it shouldn't live in storage, since any business value that is
+// intended to go into the db should use it. The alternative would be to copy
+// any business value into a DAO that was identical except for dates (ie.
+// turning time.Time into Time). This is too tedious for the value it would
+// provide, so keep Time here.
 type Time struct {
 	T time.Time
 }

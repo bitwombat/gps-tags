@@ -160,8 +160,8 @@ func (s SqliteStorer) GetLastPositions(ctx context.Context) ([]PositionRecord, e
 		Longitude sql.NullFloat64
 		Altitude  sql.NullInt32
 		Speed     sql.NullInt32
-		DateUTC   model.Time // TODO: Oops, probably shouldn't be using a model type in a DAO? model.Time should be in this package, as it's only used in this DAO.
-		GpsUTC    model.Time //
+		DateUTC   model.Time
+		GpsUTC    model.Time
 		PosAcc    sql.NullInt32
 		GpsStatus sql.NullInt32
 		Battery   sql.NullInt32 // TODO: Probably call this InternalBatteryVoltage, to match the db, or at least BatteryVoltage. Also, figure out if the LoadedVoltage field is more useful.
