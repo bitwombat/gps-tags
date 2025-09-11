@@ -28,7 +28,7 @@ type Record struct {
 	ID              string
 	SeqNo           int
 	Reason          int
-	DateUTC         string
+	DateUTC         string // TODO: Oops. Fix this.
 	GPSReading      *GPSReading
 	GPIOReading     *GPIOReading
 	AnalogueReading *AnalogueReading
@@ -40,7 +40,7 @@ type GPSReading struct {
 	SpdAcc  int
 	Head    int
 	GpsStat int
-	GpsUTC  string
+	GpsUTC  string // TODO: Oops. Fix this.
 	Lat     float64
 	Long    float64
 	Alt     int

@@ -13,7 +13,7 @@ fi
 
 [ -e "$DBNAME" ] && rm -i "$DBNAME"
 
-go run main.go "$JSON"
+go run . "$JSON"
 
 echo "importing old data (slow)"
 cat "$SQL" | sqlite3 -bail "$DBNAME"
