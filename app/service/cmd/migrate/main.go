@@ -12,8 +12,6 @@ import (
 	"strings"
 	"time"
 
-	// "github.com/bitwombat/gps-tags-cmd/target".
-	"github.com/bitwombat/gps-tags/model"
 	"maragu.dev/migrate"
 	_ "modernc.org/sqlite"
 )
@@ -144,8 +142,8 @@ func (r *RecordMongo) UnmarshalJSON(p []byte) error {
 	return nil
 }
 
-func (txs TxsMongo) convert() (model.TagTxs, error) {
-	var tts model.TagTxs
+func (txs TxsMongo) convert() (TagTxs, error) {
+	var tts TagTxs
 	for _, tx := range txs {
 		tt, err := tx.convert()
 		if err != nil {
@@ -157,8 +155,8 @@ func (txs TxsMongo) convert() (model.TagTxs, error) {
 	return tts, nil
 }
 
-func (i TxMongo) convert() (model.TagTx, error) {
-	var o model.TagTx
+func (i TxMongo) convert() (TagTx, error) {
+	var o TagTx
 
 	o.ID = i.ID.Oid
 	o.ProdID = int(i.ProdID)
@@ -169,15 +167,15 @@ func (i TxMongo) convert() (model.TagTx, error) {
 	var err error
 	o.Records, err = convertRecords(i.Records)
 	if err != nil {
-		return model.TagTx{}, fmt.Errorf("converting records: %w", err)
+		return TagTx{}, fmt.Errorf("converting records: %w", err)
 	}
 
 	return o, nil
 }
 
 // Most of these convert functions are just typecasting.
-func convertRecords(i []RecordMongo) ([]model.Record, error) {
-	o := make([]model.Record, len(i))
+func convertRecords(i []RecordMongo) ([]Record, error) {
+	o := make([]Record, len(i))
 	for k, r := range i {
 
 		parsedT, err := time.Parse(time.DateTime, r.DateUTC)
@@ -185,7 +183,7 @@ func convertRecords(i []RecordMongo) ([]model.Record, error) {
 			return nil, fmt.Errorf("parsing time %s: %w", r.DateUTC, err)
 		}
 
-		o[k].DateUTC = model.Time{T: parsedT}
+		o[k].DateUTC = Time{T: parsedT}
 		o[k].SeqNo = int(r.SeqNo)
 		o[k].Reason = int(r.Reason)
 		o[k].Fields, err = convertFields(r.Fields)
@@ -197,12 +195,12 @@ func convertRecords(i []RecordMongo) ([]model.Record, error) {
 	return o, nil
 }
 
-func convertFields(i []FieldMongo) ([]model.Field, error) {
-	var o []model.Field
+func convertFields(i []FieldMongo) ([]Field, error) {
+	var o []Field
 	for _, f := range i {
 		switch ft := f.(type) {
 		case FType0Mongo:
-			var nf model.GPSReading
+			var nf GPSReading
 			parsedT, err := time.Parse(time.DateTime, ft.GpsUTC)
 			if err != nil {
 				return nil, fmt.Errorf("parsing time %s: %w", ft.GpsUTC, err)
@@ -212,7 +210,7 @@ func convertFields(i []FieldMongo) ([]model.Field, error) {
 			nf.SpdAcc = int(ft.SpdAcc)
 			nf.Head = int(ft.Head)
 			nf.GpsStat = int(ft.GpsStat)
-			nf.GpsUTC = model.Time{T: parsedT}
+			nf.GpsUTC = Time{T: parsedT}
 			nf.Lat = ft.Lat
 			nf.Long = ft.Long
 			nf.Alt = int(ft.Alt)
@@ -221,14 +219,14 @@ func convertFields(i []FieldMongo) ([]model.Field, error) {
 			o = append(o, nf)
 
 		case FType2Mongo:
-			var nf model.GPIOReading
+			var nf GPIOReading
 			nf.DIn = int(ft.DIn)
 			nf.DOut = int(ft.DOut)
 			nf.DevStat = int(ft.DevStat)
 			o = append(o, nf)
 
 		case FType6Mongo:
-			var nf model.AnalogueReading
+			var nf AnalogueReading
 			nf.InternalBatteryVoltage = int(ft.AnalogueData.Num1)
 			nf.Temperature = int(ft.AnalogueData.Num3)
 			nf.LastGSMCQ = int(ft.AnalogueData.Num4)
@@ -236,7 +234,7 @@ func convertFields(i []FieldMongo) ([]model.Field, error) {
 			o = append(o, nf)
 
 		case FType15Mongo:
-			var nf model.TripTypeReading
+			var nf TripTypeReading
 			nf.Tt = int(ft.Tt)
 			nf.Trim = int(ft.Trim)
 			o = append(o, nf)
