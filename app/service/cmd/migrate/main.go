@@ -45,23 +45,23 @@ type RecordMongo struct {
 type FieldMongo any
 
 type FType0Mongo struct {
-	Spd     float64 `json:"Spd,omitempty"`
-	SpdAcc  float64 `json:"SpdAcc,omitempty"`
-	Head    float64 `json:"Head,omitempty"`
-	GpsStat float64 `json:"GpsStat,omitempty"`
-	GpsUTC  string  `json:"GpsUTC,omitempty"`
-	Lat     float64 `json:"Lat,omitempty"`
-	Long    float64 `json:"Long,omitempty"`
-	Alt     float64 `json:"Alt,omitempty"`
+	Spd     float64 `json:"Spd"`
+	SpdAcc  float64 `json:"SpdAcc"`
+	Head    float64 `json:"Head"`
+	GpsStat float64 `json:"GpsStat"`
+	GpsUTC  string  `json:"GpsUTC"`
+	Lat     float64 `json:"Lat"`
+	Long    float64 `json:"Long"`
+	Alt     float64 `json:"Alt"`
 	FType   float64 `json:"FType"`
-	PosAcc  float64 `json:"PosAcc,omitempty"`
-	Pdop    float64 `json:"PDOP,omitempty"`
+	PosAcc  float64 `json:"PosAcc"`
+	Pdop    float64 `json:"PDOP"`
 }
 
 type FType2Mongo struct {
-	DIn     float64 `json:"DIn,omitempty"`
-	DOut    float64 `json:"DOut,omitempty"`
-	DevStat float64 `json:"DevStat,omitempty"`
+	DIn     float64 `json:"DIn"`
+	DOut    float64 `json:"DOut"`
+	DevStat float64 `json:"DevStat"`
 	FType   float64 `json:"FType"`
 }
 
