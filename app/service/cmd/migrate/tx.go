@@ -85,10 +85,6 @@ func (t TagTx) ToSQL() string {
 
 // toSQL turns a Record into SQL commands, iterating through its Fields.
 func (r Record) toSQL(txID string) string {
-	// TODO: If the r.DateUTC is using model.Time. Should it be using plain
-	// time.Time? I thought I made that change already. Is there more than one
-	// model that I'm not remembering?
-
 	rID := uuid.NewString()
 	dateStr, _ := r.DateUTC.Value() //nolint:errcheck // our implementation of Value() always returns nil error
 	s := fmt.Sprintf("INSERT INTO record (ID, TXID, DeviceUTC, SeqNo, Reason) VALUES ('%s', '%s', '%s', %v, %v);\n", rID, txID, dateStr, r.SeqNo, r.Reason)
