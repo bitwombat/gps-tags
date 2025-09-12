@@ -9,9 +9,9 @@ import (
 )
 
 type FakeStorer struct {
-	writtenTx           model.TagTx
-	fnGetLastPositions  func(context.Context) ([]storage.PositionRecord, error)
-	fnGetLastNPositions func(context.Context, int) (storage.PathPointRecord, error)
+	writtenTx         model.TagTx
+	fnGetLastStatuses func(context.Context) ([]storage.Status, error)
+	fnGetLastNCoords  func(context.Context, int) (storage.Coords, error)
 }
 
 func (s *FakeStorer) WriteTx(_ context.Context, tagTx model.TagTx) (string, error) {
@@ -19,12 +19,12 @@ func (s *FakeStorer) WriteTx(_ context.Context, tagTx model.TagTx) (string, erro
 	return "", nil
 }
 
-func (s FakeStorer) GetLastPositions(ctx context.Context) ([]storage.PositionRecord, error) {
-	return s.fnGetLastPositions(ctx)
+func (s FakeStorer) GetLastStatuses(ctx context.Context) ([]storage.Status, error) {
+	return s.fnGetLastStatuses(ctx)
 }
 
-func (s FakeStorer) GetLastNPositions(ctx context.Context, n int) (storage.PathPointRecord, error) {
-	return s.fnGetLastNPositions(ctx, n)
+func (s FakeStorer) GetLastNCoords(ctx context.Context, n int) (storage.Coords, error) {
+	return s.fnGetLastNCoords(ctx, n)
 }
 
 type notification struct {

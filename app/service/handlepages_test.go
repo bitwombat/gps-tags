@@ -27,8 +27,8 @@ func TestCurrentMapPageHandler(t *testing.T) {
 	require.Nil(t, err, "changing directory to where public_html is")
 
 	storer := &FakeStorer{
-		fnGetLastPositions: func(_ context.Context) ([]storage.PositionRecord, error) {
-			return []storage.PositionRecord{
+		fnGetLastStatuses: func(_ context.Context) ([]storage.Status, error) {
+			return []storage.Status{
 				{
 					SerNo:     810095,
 					SeqNo:     1,

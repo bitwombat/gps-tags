@@ -39,13 +39,6 @@ type SqliteStorer struct {
 	db *sql.DB
 }
 
-type PointRecordDAO struct { // TODO: Lowercase because DAO. Shouldn't be used outside.
-	SerNo     sql.NullInt32
-	SeqNo     sql.NullInt32
-	Latitude  sql.NullFloat64
-	Longitude sql.NullFloat64
-}
-
 func NewSQLiteStorer(dataSourceName string) (SqliteStorer, error) {
 	var dsn string
 	if dataSourceName == ":memory:" {
@@ -146,11 +139,11 @@ func insertTripTypeReading(ctx context.Context, t model.TripTypeReading, db *sql
 	return err
 }
 
-func (s SqliteStorer) GetLastPositions(ctx context.Context) ([]PositionRecord, error) {
+func (s SqliteStorer) GetLastStatuses(ctx context.Context) ([]Status, error) {
 	// This type exists only to take advantage of the sql.Null type, which I'm using
 	// mostly out of caution rather than understanding a real threat of error. NOT
 	// NULL is on every column in the database. integrity.
-	type PositionRecordDAO struct {
+	type StatusDAO struct {
 		SerNo                  sql.NullInt32
 		SeqNo                  sql.NullInt32
 		Reason                 sql.NullInt32
@@ -165,8 +158,8 @@ func (s SqliteStorer) GetLastPositions(ctx context.Context) ([]PositionRecord, e
 		InternalBatteryVoltage sql.NullInt32
 	}
 
-	isValid := func(pr PositionRecordDAO) bool {
-		// seqNo checked separately so error message can use it.
+	isValid := func(pr StatusDAO) bool {
+		// seqNo checked elsewhere so error message can use it.
 		return (pr.SerNo.Valid &&
 			pr.Reason.Valid &&
 			pr.Latitude.Valid &&
@@ -225,16 +218,16 @@ ORDER BY
 LIMIT 5;
 `
 
-	var prs []PositionRecord
+	var prs []Status
 
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
-		return []PositionRecord{}, fmt.Errorf("error querying database for last positions: %w", err)
+		return []Status{}, fmt.Errorf("error querying database for last statuses: %w", err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var prDAO PositionRecordDAO
+		var prDAO StatusDAO
 		err = rows.Scan(
 			&prDAO.SerNo,
 			&prDAO.SeqNo,
@@ -249,16 +242,16 @@ LIMIT 5;
 			&prDAO.GpsStatus,
 			&prDAO.InternalBatteryVoltage)
 		if err != nil {
-			return []PositionRecord{}, fmt.Errorf("error scanning row: %w", err)
+			return []Status{}, fmt.Errorf("error scanning row: %w", err)
 		}
 		if !prDAO.SeqNo.Valid {
-			return []PositionRecord{}, errors.New("SeqNo in record is NULL")
+			return []Status{}, errors.New("SeqNo in record is NULL")
 		}
 		if !isValid(prDAO) {
-			return []PositionRecord{}, fmt.Errorf("one of the fields of database row for SeqNo %v is NULL", prDAO.SeqNo.Int32)
+			return []Status{}, fmt.Errorf("one of the fields of database row for SeqNo %v is NULL", prDAO.SeqNo.Int32)
 		}
 
-		prs = append(prs, PositionRecord{
+		prs = append(prs, Status{
 			SerNo:     prDAO.SerNo.Int32,
 			SeqNo:     prDAO.SeqNo.Int32,
 			Reason:    prDAO.Reason.Int32,
@@ -276,18 +269,20 @@ LIMIT 5;
 
 	err = rows.Err()
 	if err != nil {
-		return []PositionRecord{}, fmt.Errorf("error after scanning rows: %w", err)
+		return []Status{}, fmt.Errorf("error after scanning rows: %w", err)
 	}
 
 	return prs, nil
 }
 
-// checkValidity checks validity of everything in a PositionRecordDAO except:
-//   - SeqNo, which we check separately so we can include it in other fields' error
-//     messages.
-//   - DateUTC and GpsUTC which are of type model.Time, and are validated in the
-//     Time.Scan() method.
-func (s SqliteStorer) GetLastNPositions(ctx context.Context, n int) (PathPointRecord, error) { // TODO: Rename function or return type for consistency
+func (s SqliteStorer) GetLastNCoords(ctx context.Context, n int) (Coords, error) {
+	type pointRecordDAO struct {
+		SerNo     sql.NullInt32
+		SeqNo     sql.NullInt32
+		Latitude  sql.NullFloat64
+		Longitude sql.NullFloat64
+	}
+
 	query := `
 WITH NumberedRecords AS (
     SELECT
@@ -320,14 +315,14 @@ ORDER BY
 
 	rows, err := s.db.QueryContext(ctx, query, n)
 	if err != nil {
-		return PathPointRecord{}, fmt.Errorf("error querying database for last N positions: %w", err)
+		return Coords{}, fmt.Errorf("error querying database for last N coordinates: %w", err)
 	}
 	defer rows.Close()
 
-	ppr := make(PathPointRecord)
+	ppr := make(Coords)
 
 	for rows.Next() {
-		var prDAO PointRecordDAO
+		var prDAO pointRecordDAO
 		err := rows.Scan(
 			&prDAO.SerNo,
 			&prDAO.SeqNo,
@@ -335,16 +330,16 @@ ORDER BY
 			&prDAO.Longitude,
 		)
 		if err != nil {
-			return PathPointRecord{}, fmt.Errorf("error scanning row: %w", err)
+			return Coords{}, fmt.Errorf("error scanning row: %w", err)
 		}
 		if !prDAO.SeqNo.Valid {
-			return PathPointRecord{}, errors.New("SeqNo in record is NULL")
+			return Coords{}, errors.New("SeqNo in record is NULL")
 		}
 		if !prDAO.Latitude.Valid || !prDAO.Longitude.Valid {
-			return PathPointRecord{}, fmt.Errorf("one of the fields of database row for SeqNo %v is NULL", prDAO.SeqNo.Int32)
+			return Coords{}, fmt.Errorf("one of the fields of database row for SeqNo %v is NULL", prDAO.SeqNo.Int32)
 		}
 
-		ppr[prDAO.SerNo.Int32] = append(ppr[prDAO.SerNo.Int32], PathPoint{
+		ppr[prDAO.SerNo.Int32] = append(ppr[prDAO.SerNo.Int32], Coord{
 			Latitude:  prDAO.Latitude.Float64,
 			Longitude: prDAO.Longitude.Float64,
 		})
@@ -352,7 +347,7 @@ ORDER BY
 
 	err = rows.Err()
 	if err != nil {
-		return PathPointRecord{}, fmt.Errorf("error after scanning rows: %w", err)
+		return Coords{}, fmt.Errorf("error after scanning rows: %w", err)
 	}
 
 	return ppr, nil

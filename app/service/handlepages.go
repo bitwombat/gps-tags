@@ -20,9 +20,9 @@ func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *h
 		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 		defer cancel()
 
-		pathpoints, err := storer.GetLastNPositions(ctx, 30)
+		pathpoints, err := storer.GetLastNCoords(ctx, 30)
 		if err != nil {
-			errorLogger.Printf("Error getting last N positions from storage: %v\n", err)
+			errorLogger.Printf("Error getting last N coordinates from storage: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
@@ -74,9 +74,9 @@ func newCurrentMapPageHandler(storer storage.Storage, now func() time.Time) func
 		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 		defer cancel()
 
-		tags, err := storer.GetLastPositions(ctx)
+		tags, err := storer.GetLastStatuses(ctx)
 		if err != nil {
-			errorLogger.Printf("Error getting last position from storage: %v\n", err)
+			errorLogger.Printf("Error getting last statuses from storage: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}

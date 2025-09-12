@@ -253,7 +253,7 @@ var nSamples = []model.TagTx{
 	},
 }
 
-func TestGetLatestPosition(t *testing.T) {
+func TestGetLatestStatus(t *testing.T) {
 	// GIVEN two transmissions for two tags with multiple records
 	storer, err := NewSQLiteStorer(":memory:")
 	require.Nil(t, err)
@@ -270,11 +270,11 @@ func TestGetLatestPosition(t *testing.T) {
 	require.Nil(t, err)
 	require.NotEmpty(t, txID)
 
-	// WHEN we get the latest position for all tags.
-	result, err := storer.GetLastPositions(context.Background())
+	// WHEN we get the latest status for all tags.
+	result, err := storer.GetLastStatuses(context.Background())
 	require.Nil(t, err)
 
-	// THEN we get the latest position's values for both known tags.
+	// THEN we get the latest status's values for both known tags.
 	require.Len(t, result, 2, "length of result array")
 	for _, r := range result {
 		switch r.SerNo {
@@ -298,7 +298,7 @@ func TestGetLatestPosition(t *testing.T) {
 	}
 }
 
-func TestGetLastNPositions(t *testing.T) {
+func TestGetLastNCoords(t *testing.T) {
 	// GIVEN commits with multiple records and for multiple tags.
 	storer, err := NewSQLiteStorer(":memory:")
 	require.Nil(t, err)
@@ -314,12 +314,12 @@ func TestGetLastNPositions(t *testing.T) {
 		require.NotEmpty(t, txID)
 	}
 
-	// WHEN we get the last 3 position for all tags.
-	result, err := storer.GetLastNPositions(context.Background(), 3)
+	// WHEN we get the last 3 coordinates for all tags.
+	result, err := storer.GetLastNCoords(context.Background(), 3)
 	require.Nil(t, err)
 	require.Len(t, result, 2, "length of result array")
 
-	// THEN we get the latest position's values for both known tags.
+	// THEN we get the latest coordinate's values for both known tags.
 	require.Equal(t, len(result), 2, "number of tags/keys")
 
 	keys := slices.Collect(maps.Keys(result))

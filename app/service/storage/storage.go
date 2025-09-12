@@ -10,11 +10,11 @@ import (
 
 type Storage interface {
 	WriteTx(context.Context, model.TagTx) (string, error)
-	GetLastPositions(context.Context) ([]PositionRecord, error)
-	GetLastNPositions(context.Context, int) (PathPointRecord, error)
+	GetLastStatuses(context.Context) ([]Status, error)
+	GetLastNCoords(context.Context, int) (Coords, error)
 }
 
-type PositionRecord struct {
+type Status struct { // TODO: Change this to a map like the Coords type. For consistency, better looking function signatures.
 	SerNo     int32
 	SeqNo     int32
 	Reason    int32
@@ -29,12 +29,12 @@ type PositionRecord struct {
 	Battery   int32
 }
 
-type PathPoint struct {
+type Coord struct {
 	Latitude  float64
 	Longitude float64
 }
 
-type PathPointRecord map[int32][]PathPoint
+type Coords map[int32][]Coord
 
 func StrTimeAgoAsText(ts string, now func() time.Time) string {
 	// Parse the given time string
