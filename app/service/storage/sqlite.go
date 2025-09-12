@@ -5,8 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"maps"
-	"slices"
 
 	"github.com/bitwombat/gps-tags/model"
 	"github.com/google/uuid"
@@ -41,7 +39,7 @@ type SqliteStorer struct {
 	db *sql.DB
 }
 
-type PointRecordDAO struct {
+type PointRecordDAO struct { // TODO: Lowercase because DAO. Shouldn't be used outside.
 	SerNo     sql.NullInt32
 	SeqNo     sql.NullInt32
 	Latitude  sql.NullFloat64
@@ -289,7 +287,7 @@ LIMIT 5;
 //     messages.
 //   - DateUTC and GpsUTC which are of type model.Time, and are validated in the
 //     Time.Scan() method.
-func (s SqliteStorer) GetLastNPositions(ctx context.Context, n int) ([]PathPointRecord, error) {
+func (s SqliteStorer) GetLastNPositions(ctx context.Context, n int) (PathPointRecord, error) { // TODO: Rename function or return type for consistency
 	query := `
 WITH NumberedRecords AS (
     SELECT
@@ -319,13 +317,14 @@ ORDER BY
     SerNo, DeviceUTC DESC
 ;
 `
-	pps := make(map[int32][]PathPoint) // TODO: Make PathPointRecord type this map so the later conversion isn't necessary
 
 	rows, err := s.db.QueryContext(ctx, query, n)
 	if err != nil {
-		return []PathPointRecord{}, fmt.Errorf("error querying database for last N positions: %w", err)
+		return PathPointRecord{}, fmt.Errorf("error querying database for last N positions: %w", err)
 	}
 	defer rows.Close()
+
+	ppr := make(PathPointRecord)
 
 	for rows.Next() {
 		var prDAO PointRecordDAO
@@ -336,16 +335,16 @@ ORDER BY
 			&prDAO.Longitude,
 		)
 		if err != nil {
-			return []PathPointRecord{}, fmt.Errorf("error scanning row: %w", err)
+			return PathPointRecord{}, fmt.Errorf("error scanning row: %w", err)
 		}
 		if !prDAO.SeqNo.Valid {
-			return []PathPointRecord{}, errors.New("SeqNo in record is NULL")
+			return PathPointRecord{}, errors.New("SeqNo in record is NULL")
 		}
 		if !prDAO.Latitude.Valid || !prDAO.Longitude.Valid {
-			return []PathPointRecord{}, fmt.Errorf("one of the fields of database row for SeqNo %v is NULL", prDAO.SeqNo.Int32)
+			return PathPointRecord{}, fmt.Errorf("one of the fields of database row for SeqNo %v is NULL", prDAO.SeqNo.Int32)
 		}
 
-		pps[prDAO.SerNo.Int32] = append(pps[prDAO.SerNo.Int32], PathPoint{
+		ppr[prDAO.SerNo.Int32] = append(ppr[prDAO.SerNo.Int32], PathPoint{
 			Latitude:  prDAO.Latitude.Float64,
 			Longitude: prDAO.Longitude.Float64,
 		})
@@ -353,17 +352,8 @@ ORDER BY
 
 	err = rows.Err()
 	if err != nil {
-		return []PathPointRecord{}, fmt.Errorf("error after scanning rows: %w", err)
+		return PathPointRecord{}, fmt.Errorf("error after scanning rows: %w", err)
 	}
 
-	keys := maps.Keys(pps) // only need them sorted for testing. TODO: Fix test.
-	keysSlice := slices.Sorted(keys)
-
-	pprs := make([]PathPointRecord, len(keysSlice))
-
-	for i, k := range keysSlice {
-		pprs[i] = PathPointRecord{SerNo: k, PathPoints: pps[k]}
-	}
-
-	return pprs, nil
+	return ppr, nil
 }

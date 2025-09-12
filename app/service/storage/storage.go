@@ -11,7 +11,7 @@ import (
 type Storage interface {
 	WriteTx(context.Context, model.TagTx) (string, error)
 	GetLastPositions(context.Context) ([]PositionRecord, error)
-	GetLastNPositions(context.Context, int) ([]PathPointRecord, error)
+	GetLastNPositions(context.Context, int) (PathPointRecord, error)
 }
 
 type PositionRecord struct {
@@ -34,10 +34,7 @@ type PathPoint struct {
 	Longitude float64
 }
 
-type PathPointRecord struct {
-	SerNo      int32
-	PathPoints []PathPoint
-}
+type PathPointRecord map[int32][]PathPoint
 
 func StrTimeAgoAsText(ts string, now func() time.Time) string {
 	// Parse the given time string

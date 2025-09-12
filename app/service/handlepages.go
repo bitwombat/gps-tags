@@ -29,11 +29,11 @@ func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *h
 
 		subs := make(map[string]string)
 
-		for _, tag := range pathpoints {
+		for tag, points := range pathpoints {
 			// Start the JavaScript array
 			pathpointStr := "["
-			name := device.SerNoToName[int(tag.SerNo)]
-			for i, pathpoint := range tag.PathPoints {
+			name := device.SerNoToName[int(tag)]
+			for i, pathpoint := range points {
 				if i == 0 { // First point is most recent. Use this for the marker.
 					subs[name+"Lat"] = fmt.Sprintf("%.7f", pathpoint.Latitude)
 					subs[name+"Lng"] = fmt.Sprintf("%.7f", pathpoint.Longitude)

@@ -11,7 +11,7 @@ import (
 type FakeStorer struct {
 	writtenTx           model.TagTx
 	fnGetLastPositions  func(context.Context) ([]storage.PositionRecord, error)
-	fnGetLastNPositions func(context.Context, int) ([]storage.PathPointRecord, error)
+	fnGetLastNPositions func(context.Context, int) (storage.PathPointRecord, error)
 }
 
 func (s *FakeStorer) WriteTx(_ context.Context, tagTx model.TagTx) (string, error) {
@@ -23,7 +23,7 @@ func (s FakeStorer) GetLastPositions(ctx context.Context) ([]storage.PositionRec
 	return s.fnGetLastPositions(ctx)
 }
 
-func (s FakeStorer) GetLastNPositions(ctx context.Context, n int) ([]storage.PathPointRecord, error) {
+func (s FakeStorer) GetLastNPositions(ctx context.Context, n int) (storage.PathPointRecord, error) {
 	return s.fnGetLastNPositions(ctx, n)
 }
 

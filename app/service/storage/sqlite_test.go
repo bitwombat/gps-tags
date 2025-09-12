@@ -3,7 +3,9 @@ package storage
 import (
 	"context"
 	"fmt"
+	"maps"
 	"os"
+	"slices"
 	"testing"
 	"time"
 
@@ -318,19 +320,23 @@ func TestGetLastNPositions(t *testing.T) {
 	require.Len(t, result, 2, "length of result array")
 
 	// THEN we get the latest position's values for both known tags.
-	require.Equal(t, int32(810095), result[0].SerNo)
-	require.Equal(t, 108.0, result[0].PathPoints[0].Latitude)
-	require.Equal(t, 109.0, result[0].PathPoints[0].Longitude)
-	require.Equal(t, 106.0, result[0].PathPoints[1].Latitude)
-	require.Equal(t, 107.0, result[0].PathPoints[1].Longitude)
-	require.Equal(t, 104.0, result[0].PathPoints[2].Latitude)
-	require.Equal(t, 105.0, result[0].PathPoints[2].Longitude)
+	require.Equal(t, len(result), 2, "number of tags/keys")
 
-	require.Equal(t, int32(810243), result[1].SerNo)
-	require.Equal(t, 118.0, result[1].PathPoints[0].Latitude)
-	require.Equal(t, 119.0, result[1].PathPoints[0].Longitude)
-	require.Equal(t, 116.0, result[1].PathPoints[1].Latitude)
-	require.Equal(t, 117.0, result[1].PathPoints[1].Longitude)
-	require.Equal(t, 114.0, result[1].PathPoints[2].Latitude)
-	require.Equal(t, 115.0, result[1].PathPoints[2].Longitude)
+	keys := slices.Collect(maps.Keys(result))
+	slices.Sort(keys)
+	require.Equal(t, keys, []int32{810095, 810243}, "tag values")
+
+	require.Equal(t, 108.0, result[810095][0].Latitude)
+	require.Equal(t, 109.0, result[810095][0].Longitude)
+	require.Equal(t, 106.0, result[810095][1].Latitude)
+	require.Equal(t, 107.0, result[810095][1].Longitude)
+	require.Equal(t, 104.0, result[810095][2].Latitude)
+	require.Equal(t, 105.0, result[810095][2].Longitude)
+
+	require.Equal(t, 118.0, result[810243][0].Latitude)
+	require.Equal(t, 119.0, result[810243][0].Longitude)
+	require.Equal(t, 116.0, result[810243][1].Latitude)
+	require.Equal(t, 117.0, result[810243][1].Longitude)
+	require.Equal(t, 114.0, result[810243][2].Latitude)
+	require.Equal(t, 115.0, result[810243][2].Longitude)
 }
