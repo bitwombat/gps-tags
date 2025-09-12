@@ -153,18 +153,18 @@ func (s SqliteStorer) GetLastPositions(ctx context.Context) ([]PositionRecord, e
 	// mostly out of caution rather than understanding a real threat of error. NOT
 	// NULL is on every column in the database. integrity.
 	type PositionRecordDAO struct {
-		SerNo     sql.NullInt32
-		SeqNo     sql.NullInt32
-		Reason    sql.NullInt32
-		Latitude  sql.NullFloat64
-		Longitude sql.NullFloat64
-		Altitude  sql.NullInt32
-		Speed     sql.NullInt32
-		DateUTC   model.Time
-		GpsUTC    model.Time
-		PosAcc    sql.NullInt32
-		GpsStatus sql.NullInt32
-		Battery   sql.NullInt32 // TODO: Probably call this InternalBatteryVoltage, to match the db, or at least BatteryVoltage. Also, figure out if the LoadedVoltage field is more useful.
+		SerNo                  sql.NullInt32
+		SeqNo                  sql.NullInt32
+		Reason                 sql.NullInt32
+		Latitude               sql.NullFloat64
+		Longitude              sql.NullFloat64
+		Altitude               sql.NullInt32
+		Speed                  sql.NullInt32
+		DateUTC                model.Time
+		GpsUTC                 model.Time
+		PosAcc                 sql.NullInt32
+		GpsStatus              sql.NullInt32
+		InternalBatteryVoltage sql.NullInt32
 	}
 
 	isValid := func(pr PositionRecordDAO) bool {
@@ -177,7 +177,7 @@ func (s SqliteStorer) GetLastPositions(ctx context.Context) ([]PositionRecord, e
 			pr.Speed.Valid &&
 			pr.PosAcc.Valid &&
 			pr.GpsStatus.Valid &&
-			pr.Battery.Valid)
+			pr.InternalBatteryVoltage.Valid)
 	}
 
 	query := `
@@ -249,7 +249,7 @@ LIMIT 5;
 			&prDAO.GpsUTC,
 			&prDAO.PosAcc,
 			&prDAO.GpsStatus,
-			&prDAO.Battery)
+			&prDAO.InternalBatteryVoltage)
 		if err != nil {
 			return []PositionRecord{}, fmt.Errorf("error scanning row: %w", err)
 		}
@@ -272,7 +272,7 @@ LIMIT 5;
 			GpsUTC:    prDAO.GpsUTC.T,
 			PosAcc:    prDAO.PosAcc.Int32,
 			GpsStatus: prDAO.GpsStatus.Int32,
-			Battery:   prDAO.Battery.Int32,
+			Battery:   prDAO.InternalBatteryVoltage.Int32,
 		})
 	}
 
