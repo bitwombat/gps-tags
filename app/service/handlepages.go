@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/bitwombat/gps-tags/device"
 	"github.com/bitwombat/gps-tags/model"
 	"github.com/bitwombat/gps-tags/storage"
 	"github.com/bitwombat/gps-tags/substitute"
@@ -32,7 +31,7 @@ func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *h
 		for tag, points := range pathpoints {
 			// Start the JavaScript array
 			pathpointStr := "["
-			name := device.SerNoToName[int(tag)]
+			name := model.SerNoToName[int(tag)]
 			for i, pathpoint := range points {
 				if i == 0 { // First point is most recent. Use this for the marker.
 					subs[name+"Lat"] = fmt.Sprintf("%.7f", pathpoint.Latitude)
@@ -84,7 +83,7 @@ func newCurrentMapPageHandler(storer storage.Storage, now func() time.Time) func
 		subs := make(map[string]string)
 
 		for _, tag := range tags {
-			name := device.SerNoToName[int(tag.SerNo)]
+			name := model.SerNoToName[int(tag.SerNo)]
 			subs[name+"Lat"] = fmt.Sprintf("%.7f", tag.Latitude)
 			subs[name+"Lng"] = fmt.Sprintf("%.7f", tag.Longitude)
 			subs[name+"AccuracyRadius"] = fmt.Sprintf("%v", tag.PosAcc)

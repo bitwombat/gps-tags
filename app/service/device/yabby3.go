@@ -257,9 +257,3 @@ func convertTripTypeReading(tt *TripTypeReading) *model.TripTypeReading {
 
 	return &mr
 }
-
-// TODO: Is this used? (unused checker doesn't always catch these).
-var SerNoToName = map[int]string{
-	810095: "rueger",
-	810243: "charlie",
-}
