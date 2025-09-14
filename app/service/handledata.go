@@ -93,12 +93,12 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 		dogName = strings.ToUpper(dogName) // Just looks better and stands out in notifications
 
 		type AnalogueRecord struct {
-			ar    model.AnalogueReading
+			ar    *model.AnalogueReading
 			seqNo int
 		}
 
 		type GPSRecord struct {
-			gr    model.GPSReading
+			gr    *model.GPSReading
 			seqNo int
 		}
 
@@ -118,7 +118,7 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 
 				if r.SeqNo > latestGPS.seqNo {
 					latestGPS.seqNo = r.SeqNo
-					latestGPS.gr = *r.GPSReading
+					latestGPS.gr = r.GPSReading
 				}
 				thisZoneText = zonespkg.NameThatZone(NamedZones, zonespkg.Point{Latitude: r.GPSReading.Lat, Longitude: r.GPSReading.Long})
 
@@ -130,7 +130,7 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 			if r.AnalogueReading != nil {
 				if r.SeqNo > latestAnalogue.seqNo {
 					latestAnalogue.seqNo = r.SeqNo
-					latestAnalogue.ar = *r.AnalogueReading
+					latestAnalogue.ar = r.AnalogueReading
 				}
 			}
 
@@ -154,12 +154,14 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 	}
 }
 
-func notifyAboutBattery(ctx context.Context, now func() time.Time, latestAnalogue model.AnalogueReading, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
-	if latestAnalogue.InternalBatteryVoltage == 0 { // TODO: nil?
+func notifyAboutBattery(ctx context.Context, now func() time.Time, latestAnalogue *model.AnalogueReading, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
+	if latestAnalogue == nil {
+		debugLogger.Println("No Analogue reading in transmission")
+
 		return
 	}
 
-	batteryVoltage := float64(latestAnalogue.InternalBatteryVoltage) / 1000 // TODO: Remove this extra level of structure.
+	batteryVoltage := float64(latestAnalogue.InternalBatteryVoltage) / 1000
 
 	// We don't want to hear about low battery in the middle of the night.
 	nowIsWakingHours := now().Hour() >= 8 && now().Hour() <= 22
@@ -206,9 +208,9 @@ func notifyAboutBattery(ctx context.Context, now func() time.Time, latestAnalogu
 	}
 }
 
-func notifyAboutZones(ctx context.Context, latestGPS model.GPSReading, namedZones []zonespkg.Zone, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
-	if latestGPS.Lat == 0 { // TODO: nil?
-		debugLogger.Println("No GPS reading in record") // TODO: Should this return an error?
+func notifyAboutZones(ctx context.Context, latestGPS *model.GPSReading, namedZones []zonespkg.Zone, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
+	if latestGPS == nil {
+		debugLogger.Println("No GPS reading in transmission")
 
 		return
 	}
