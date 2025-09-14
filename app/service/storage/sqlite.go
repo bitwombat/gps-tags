@@ -139,7 +139,7 @@ func insertTripTypeReading(ctx context.Context, t model.TripTypeReading, db *sql
 	return err
 }
 
-func (s SqliteStorer) GetLastStatuses(ctx context.Context) ([]Status, error) {
+func (s SqliteStorer) GetLastStatuses(ctx context.Context) (Statuses, error) {
 	// This type exists only to take advantage of the sql.Null type, which I'm using
 	// mostly out of caution rather than understanding a real threat of error. NOT
 	// NULL is on every column in the database. integrity.
@@ -218,61 +218,60 @@ ORDER BY
 LIMIT 5;
 `
 
-	var prs []Status
+	ss := make(Statuses)
 
 	rows, err := s.db.QueryContext(ctx, query)
 	if err != nil {
-		return []Status{}, fmt.Errorf("error querying database for last statuses: %w", err)
+		return Statuses{}, fmt.Errorf("error querying database for last statuses: %w", err)
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var prDAO StatusDAO
+		var sDAO StatusDAO
 		err = rows.Scan(
-			&prDAO.SerNo,
-			&prDAO.SeqNo,
-			&prDAO.Reason,
-			&prDAO.Latitude,
-			&prDAO.Longitude,
-			&prDAO.Altitude,
-			&prDAO.Speed,
-			&prDAO.DateUTC,
-			&prDAO.GpsUTC,
-			&prDAO.PosAcc,
-			&prDAO.GpsStatus,
-			&prDAO.InternalBatteryVoltage)
+			&sDAO.SerNo,
+			&sDAO.SeqNo,
+			&sDAO.Reason,
+			&sDAO.Latitude,
+			&sDAO.Longitude,
+			&sDAO.Altitude,
+			&sDAO.Speed,
+			&sDAO.DateUTC,
+			&sDAO.GpsUTC,
+			&sDAO.PosAcc,
+			&sDAO.GpsStatus,
+			&sDAO.InternalBatteryVoltage)
 		if err != nil {
-			return []Status{}, fmt.Errorf("error scanning row: %w", err)
+			return Statuses{}, fmt.Errorf("error scanning row: %w", err)
 		}
-		if !prDAO.SeqNo.Valid {
-			return []Status{}, errors.New("SeqNo in record is NULL")
+		if !sDAO.SeqNo.Valid {
+			return Statuses{}, errors.New("SeqNo in record is NULL")
 		}
-		if !isValid(prDAO) {
-			return []Status{}, fmt.Errorf("one of the fields of database row for SeqNo %v is NULL", prDAO.SeqNo.Int32)
+		if !isValid(sDAO) {
+			return Statuses{}, fmt.Errorf("one of the fields of database row for SeqNo %v is NULL", sDAO.SeqNo.Int32)
 		}
 
-		prs = append(prs, Status{
-			SerNo:     prDAO.SerNo.Int32,
-			SeqNo:     prDAO.SeqNo.Int32,
-			Reason:    model.ReasonCode(prDAO.Reason.Int32),
-			Latitude:  prDAO.Latitude.Float64,
-			Longitude: prDAO.Longitude.Float64,
-			Altitude:  prDAO.Altitude.Int32,
-			Speed:     prDAO.Speed.Int32,
-			DateUTC:   prDAO.DateUTC.T,
-			GpsUTC:    prDAO.GpsUTC.T,
-			PosAcc:    prDAO.PosAcc.Int32,
-			GpsStatus: prDAO.GpsStatus.Int32,
-			Battery:   prDAO.InternalBatteryVoltage.Int32,
-		})
+		ss[sDAO.SerNo.Int32] = Status{
+			SeqNo:     sDAO.SeqNo.Int32,
+			Reason:    model.ReasonCode(sDAO.Reason.Int32),
+			Latitude:  sDAO.Latitude.Float64,
+			Longitude: sDAO.Longitude.Float64,
+			Altitude:  sDAO.Altitude.Int32,
+			Speed:     sDAO.Speed.Int32,
+			DateUTC:   sDAO.DateUTC.T,
+			GpsUTC:    sDAO.GpsUTC.T,
+			PosAcc:    sDAO.PosAcc.Int32,
+			GpsStatus: sDAO.GpsStatus.Int32,
+			Battery:   sDAO.InternalBatteryVoltage.Int32,
+		}
 	}
 
 	err = rows.Err()
 	if err != nil {
-		return []Status{}, fmt.Errorf("error after scanning rows: %w", err)
+		return Statuses{}, fmt.Errorf("error after scanning rows: %w", err)
 	}
 
-	return prs, nil
+	return ss, nil
 }
 
 func (s SqliteStorer) GetLastNCoords(ctx context.Context, n int) (Coords, error) {

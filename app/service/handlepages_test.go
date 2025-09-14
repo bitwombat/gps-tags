@@ -27,10 +27,9 @@ func TestCurrentMapPageHandler(t *testing.T) {
 	require.Nil(t, err, "changing directory to where public_html is")
 
 	storer := &FakeStorer{
-		fnGetLastStatuses: func(_ context.Context) ([]storage.Status, error) {
-			return []storage.Status{
-				{
-					SerNo:     810095,
+		fnGetLastStatuses: func(_ context.Context) (storage.Statuses, error) {
+			return storage.Statuses{
+				810095: {
 					SeqNo:     1,
 					Reason:    3,
 					Latitude:  5.0,
@@ -43,8 +42,8 @@ func TestCurrentMapPageHandler(t *testing.T) {
 					GpsStatus: 23,
 					Battery:   27,
 				},
-				{
-					SerNo:     810243,
+
+				810243: {
 					SeqNo:     11,
 					Reason:    13,
 					Latitude:  15.0,

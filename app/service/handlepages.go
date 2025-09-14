@@ -82,13 +82,13 @@ func newCurrentMapPageHandler(storer storage.Storage, now func() time.Time) func
 
 		subs := make(map[string]string)
 
-		for _, tag := range tagStatuses {
-			name := model.SerNoToName[int(tag.SerNo)]
-			subs[name+"Lat"] = fmt.Sprintf("%.7f", tag.Latitude)
-			subs[name+"Lng"] = fmt.Sprintf("%.7f", tag.Longitude)
-			subs[name+"AccuracyRadius"] = fmt.Sprintf("%v", tag.PosAcc)
-			subs[name+"Note"] = "Last GPS: " + storage.TimeAgoAsText(tag.GpsUTC, now) + " ago<br>Last Checkin: " + storage.TimeAgoAsText(tag.DateUTC, now) + " ago<br>Reason: " + tag.Reason.String() + "<br>Battery: " + fmt.Sprintf("%.2f", float64(tag.Battery)/1000.) + "V"
-			subs[name+"Colour"] = storage.TimeAgoInColour(tag.GpsUTC, now)
+		for serNo, status := range tagStatuses {
+			name := model.SerNoToName[int(serNo)]
+			subs[name+"Lat"] = fmt.Sprintf("%.7f", status.Latitude)
+			subs[name+"Lng"] = fmt.Sprintf("%.7f", status.Longitude)
+			subs[name+"AccuracyRadius"] = fmt.Sprintf("%v", status.PosAcc)
+			subs[name+"Note"] = "Last GPS: " + storage.TimeAgoAsText(status.GpsUTC, now) + " ago<br>Last Checkin: " + storage.TimeAgoAsText(status.DateUTC, now) + " ago<br>Reason: " + status.Reason.String() + "<br>Battery: " + fmt.Sprintf("%.2f", float64(status.Battery)/1000.) + "V"
+			subs[name+"Colour"] = storage.TimeAgoInColour(status.GpsUTC, now)
 		}
 
 		mapPage, err := substitute.ContentsOf("public_html/current-map.html", subs)

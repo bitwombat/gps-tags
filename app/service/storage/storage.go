@@ -10,12 +10,11 @@ import (
 
 type Storage interface {
 	WriteTx(context.Context, model.TagTx) (string, error)
-	GetLastStatuses(context.Context) ([]Status, error)
+	GetLastStatuses(context.Context) (Statuses, error)
 	GetLastNCoords(context.Context, int) (Coords, error)
 }
 
-type Status struct { // TODO: Change this to a map like the Coords type. For consistency, better looking function signatures.
-	SerNo     int32
+type Status struct {
 	SeqNo     int32
 	Reason    model.ReasonCode
 	Latitude  float64
@@ -28,6 +27,8 @@ type Status struct { // TODO: Change this to a map like the Coords type. For con
 	GpsStatus int32
 	Battery   int32
 }
+
+type Statuses map[int32]Status
 
 type Coord struct {
 	Latitude  float64

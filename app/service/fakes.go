@@ -11,7 +11,7 @@ import (
 
 type FakeStorer struct {
 	writtenTx         model.TagTx
-	fnGetLastStatuses func(context.Context) ([]storage.Status, error)
+	fnGetLastStatuses func(context.Context) (storage.Statuses, error)
 	fnGetLastNCoords  func(context.Context, int) (storage.Coords, error)
 }
 
@@ -20,7 +20,7 @@ func (s *FakeStorer) WriteTx(_ context.Context, tagTx model.TagTx) (string, erro
 	return "", nil
 }
 
-func (s FakeStorer) GetLastStatuses(ctx context.Context) ([]storage.Status, error) {
+func (s FakeStorer) GetLastStatuses(ctx context.Context) (storage.Statuses, error) {
 	return s.fnGetLastStatuses(ctx)
 }
 

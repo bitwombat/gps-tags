@@ -276,8 +276,8 @@ func TestGetLatestStatus(t *testing.T) {
 
 	// THEN we get the latest status's values for both known tags.
 	require.Len(t, result, 2, "length of result array")
-	for _, r := range result {
-		switch r.SerNo {
+	for serNo, r := range result {
+		switch serNo {
 		case 810095:
 			require.Equal(t, int32(7495), r.SeqNo)
 			require.Equal(t, -31.4577084, r.Latitude)
@@ -293,7 +293,7 @@ func TestGetLatestStatus(t *testing.T) {
 			require.Equal(t, -31.99, r.Latitude)
 			require.Equal(t, 152.99, r.Longitude)
 		default:
-			t.Fatalf("Unmatched serNo: %v", r.SerNo)
+			t.Fatalf("Unmatched serNo: %v", serNo)
 		}
 	}
 }
