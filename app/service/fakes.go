@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/bitwombat/gps-tags/model"
+	"github.com/bitwombat/gps-tags/notify"
 	"github.com/bitwombat/gps-tags/storage"
 )
 
@@ -28,17 +29,15 @@ func (s FakeStorer) GetLastNCoords(ctx context.Context, n int) (storage.Coords, 
 }
 
 type notification struct {
-	title   string
-	message string
+	title   notify.Title
+	message notify.Message
 }
 
 type FakeNotifier struct {
 	notifications []notification
 }
 
-// TODO: title and message should be types. "string, string" in interface not
-// very explicative.
-func (n *FakeNotifier) Notify(_ context.Context, title, message string) error {
+func (n *FakeNotifier) Notify(_ context.Context, title notify.Title, message notify.Message) error {
 	fmt.Println("FAKE notification ", title, message)
 	n.notifications = append(n.notifications, notification{title: title, message: message})
 

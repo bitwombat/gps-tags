@@ -2,6 +2,11 @@ package notify
 
 import "context"
 
+type (
+	Title   string
+	Message string
+)
+
 type Notifier interface {
-	Notify(context.Context, string, string) error
+	Notify(context.Context, Title, Message) error
 }

@@ -30,10 +30,10 @@ func cacheBustingString() string {
 	return hex.EncodeToString(bytes)
 }
 
-func (n Ntfy) Notify(ctx context.Context, title, message string) error {
+func (n Ntfy) Notify(ctx context.Context, title Title, message Message) error {
 	// Set up
 	client := &http.Client{}
-	buf := strings.NewReader(message)
+	buf := strings.NewReader(string(message))
 
 	// Make the request object
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, ntfyURLBase+n.subscriptionID, buf)
@@ -41,7 +41,7 @@ func (n Ntfy) Notify(ctx context.Context, title, message string) error {
 		return fmt.Errorf("error while making http POST request to ntfy.sh: %w", err)
 	}
 
-	req.Header.Set("Title", title)
+	req.Header.Set("Title", string(title))
 	req.Header.Set("Actions", `[{ "action": "view", "label": "Show me", "url": "https://tags.bitwombat.com.au/current?q=`+cacheBustingString()+`"}]`)
 
 	// Send the request

@@ -129,12 +129,12 @@ func TestPostDataHandler(t *testing.T) {
 	resp := w.Result()
 	require.Equal(t, http.StatusOK, resp.StatusCode, "HTTP status")
 
-	assert.Equal(t, "RUEGER's battery low", notifier.notifications[0].title)
-	assert.Equal(t, "Battery voltage: 1.641 V", notifier.notifications[0].message)
-	assert.Equal(t, "RUEGER's battery critical", notifier.notifications[1].title)
-	assert.Equal(t, "Battery voltage: 1.641 V", notifier.notifications[1].message)
-	assert.Equal(t, "RUEGER is off the property", notifier.notifications[2].title)
-	assert.Equal(t, "Last seen Not in any known zone.", notifier.notifications[2].message)
+	assert.Equal(t, "RUEGER's battery low", string(notifier.notifications[0].title))
+	assert.Equal(t, "Battery voltage: 1.641 V", string(notifier.notifications[0].message))
+	assert.Equal(t, "RUEGER's battery critical", string(notifier.notifications[1].title))
+	assert.Equal(t, "Battery voltage: 1.641 V", string(notifier.notifications[1].message))
+	assert.Equal(t, "RUEGER is off the property", string(notifier.notifications[2].title))
+	assert.Equal(t, "Last seen Not in any known zone.", string(notifier.notifications[2].message))
 
 	_ = os.Chdir(cwd) //nolint:errcheck // don't care
 }
