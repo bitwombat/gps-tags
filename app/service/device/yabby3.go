@@ -8,8 +8,6 @@ import (
 	"github.com/bitwombat/gps-tags/model"
 )
 
-// TODO: do these field names need to be exported?
-
 // These types are close to what comes from the Yabby except:
 // - []Fields are flattened up to the Record
 // - Fields are pointers to types because they're optional. This is to get rid
@@ -137,10 +135,6 @@ func (r *Record) UnmarshalJSON(p []byte) error {
 
 	return nil
 }
-
-// TODO: Do we ever get multiple transmissions? See if the raw data from the
-// yabby, which I think I'm logging, starts with an JSON array [.
-// Make sure my logging (main branch) isn't JSON decoding first!
 
 func Unmarshal(jsonBytes []byte) (model.TagTx, error) {
 	var deviceData TagTx
