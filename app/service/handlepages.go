@@ -73,7 +73,7 @@ func newCurrentMapPageHandler(storer storage.Storage, now func() time.Time) func
 		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 		defer cancel()
 
-		tags, err := storer.GetLastStatuses(ctx)
+		tagStatuses, err := storer.GetLastStatuses(ctx)
 		if err != nil {
 			errorLogger.Printf("Error getting last statuses from storage: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -82,7 +82,7 @@ func newCurrentMapPageHandler(storer storage.Storage, now func() time.Time) func
 
 		subs := make(map[string]string)
 
-		for _, tag := range tags {
+		for _, tag := range tagStatuses {
 			name := model.SerNoToName[int(tag.SerNo)]
 			subs[name+"Lat"] = fmt.Sprintf("%.7f", tag.Latitude)
 			subs[name+"Lng"] = fmt.Sprintf("%.7f", tag.Longitude)
@@ -98,13 +98,11 @@ func newCurrentMapPageHandler(storer storage.Storage, now func() time.Time) func
 			return
 		}
 
-		_, err = w.Write([]byte(mapPage))
+		_, err = w.Write([]byte(mapPage)) // NOTE: writes http.StatusOK header
 		if err != nil {
 			errorLogger.Printf("Error writing response: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
-		// Don't need this - it's taken care of by w.Write:  w.WriteHeader(http.StatusOK)
 	}
 }

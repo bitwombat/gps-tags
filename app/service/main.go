@@ -63,7 +63,7 @@ func main() {
 func run() int {
 	infoLogger.Println("Starting Dog Tag service.")
 
-	storer, err := storage.NewSQLiteStorer("dogs") // TODO: Get consistent between "dogs", "tags" and "dogtags" throughout codebase, including SQL
+	storer, err := storage.NewSQLiteStorer("dogtags")
 	if err != nil {
 		return fatalLog(1, fmt.Sprintf("getting an sqlite storer: %v", err))
 	}
