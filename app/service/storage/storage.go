@@ -17,7 +17,7 @@ type Storage interface {
 type Status struct { // TODO: Change this to a map like the Coords type. For consistency, better looking function signatures.
 	SerNo     int32
 	SeqNo     int32
-	Reason    int32
+	Reason    model.ReasonCode
 	Latitude  float64
 	Longitude float64
 	Altitude  int32

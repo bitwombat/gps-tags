@@ -254,7 +254,7 @@ LIMIT 5;
 		prs = append(prs, Status{
 			SerNo:     prDAO.SerNo.Int32,
 			SeqNo:     prDAO.SeqNo.Int32,
-			Reason:    prDAO.Reason.Int32,
+			Reason:    model.ReasonCode(prDAO.Reason.Int32),
 			Latitude:  prDAO.Latitude.Float64,
 			Longitude: prDAO.Longitude.Float64,
 			Altitude:  prDAO.Altitude.Int32,

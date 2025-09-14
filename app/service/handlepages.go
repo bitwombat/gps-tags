@@ -87,7 +87,7 @@ func newCurrentMapPageHandler(storer storage.Storage, now func() time.Time) func
 			subs[name+"Lat"] = fmt.Sprintf("%.7f", tag.Latitude)
 			subs[name+"Lng"] = fmt.Sprintf("%.7f", tag.Longitude)
 			subs[name+"AccuracyRadius"] = fmt.Sprintf("%v", tag.PosAcc)
-			subs[name+"Note"] = "Last GPS: " + storage.TimeAgoAsText(tag.GpsUTC, now) + " ago<br>Last Checkin: " + storage.TimeAgoAsText(tag.DateUTC, now) + " ago<br>Reason: " + model.ReasonCode(tag.Reason).String() + "<br>Battery: " + fmt.Sprintf("%.2f", float64(tag.Battery)/1000.) + "V"
+			subs[name+"Note"] = "Last GPS: " + storage.TimeAgoAsText(tag.GpsUTC, now) + " ago<br>Last Checkin: " + storage.TimeAgoAsText(tag.DateUTC, now) + " ago<br>Reason: " + tag.Reason.String() + "<br>Battery: " + fmt.Sprintf("%.2f", float64(tag.Battery)/1000.) + "V"
 			subs[name+"Colour"] = storage.TimeAgoInColour(tag.GpsUTC, now)
 		}
 

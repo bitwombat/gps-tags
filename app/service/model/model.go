@@ -27,7 +27,7 @@ type TagTx struct {
 type Record struct {
 	ID              string
 	SeqNo           int
-	Reason          int
+	Reason          ReasonCode
 	DateUTC         Time
 	GPSReading      *GPSReading
 	GPIOReading     *GPIOReading

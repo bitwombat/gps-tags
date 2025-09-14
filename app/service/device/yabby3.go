@@ -181,7 +181,7 @@ func convertRecord(r Record) model.Record {
 	var mr model.Record
 	mr.ID = r.ID
 	mr.SeqNo = r.SeqNo
-	mr.Reason = r.Reason
+	mr.Reason = model.ReasonCode(r.Reason)
 
 	t, err := model.TimeFromString(r.DateUTC)
 	if err != nil {
