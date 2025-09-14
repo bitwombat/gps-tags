@@ -166,10 +166,20 @@ func notifyAboutBattery(ctx context.Context, now func() time.Time, latestAnalogu
 
 	err := oneShot.SetReset(dogName+"lowBattery",
 		oshotpkg.Config{
-			SetIf:   (batteryVoltage < BatteryLowThreshold) && nowIsWakingHours,
-			OnSet:   makeNotifier(ctx, notifier, notify.Title(fmt.Sprintf("%s's battery low", dogName)), notify.Message(fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage))),
+			SetIf: (batteryVoltage < BatteryLowThreshold) && nowIsWakingHours,
+			OnSet: makeNotifier(
+				ctx,
+				notifier,
+				notify.Title(fmt.Sprintf("%s's battery low", dogName)),
+				notify.Message(fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
+			),
 			ResetIf: batteryVoltage > BatteryLowThreshold+BatteryHysteresis,
-			OnReset: makeNotifier(ctx, notifier, notify.Title(fmt.Sprintf("New battery for %s detected", dogName)), notify.Message(fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage))),
+			OnReset: makeNotifier(
+				ctx,
+				notifier,
+				notify.Title(fmt.Sprintf("New battery for %s detected", dogName)),
+				notify.Message(fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
+			),
 		})
 	if err != nil {
 		debugLogger.Println("error when setting: ", err) // TODO: Should this return an error?
@@ -179,8 +189,14 @@ func notifyAboutBattery(ctx context.Context, now func() time.Time, latestAnalogu
 
 	err = oneShot.SetReset(dogName+"criticalBattery",
 		oshotpkg.Config{
-			SetIf:   (batteryVoltage < BatteryCriticalThreshold) && nowIsWakingHours,
-			OnSet:   makeNotifier(ctx, notifier, notify.Title(fmt.Sprintf("%s's battery critical", dogName)), notify.Message(fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage))),
+			SetIf: (batteryVoltage < BatteryCriticalThreshold) && nowIsWakingHours,
+			OnSet: makeNotifier(
+				ctx,
+				notifier,
+				notify.Title(fmt.Sprintf("%s's battery critical", dogName)),
+				notify.Message(fmt.Sprintf("Battery voltage: %.3f V",
+					batteryVoltage)),
+			),
 			ResetIf: batteryVoltage > BatteryLowThreshold,
 		})
 	if err != nil {
@@ -211,10 +227,20 @@ func notifyAboutZones(ctx context.Context, latestGPS model.GPSReading, namedZone
 
 	err := oneShot.SetReset(dogName+"offProperty",
 		oshotpkg.Config{
-			SetIf:   isOutsidePropertyBoundary,
-			OnSet:   makeNotifier(ctx, notifier, notify.Title(fmt.Sprintf("%s is off the property", dogName)), notify.Message(thisZoneText)),
+			SetIf: isOutsidePropertyBoundary,
+			OnSet: makeNotifier(
+				ctx,
+				notifier,
+				notify.Title(fmt.Sprintf("%s is off the property", dogName)),
+				notify.Message(thisZoneText),
+			),
 			ResetIf: !isOutsidePropertyBoundary,
-			OnReset: makeNotifier(ctx, notifier, notify.Title(fmt.Sprintf("%s is now back on the property", dogName)), notify.Message(thisZoneText)),
+			OnReset: makeNotifier(
+				ctx,
+				notifier,
+				notify.Title(fmt.Sprintf("%s is back on the property", dogName)),
+				notify.Message(thisZoneText),
+			),
 		})
 	if err != nil {
 		debugLogger.Println("error when setting: ", err) // TODO: Should this return an error?
@@ -224,10 +250,20 @@ func notifyAboutZones(ctx context.Context, latestGPS model.GPSReading, namedZone
 
 	err = oneShot.SetReset(dogName+"outsideSafeZone",
 		oshotpkg.Config{
-			SetIf:   isOutsideSafeZoneBoundary,
-			OnSet:   makeNotifier(ctx, notifier, notify.Title(fmt.Sprintf("%s is getting far from the house", dogName)), notify.Message(thisZoneText)),
+			SetIf: isOutsideSafeZoneBoundary,
+			OnSet: makeNotifier(
+				ctx,
+				notifier,
+				notify.Title(fmt.Sprintf("%s is getting far from the house", dogName)),
+				notify.Message(thisZoneText),
+			),
 			ResetIf: !isOutsideSafeZoneBoundary,
-			OnReset: makeNotifier(ctx, notifier, notify.Title(fmt.Sprintf("%s is now back close to the house", dogName)), notify.Message(thisZoneText)),
+			OnReset: makeNotifier(
+				ctx,
+				notifier,
+				notify.Title(fmt.Sprintf("%s is back close to the house", dogName)),
+				notify.Message(thisZoneText),
+			),
 		})
 	if err != nil {
 		debugLogger.Println("error when setting: ", err) // TODO: Should this return an error?
