@@ -1,7 +1,5 @@
 package model
 
-// TODO: do these field names need to be exported?
-//
 // This is a copy of ../device/yabby3.go, because the device's structure is an
 // OK starting point for our model (and db schema). A model that is nearly a
 // copy is a good idea for better separation (the yabby can change with minimal
