@@ -228,6 +228,8 @@ LIMIT 5;
 
 	for rows.Next() {
 		var sDAO StatusDAO
+		// TODO: try https://github.com/jmoiron/sqlx for direct scanning into
+		// struct.
 		err = rows.Scan(
 			&sDAO.SerNo,
 			&sDAO.SeqNo,
