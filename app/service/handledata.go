@@ -145,6 +145,7 @@ func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAut
 		if err != nil {
 			errorLogger.Printf("Error inserting transmission: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
+
 			return
 		}
 
@@ -184,7 +185,7 @@ func notifyAboutBattery(ctx context.Context, now func() time.Time, latestAnalogu
 			),
 		})
 	if err != nil {
-		debugLogger.Println("error when setting: ", err) // TODO: Should this return an error?
+		debugLogger.Println("error when setting: ", err) // notifications are not important enough to return an error.
 
 		return
 	}
@@ -202,7 +203,7 @@ func notifyAboutBattery(ctx context.Context, now func() time.Time, latestAnalogu
 			ResetIf: batteryVoltage > BatteryLowThreshold,
 		})
 	if err != nil {
-		debugLogger.Println("error when setting: ", err) // TODO: Should this return an error?
+		debugLogger.Println("error when setting: ", err) // notifications are not important enough to return an error.
 
 		return
 	}
@@ -245,7 +246,7 @@ func notifyAboutZones(ctx context.Context, latestGPS *model.GPSReading, namedZon
 			),
 		})
 	if err != nil {
-		debugLogger.Println("error when setting: ", err) // TODO: Should this return an error?
+		debugLogger.Println("error when setting: ", err) // notifications are not important enough to return an error.
 
 		return
 	}
@@ -268,7 +269,7 @@ func notifyAboutZones(ctx context.Context, latestGPS *model.GPSReading, namedZon
 			),
 		})
 	if err != nil {
-		debugLogger.Println("error when setting: ", err) // TODO: Should this return an error?
+		debugLogger.Println("error when setting: ", err) // notifications are not important enough to return an error.
 
 		return
 	}

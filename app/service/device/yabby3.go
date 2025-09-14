@@ -12,19 +12,12 @@ import (
 
 // These types are close to what comes from the Yabby except:
 // - []Fields are flattened up to the Record
-// - Fields are pointers to types because they're optional. This is so the
-// icky/weird JSON format doesn't affect the model and business logic. But, see
-// the TODO below: this probably isn't the right place to do this.
+// - Fields are pointers to types because they're optional. This is to get rid
+// of the icky/weird JSON format ASAP to avoid affecting other code.
 //
 // I can only get away with this because of the irregular JSON decoding that
 // gives me a place to insert logic and make the Reading* elements as I want
 // them (pointers).
-//
-// TODO: Maybe? It would be better if Record had []Fields, which were of type
-// any, like I had in a previous version. Then this file would be straight JSON
-// decoding (though with the irregular JSON fun). Then the convert function here
-// would flatten the structure and use the pointers. This would have the
-// responsibilities more accurately contained/partitioned.
 
 type TagTx struct {
 	ID      string
@@ -176,7 +169,7 @@ func ModelFrom(d TagTx) model.TagTx {
 	m.SerNo = d.SerNo
 	m.IMEI = d.IMEI
 	m.ICCID = d.ICCID
-	m.ProdID = d.ProdID // TODO: Fix Id case
+	m.ProdID = d.ProdID
 	m.Fw = d.Fw
 
 	var mrs []model.Record
