@@ -24,10 +24,10 @@ func TestSqliteInsertOne(t *testing.T) {
 	err = db.PingContext(ctx)
 	require.Nil(t, err)
 
-	result, err := db.ExecContext(ctx, "DROP TABLE IF EXISTS tx;")
+	_, err = db.ExecContext(ctx, "DROP TABLE IF EXISTS tx;")
 	require.Nil(t, err)
 
-	result, err = db.ExecContext(ctx, `
+	result, err := db.ExecContext(ctx, `
   CREATE TABLE tx (
       ID INTEGER PRIMARY KEY AUTOINCREMENT,
       ProdID INTEGER,
@@ -69,52 +69,4 @@ func TestSqliteInsertOne(t *testing.T) {
 
 	err = rows.Err()
 	require.Nil(t, err)
-
-	/*
-		// Unmarshal JSON to map
-		var data map[string]interface{}
-		err = json.Unmarshal([]byte(basicCompleteSample), &data)
-		require.Nil(t, err)
-
-		// Insert into SQLite
-		ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-		defer cancel()
-
-		insertResult, err := collection.InsertOne(ctx, data)
-		require.Nil(t, err)
-
-		fmt.Println("Inserted document:", insertResult.InsertedID)
-	*/
 }
-
-/*
-func TestSqliteFind(t *testing.T) {
-	collection, err := NewMongoConnection(mongoURL, randomTestCollectionName())
-	require.Nil(t, err)
-
-	// Unmarshal JSON to map
-	var data map[string]interface{}
-	err = json.Unmarshal([]byte(basicCompleteSample), &data)
-	require.Nil(t, err)
-
-	// Insert into SQLite
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
-	defer cancel()
-
-	insertResult, err := collection.InsertOne(ctx, data)
-	require.Nil(t, err)
-
-	fmt.Println("Inserted document:", insertResult.InsertedID)
-
-	cur, err := collection.Find(context.Background(), bson.D{})
-	require.Nil(t, err)
-	defer cur.Close(context.Background())
-
-	var results []device.TagTx
-	err = cur.All(context.Background(), &results)
-	require.Nil(t, err)
-	require.Equal(t, 810095, results[0].SerNo)
-	require.Equal(t, 1, len(results))
-	require.Equal(t, 2, len(results[0].Records))
-}
-*/
