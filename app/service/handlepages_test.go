@@ -23,7 +23,15 @@ func mkTime(ts string) time.Time {
 }
 
 func TestCurrentMapPageHandler(t *testing.T) {
-	err := os.Chdir("..")
+	// Save current directory to restore after test
+	origDir, err := os.Getwd()
+	require.Nil(t, err, "getting current directory")
+	defer func() {
+		err := os.Chdir(origDir)
+		require.Nil(t, err, "restoring original directory")
+	}()
+
+	err = os.Chdir("..")
 	require.Nil(t, err, "changing directory to where public_html is")
 
 	storer := &FakeStorer{
@@ -84,6 +92,51 @@ func TestCurrentMapPageHandler(t *testing.T) {
 	require.Contains(t, string(body), "Rueger")
 
 	assertGolden(t, "current_page", string(body))
+}
+
+func TestPathsMapPageHandler(t *testing.T) {
+	// Save current directory to restore after test
+	origDir, err := os.Getwd()
+	require.Nil(t, err, "getting current directory")
+	defer func() {
+		err := os.Chdir(origDir)
+		require.Nil(t, err, "restoring original directory")
+	}()
+
+	err = os.Chdir("..")
+	require.Nil(t, err, "changing directory to where public_html is")
+
+	storer := &FakeStorer{
+		fnGetLastNCoords: func(_ context.Context, n int) (storage.Coords, error) {
+			return storage.Coords{
+				810095: {
+					{Latitude: 5.0, Longitude: 7.0},
+					{Latitude: 5.1, Longitude: 7.1},
+					{Latitude: 5.2, Longitude: 7.2},
+				},
+				810243: {
+					{Latitude: 15.0, Longitude: 17.0},
+					{Latitude: 15.1, Longitude: 17.1},
+				},
+			}, nil
+		},
+	}
+
+	handler := newPathsMapPageHandler(storer)
+	req := httptest.NewRequest(http.MethodGet, "http://example.com/foo", http.NoBody)
+	w := httptest.NewRecorder()
+	handler(w, req)
+
+	resp := w.Result()
+	require.Equal(t, 200, resp.StatusCode, "HTTP status")
+	body, err := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	require.Nil(t, err)
+
+	// This is just an early, clearer fail
+	require.Contains(t, string(body), "Rueger")
+
+	assertGolden(t, "paths_page", string(body))
 }
 
 func assertGolden(tb testing.TB, fileBasename, got string) {
