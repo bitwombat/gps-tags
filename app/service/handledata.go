@@ -17,6 +17,11 @@ import (
 	zonespkg "github.com/bitwombat/gps-tags/zones"
 )
 
+// TxWriter handles writing transmission data
+type TxWriter interface {
+	WriteTx(context.Context, model.TagTx) (string, error)
+}
+
 var lastWasHealthCheck bool // Used to clean up the log output.
 
 func makeNotifier(ctx context.Context, notifier notify.Notifier, title notify.Title, message notify.Message) func() error {
@@ -27,7 +32,7 @@ func makeNotifier(ctx context.Context, notifier notify.Notifier, title notify.Ti
 	}
 }
 
-func newDataPostHandler(storer storage.Storage, notifier notify.Notifier, tagAuthKey string, now func() time.Time) func(http.ResponseWriter, *http.Request) {
+func newDataPostHandler(storer TxWriter, notifier notify.Notifier, tagAuthKey string, now func() time.Time) func(http.ResponseWriter, *http.Request) {
 	oneShot := oshotpkg.NewOneShot()
 
 	NamedZones, err := zonespkg.ReadKMLDir("named_zones")

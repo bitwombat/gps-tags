@@ -11,7 +11,17 @@ import (
 	"github.com/bitwombat/gps-tags/substitute"
 )
 
-func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
+// CoordReader handles reading coordinate data for paths
+type CoordReader interface {
+	GetLastNCoords(context.Context, int) (storage.Coords, error)
+}
+
+// StatusReader handles reading status data for current locations
+type StatusReader interface {
+	GetLastStatuses(context.Context) (storage.Statuses, error)
+}
+
+func newPathsMapPageHandler(storer CoordReader) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		debugLogger.Println("Got a current map page request.")
 		lastWasHealthCheck = false
@@ -65,7 +75,7 @@ func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *h
 	}
 }
 
-func newCurrentMapPageHandler(storer storage.Storage, now func() time.Time) func(http.ResponseWriter, *http.Request) {
+func newCurrentMapPageHandler(storer StatusReader, now func() time.Time) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		debugLogger.Println("Got a current map page request.")
 		lastWasHealthCheck = false
