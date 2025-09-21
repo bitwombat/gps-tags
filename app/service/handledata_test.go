@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -139,7 +140,7 @@ func TestPostDataHandler(t *testing.T) {
 	_ = os.Chdir(cwd) //nolint:errcheck // don't care
 }
 
-func TestPostDataHandlerBatteryExactLowThreshold(t *testing.T) {
+func TestPostDataHandlerBatteryLevels(t *testing.T) {
 	cwd, _ := os.Getwd() //nolint:errcheck // don't care
 	err := os.Chdir("..")
 	require.Nil(t, err, "changing directory to where zone kml's are")
@@ -152,12 +153,71 @@ func TestPostDataHandlerBatteryExactLowThreshold(t *testing.T) {
 		return t
 	}
 
-	storer := &FakeStorer{}
-	notifier := &FakeNotifier{}
-	handler := newDataPostHandler(storer, notifier, "xxxx", now)
+	tests := []struct {
+		name                string
+		batteryMillivolts   int
+		expectedNotifyCount int
+		expectedTitles      []string
+		expectedMessages    []string
+		description         string
+	}{
+		{
+			name:                "just_below_low_threshold",
+			batteryMillivolts:   3999, // 3.999V (just below 4.0V threshold)
+			expectedNotifyCount: 1,
+			expectedTitles:      []string{"RUEGER's battery low"},
+			expectedMessages:    []string{"Battery voltage: 3.999 V"},
+			description:         "Battery just below low threshold should trigger low battery notification",
+		},
+		{
+			name:                "at_low_threshold",
+			batteryMillivolts:   4000, // 4.0V (exactly at threshold)
+			expectedNotifyCount: 0,
+			expectedTitles:      []string{},
+			expectedMessages:    []string{},
+			description:         "Battery exactly at threshold should NOT trigger (< comparison)",
+		},
+		{
+			name:                "just_above_low_threshold",
+			batteryMillivolts:   4001, // 4.001V (just above threshold)
+			expectedNotifyCount: 0,
+			expectedTitles:      []string{},
+			expectedMessages:    []string{},
+			description:         "Battery just above threshold should NOT trigger",
+		},
+		{
+			name:                "just_below_reset_threshold",
+			batteryMillivolts:   4099, // 4.099V (just below 4.1V reset)
+			expectedNotifyCount: 0,
+			expectedTitles:      []string{},
+			expectedMessages:    []string{},
+			description:         "Battery just below reset threshold should NOT trigger",
+		},
+		{
+			name:                "at_reset_threshold",
+			batteryMillivolts:   4100, // 4.1V (exactly at reset threshold)
+			expectedNotifyCount: 0,
+			expectedTitles:      []string{},
+			expectedMessages:    []string{},
+			description:         "Battery at reset threshold should NOT trigger",
+		},
+		{
+			name:                "just_above_reset_threshold",
+			batteryMillivolts:   4101, // 4.101V (just above reset)
+			expectedNotifyCount: 0,
+			expectedTitles:      []string{},
+			expectedMessages:    []string{},
+			description:         "Battery just above reset threshold should NOT trigger (no previous low state to reset from)",
+		},
+	}
 
-	// Test data with battery voltage exactly at low threshold (4.0V = 4000 millivolts)
-	batteryAtLowThresholdSample := `{
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			storer := &FakeStorer{}
+			notifier := &FakeNotifier{}
+			handler := newDataPostHandler(storer, notifier, "xxxx", now)
+
+			batteryTestSample := fmt.Sprintf(`{
   "SerNo": 810095,
   "IMEI": "353785725680796",
   "ICCID": "89610180004127201829",
@@ -170,53 +230,44 @@ func TestPostDataHandlerBatteryExactLowThreshold(t *testing.T) {
       "DateUTC": "2023-10-21 23:21:42",
       "Fields": [
         {
-          "GpsUTC": "2023-10-21 23:17:40",
-          "Lat": -31.4577084,
-          "Long": 152.6422,
-          "Alt": 35,
-          "Spd": 0,
-          "SpdAcc": 2,
-          "Head": 0,
-          "PDOP": 17,
-          "PosAcc": 10,
-          "GpsStat": 7,
-          "FType": 0
-        },
-        {
           "AnalogueData": {
-            "1": 3999,
-            "3": 3500,
-            "4": 8,
-            "5": 4500
+            "1": %d,
+            "3": 9999,
+            "4": 9999,
+            "5": 9999
           },
           "FType": 6
         }
       ]
     }
   ]
-}`
+}`, tt.batteryMillivolts)
 
-	body := strings.NewReader(batteryAtLowThresholdSample)
-	req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", body)
-	header := http.Header{}
-	header.Add("auth", "xxxx")
-	req.Header = header
+			body := strings.NewReader(batteryTestSample)
+			req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", body)
+			header := http.Header{}
+			header.Add("auth", "xxxx")
+			req.Header = header
 
-	w := httptest.NewRecorder()
-	handler(w, req)
+			w := httptest.NewRecorder()
+			handler(w, req)
 
-	resp := w.Result()
-	require.Equal(t, http.StatusOK, resp.StatusCode, "HTTP status")
+			resp := w.Result()
+			require.Equal(t, http.StatusOK, resp.StatusCode, "HTTP status")
 
-	// Battery at 3.999V (just below 4.0V threshold) should trigger low battery notification but NOT critical
-	require.Len(t, notifier.notifications, 1, "Should have exactly 1 notification: low battery only")
-	assert.Equal(t, "RUEGER's battery low", string(notifier.notifications[0].title))
-	assert.Equal(t, "Battery voltage: 3.999 V", string(notifier.notifications[0].message))
+			require.Len(t, notifier.notifications, tt.expectedNotifyCount, tt.description)
+
+			for i, expectedTitle := range tt.expectedTitles {
+				assert.Equal(t, expectedTitle, string(notifier.notifications[i].title))
+				assert.Equal(t, tt.expectedMessages[i], string(notifier.notifications[i].message))
+			}
+		})
+	}
 
 	_ = os.Chdir(cwd) //nolint:errcheck // don't care
 }
 
-func TestPostDataHandlerBatteryHysteresisReset(t *testing.T) {
+func TestPostDataHandlerBatteryRecovery(t *testing.T) {
 	cwd, _ := os.Getwd() //nolint:errcheck // don't care
 	err := os.Chdir("..")
 	require.Nil(t, err, "changing directory to where zone kml's are")
@@ -233,9 +284,8 @@ func TestPostDataHandlerBatteryHysteresisReset(t *testing.T) {
 	notifier := &FakeNotifier{}
 	handler := newDataPostHandler(storer, notifier, "xxxx", now)
 
-	// Test data with battery voltage at hysteresis reset boundary (4.1V = 4100 millivolts)
-	// This should NOT trigger low battery notification (4.0V + 0.1V hysteresis = 4.1V)
-	batteryAtHysteresisResetSample := `{
+	// First: Send low battery data to trigger the "set" state
+	lowBatterySample := `{
   "SerNo": 810095,
   "IMEI": "353785725680796",
   "ICCID": "89610180004127201829",
@@ -248,24 +298,11 @@ func TestPostDataHandlerBatteryHysteresisReset(t *testing.T) {
       "DateUTC": "2023-10-21 23:21:42",
       "Fields": [
         {
-          "GpsUTC": "2023-10-21 23:17:40",
-          "Lat": -31.4577084,
-          "Long": 152.6422,
-          "Alt": 35,
-          "Spd": 0,
-          "SpdAcc": 2,
-          "Head": 0,
-          "PDOP": 17,
-          "PosAcc": 10,
-          "GpsStat": 7,
-          "FType": 0
-        },
-        {
           "AnalogueData": {
-            "1": 4100,
-            "3": 3500,
-            "4": 8,
-            "5": 4500
+            "1": 3999,
+            "3": 9999,
+            "4": 9999,
+            "5": 9999
           },
           "FType": 6
         }
@@ -274,7 +311,7 @@ func TestPostDataHandlerBatteryHysteresisReset(t *testing.T) {
   ]
 }`
 
-	body := strings.NewReader(batteryAtHysteresisResetSample)
+	body := strings.NewReader(lowBatterySample)
 	req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", body)
 	header := http.Header{}
 	header.Add("auth", "xxxx")
@@ -286,8 +323,55 @@ func TestPostDataHandlerBatteryHysteresisReset(t *testing.T) {
 	resp := w.Result()
 	require.Equal(t, http.StatusOK, resp.StatusCode, "HTTP status")
 
-	// Battery at 4.1V should NOT trigger any battery notifications (above reset threshold)
-	require.Len(t, notifier.notifications, 0, "Should have no notifications: good battery, inside property")
+	// Should have low battery notification
+	require.Len(t, notifier.notifications, 1, "Should have low battery notification")
+	assert.Equal(t, "RUEGER's battery low", string(notifier.notifications[0].title))
+	assert.Equal(t, "Battery voltage: 3.999 V", string(notifier.notifications[0].message))
+
+	// Clear notifications for next test
+	notifier.notifications = nil
+
+	// Second: Send recovery battery data (above reset threshold)
+	recoverySample := `{
+  "SerNo": 810095,
+  "IMEI": "353785725680796",
+  "ICCID": "89610180004127201829",
+  "ProdId": 97,
+  "FW": "97.2.1.11",
+  "Records": [
+    {
+      "SeqNo": 7495,
+      "Reason": 11,
+      "DateUTC": "2023-10-21 23:23:42",
+      "Fields": [
+        {
+          "AnalogueData": {
+            "1": 4101,
+            "3": 9999,
+            "4": 9999,
+            "5": 9999
+          },
+          "FType": 6
+        }
+      ]
+    }
+  ]
+}`
+
+	body2 := strings.NewReader(recoverySample)
+	req2 := httptest.NewRequest(http.MethodPost, "http://example.com/foo", body2)
+	req2.Header = header
+
+	w2 := httptest.NewRecorder()
+	handler(w2, req2)
+
+	resp2 := w2.Result()
+	require.Equal(t, http.StatusOK, resp2.StatusCode, "HTTP status")
+
+	// Should now have "new battery detected" reset notification
+	require.Len(t, notifier.notifications, 1, "Should have new battery detected notification")
+	assert.Equal(t, "New battery for RUEGER detected", string(notifier.notifications[0].title))
+	assert.Equal(t, "Battery voltage: 4.101 V", string(notifier.notifications[0].message))
 
 	_ = os.Chdir(cwd) //nolint:errcheck // don't care
 }
