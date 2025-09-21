@@ -34,7 +34,7 @@ var (
 
 func hostnameBasedFileServer() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Determine the directory to serve filess from based on the hostname in
+		// Determine the directory to serve files from based on the hostname in
 		// the request.
 		host := strings.ToLower(r.Host)
 		var dir string
@@ -87,7 +87,7 @@ func run() int {
 
 	tagAuthKey := os.Getenv("TAG_AUTH_KEY")
 	if tagAuthKey == "" {
-		fatalLog(1, "TAG_AUTH_KEY not set")
+		return fatalLog(1, "TAG_AUTH_KEY not set")
 	}
 
 	// Current location map page

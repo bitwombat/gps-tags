@@ -11,12 +11,12 @@ import (
 	"github.com/bitwombat/gps-tags/substitute"
 )
 
-// CoordReader handles reading coordinate data for paths
+// CoordReader handles reading coordinate data for paths.
 type CoordReader interface {
 	GetLastNCoords(context.Context, int) (storage.Coords, error)
 }
 
-// StatusReader handles reading status data for current locations
+// StatusReader handles reading status data for current locations.
 type StatusReader interface {
 	GetLastStatuses(context.Context) (storage.Statuses, error)
 }

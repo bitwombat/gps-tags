@@ -107,7 +107,7 @@ func TestPathsMapPageHandler(t *testing.T) {
 	require.Nil(t, err, "changing directory to where public_html is")
 
 	storer := &FakeStorer{
-		fnGetLastNCoords: func(_ context.Context, n int) (storage.Coords, error) {
+		fnGetLastNCoords: func(_ context.Context, _ int) (storage.Coords, error) {
 			return storage.Coords{
 				810095: {
 					{Latitude: 5.0, Longitude: 7.0},

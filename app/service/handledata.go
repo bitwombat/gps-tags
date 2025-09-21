@@ -17,7 +17,7 @@ import (
 	zonespkg "github.com/bitwombat/gps-tags/zones"
 )
 
-// TxWriter handles writing transmission data
+// TxWriter handles writing transmission data.
 type TxWriter interface {
 	WriteTx(context.Context, model.TagTx) (string, error)
 }
