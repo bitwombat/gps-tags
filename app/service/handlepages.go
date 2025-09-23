@@ -1,44 +1,55 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
+	"time"
 
-	"github.com/bitwombat/gps-tags/device"
+	"github.com/bitwombat/gps-tags/model"
 	"github.com/bitwombat/gps-tags/storage"
 	"github.com/bitwombat/gps-tags/substitute"
 )
 
-func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
+// CoordReader handles reading coordinate data for paths.
+type CoordReader interface {
+	GetLastNCoords(context.Context, int) (storage.Coords, error)
+}
 
+// StatusReader handles reading status data for current locations.
+type StatusReader interface {
+	GetLastStatuses(context.Context) (storage.Statuses, error)
+}
+
+func newPathsMapPageHandler(storer CoordReader) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		debugLogger.Println("Got a current map page request.")
 		lastWasHealthCheck = false
 
-		pathpoints, err := storer.GetLastNPositions(30)
+		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
+		defer cancel()
+
+		pathpoints, err := storer.GetLastNCoords(ctx, 30)
 		if err != nil {
-			errorLogger.Printf("Error getting last N positions from storage: %v\n", err)
+			errorLogger.Printf("Error getting last N coordinates from storage: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		//for _, tag := range tags {
-		//name := idToName[tag.SerNo]
-
 		subs := make(map[string]string)
 
-		for _, tag := range pathpoints {
+		for tag, points := range pathpoints {
 			// Start the JavaScript array
 			pathpointStr := "["
-			name := idToName[tag.SerNo]
-			for i, pathpoint := range tag.PathPoints {
+			name := model.SerNoToName[int(tag)]
+			for i, pathpoint := range points {
 				if i == 0 { // First point is most recent. Use this for the marker.
 					subs[name+"Lat"] = fmt.Sprintf("%.7f", pathpoint.Latitude)
 					subs[name+"Lng"] = fmt.Sprintf("%.7f", pathpoint.Longitude)
 				}
 				pathpointStr += fmt.Sprintf("{lat: %.7f, lng: %.7f},", pathpoint.Latitude, pathpoint.Longitude)
 			}
-			// Take the damn trailling comma off.
+			// Take the trailing comma off
 			pathpointStr = pathpointStr[:len(pathpointStr)-1]
 			// Close out the array
 			pathpointStr += "]"
@@ -47,7 +58,6 @@ func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *h
 		}
 
 		mapPage, err := substitute.ContentsOf("public_html/paths.html", subs)
-
 		if err != nil {
 			errorLogger.Printf("Error getting contents of paths.html: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -61,54 +71,48 @@ func newPathsMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *h
 			return
 		}
 
-		// Don't need this - it's taken care of by w.Write:  w.WriteHeader(http.StatusOK)
+		// Don't need w.WriteHeader(http.StatusOK) - it's taken care of by w.Write
 	}
 }
 
-func newCurrentMapPageHandler(storer storage.Storage) func(http.ResponseWriter, *http.Request) {
-
+func newCurrentMapPageHandler(storer StatusReader, now func() time.Time) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		debugLogger.Println("Got a current map page request.")
 		lastWasHealthCheck = false
 
-		tags, err := storer.GetLastPositions()
+		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
+		defer cancel()
+
+		tagStatuses, err := storer.GetLastStatuses(ctx)
 		if err != nil {
-			errorLogger.Printf("Error getting last position from storage: %v\n", err)
+			errorLogger.Printf("Error getting last statuses from storage: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
 		subs := make(map[string]string)
 
-		for _, tag := range tags {
-			name := idToName[tag.SerNo]
-			reason, ok := device.ReasonToText[tag.Reason]
-			if !ok {
-				errorLogger.Printf("Error: Unknown reason code: %v\n", tag.Reason)
-				reason = "Unknown reason"
-			}
-			subs[name+"Lat"] = fmt.Sprintf("%.7f", tag.Latitude)
-			subs[name+"Lng"] = fmt.Sprintf("%.7f", tag.Longitude)
-			subs[name+"AccuracyRadius"] = fmt.Sprintf("%.7f", tag.PosAcc)
-			subs[name+"Note"] = "Last GPS: " + timeAgoAsText(tag.GpsUTC) + " ago<br>Last Checkin: " + timeAgoAsText(tag.DateUTC) + " ago<br>Reason: " + reason + "<br>Battery: " + fmt.Sprintf("%.2f", tag.Battery/1000) + "V"
-			subs[name+"Colour"] = timeAgoInColour(tag.GpsUTC)
+		for serNo, status := range tagStatuses {
+			name := model.SerNoToName[int(serNo)]
+			subs[name+"Lat"] = fmt.Sprintf("%.7f", status.Latitude)
+			subs[name+"Lng"] = fmt.Sprintf("%.7f", status.Longitude)
+			subs[name+"AccuracyRadius"] = fmt.Sprintf("%v", status.PosAcc)
+			subs[name+"Note"] = "Last GPS: " + timeAgoAsText(status.GpsUTC, now) + " ago<br>Last Checkin: " + timeAgoAsText(status.DateUTC, now) + " ago<br>Reason: " + status.Reason.String() + "<br>Battery: " + fmt.Sprintf("%.2f", float64(status.Battery)/1000.) + "V"
+			subs[name+"Colour"] = timeAgoInColour(status.GpsUTC, now)
 		}
 
 		mapPage, err := substitute.ContentsOf("public_html/current-map.html", subs)
-
 		if err != nil {
 			errorLogger.Printf("Error getting contents of current-map.html: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
 
-		_, err = w.Write([]byte(mapPage))
+		_, err = w.Write([]byte(mapPage)) // NOTE: writes http.StatusOK header
 		if err != nil {
 			errorLogger.Printf("Error writing response: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-
-		// Don't need this - it's taken care of by w.Write:  w.WriteHeader(http.StatusOK)
 	}
 }

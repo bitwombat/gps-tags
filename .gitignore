@@ -11,3 +11,13 @@ dog-tracking.service
 .env
 app/service/.vscode
 tmux.scr
+data
+app/service/cmd/migrate/dogs.sqbpro
+app/service/cmd/migrate/dogs_pre_20250711.json
+app/service/cmd/migrate/dogs_pre_20250711.sql
+app/service/cmd/migrate/dogtags.db
+app/service/cmd/migrate/golden.txt
+app/service/dogtags.db
+app/service/test-output/current_page.html
+app/service/samples_go
+app/service/cmd/migrate/migration_20250924.zip

@@ -12,12 +12,12 @@ import (
 const ntfyURLBase = "https://ntfy.sh/"
 
 type Ntfy struct {
-	subscriptionId string
+	subscriptionID string
 }
 
-func NewNtfyNotifier(subscriptionId string) Notifier {
+func NewNtfyNotifier(subscriptionID string) Notifier {
 	return Ntfy{
-		subscriptionId: subscriptionId,
+		subscriptionID: subscriptionID,
 	}
 }
 
@@ -30,18 +30,18 @@ func cacheBustingString() string {
 	return hex.EncodeToString(bytes)
 }
 
-func (n Ntfy) Notify(ctx context.Context, title, message string) error {
+func (n Ntfy) Notify(ctx context.Context, title Title, message Message) error {
 	// Set up
 	client := &http.Client{}
-	buf := strings.NewReader(message)
+	buf := strings.NewReader(string(message))
 
 	// Make the request object
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, ntfyURLBase+n.subscriptionId, buf)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, ntfyURLBase+n.subscriptionID, buf)
 	if err != nil {
 		return fmt.Errorf("error while making http POST request to ntfy.sh: %w", err)
 	}
 
-	req.Header.Set("Title", title)
+	req.Header.Set("Title", string(title))
 	req.Header.Set("Actions", `[{ "action": "view", "label": "Show me", "url": "https://tags.bitwombat.com.au/current?q=`+cacheBustingString()+`"}]`)
 
 	// Send the request

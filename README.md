@@ -61,7 +61,6 @@ them.
    (see TODOs below)
 
 
-
 ## Deployment
 
 From this dir, run
@@ -75,7 +74,43 @@ From this dir, run
     $ go test ./...
 
 
+## Backing up MongoDB
+
+### Install mongodump
+
+    wget https://fastdl.mongodb.org/tools/db/mongodb-database-tools-amazon2-x86_64-100.12.2.tgz
+    tar zxvf mongodb-database-tools-amazon2-x86_64-100.12.2.tgz
+    export PATH=/root/mongodb-database-tools-amazon2-x86_64-100.12.2/bin:$PATH
+
+### Run mongodump
+
+    mongodump
+
+Results are in `./dump`
+
+## Using MongoSH
+
+    $ mongosh
+    $ show dbs
+    $ use tags
+    $ show collections
+    $ db.dogs.find()
+    $ db.dogs.drop()
+
+
+See https://www.mongodb.com/docs/mongodb-shell/crud/read/
+https://www.mongodb.com/docs/manual/reference/method/
+
+## Exporting Mongo
+
+Follow instructions to install mongodb-database-tools from above, then:
+
+    mongoexport --collection=dogs --db=tags  --type=json --jsonArray --out=dogs.json
+
+
 ## TODOs
+- Make types that I unmarshal the Tx into match the types in the Yabby spec.
+https://go.dev/ref/spec#Numeric_types
 
 1. Make own location configurable (get it out of current-map.html).
 2. Read boundaries from boundary_zones dir (get them out of main.go).
@@ -91,4 +126,6 @@ From this dir, run
     and it reports "Dog X is now back close to the house".
 11. Notify when the collar hasn't been heard from in X hours.
 12. Notify when the collar hasn't GPS located in X hours.
-
+13. Report furthest distance travelled.
+14. Time window & slider for paths.
+15. Setup "pragma optimize;" and "pragma vacuum;" to run daily on sqlite3.

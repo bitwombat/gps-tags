@@ -7,250 +7,312 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSets(t *testing.T) {
-	// GIVEN some storage and a flag to store that an action happened
-	var storage map[string]bool
-	storage = make(map[string]bool)
-	var fired bool
-
-	// WHEN the condition to set the oneshot is true
-	err := SetOrReset("someEvent", storage,
-		Config{
-			SetIf: true,
-			OnSet: func() error {
-				fired = true
-				return nil
-			},
-			ResetIf: false,
-			OnReset: nil,
-		})
-
-	// THEN we expect the set action to have happened
-	require.Nil(t, err)
-	require.True(t, fired)
-
+type step struct {
+	config                   Config
+	expectedSetActionCount   int
+	expectedResetActionCount int
+	expectedError            error
 }
 
-func TestItDoesntSetIfConditionIsntTrue(t *testing.T) {
-	// GIVEN some storage and a flag to store that an action happened
-	var storage map[string]bool
-	storage = make(map[string]bool)
-	var fired bool
+func TestOneShot(t *testing.T) {
+	uut := NewOneShot()
 
-	// WHEN the condition to set the oneshot is NOT true
-	err := SetOrReset("someEvent", storage,
-		Config{
-			SetIf: false,
-			OnSet: func() error {
-				fired = true
-				return nil
+	someError := fmt.Errorf("some error")
+
+	var setActionCount int
+	var resetActionCount int
+
+	SetFn := func() error {
+		setActionCount++
+		return nil
+	}
+
+	SetFnWithError := func() error {
+		setActionCount++
+		return someError
+	}
+
+	ResetFn := func() error {
+		resetActionCount++
+		return nil
+	}
+
+	ResetFnWithError := func() error {
+		resetActionCount++
+		return someError
+	}
+
+	for _, tc := range []struct {
+		description string
+		steps       []step
+	}{
+		{
+			description: "doesn't run any actions when no conditions true (FF)",
+			steps: []step{
+				{
+					config: Config{
+						SetIf:   false,
+						OnSet:   SetFn,
+						ResetIf: false,
+						OnReset: ResetFn,
+					},
+					expectedSetActionCount:   0,
+					expectedResetActionCount: 0,
+					expectedError:            nil,
+				},
 			},
-			ResetIf: false,
-			OnReset: nil,
+		},
+		{
+			description: "runs just the set action when just SetIf is true (TF)",
+			steps: []step{
+				{
+					config: Config{
+						SetIf:   true,
+						OnSet:   SetFn,
+						ResetIf: false,
+						OnReset: ResetFn,
+					},
+					expectedSetActionCount:   1,
+					expectedResetActionCount: 0,
+					expectedError:            nil,
+				},
+			},
+		},
+		{
+			description: "does not run the reset action if it hasn't been set (FT)",
+			steps: []step{
+				{
+					config: Config{
+						SetIf:   false,
+						OnSet:   SetFn,
+						ResetIf: true,
+						OnReset: ResetFn,
+					},
+					expectedSetActionCount:   0,
+					expectedResetActionCount: 0,
+					expectedError:            nil,
+				},
+			},
+		},
+		{
+			description: "does run the reset action if it has been set",
+			steps: []step{
+				{
+					config: Config{
+						SetIf:   true,
+						OnSet:   SetFn,
+						ResetIf: false,
+						OnReset: ResetFn,
+					},
+					expectedSetActionCount:   1,
+					expectedResetActionCount: 0,
+					expectedError:            nil,
+				},
+				{
+					config: Config{
+						SetIf:   false,
+						OnSet:   SetFn,
+						ResetIf: true,
+						OnReset: ResetFn,
+					},
+					expectedSetActionCount:   1,
+					expectedResetActionCount: 1,
+					expectedError:            nil,
+				},
+			},
+		},
+		{
+			description: "runs both actions when both Ifs are true simultaneously (TT)",
+			steps: []step{
+				{
+					config: Config{
+						SetIf:   true,
+						OnSet:   SetFn,
+						ResetIf: true,
+						OnReset: ResetFn,
+					},
+					expectedSetActionCount:   1,
+					expectedResetActionCount: 1,
+					expectedError:            nil,
+				},
+			},
+		},
+		{
+			description: "remains reset when both Ifs are true (TT)",
+			steps: []step{
+				{
+					config: Config{
+						SetIf:   true,
+						OnSet:   SetFn,
+						ResetIf: true,
+						OnReset: ResetFn,
+					},
+					expectedSetActionCount:   1,
+					expectedResetActionCount: 1,
+					expectedError:            nil,
+				},
+				{
+					config: Config{
+						SetIf:   true,
+						OnSet:   SetFn,
+						ResetIf: false,
+						OnReset: ResetFn,
+					},
+					expectedSetActionCount:   2,
+					expectedResetActionCount: 1,
+					expectedError:            nil,
+				},
+			},
+		},
+		{
+			description: "one-shots properly (doesn't fire twice)",
+			steps: []step{
+				{
+					config: Config{
+						SetIf:   true,
+						OnSet:   SetFn,
+						ResetIf: false,
+						OnReset: ResetFn,
+					},
+					expectedSetActionCount:   1,
+					expectedResetActionCount: 0,
+					expectedError:            nil,
+				},
+				{
+					config: Config{
+						SetIf:   true,
+						OnSet:   SetFn,
+						ResetIf: false,
+						OnReset: ResetFn,
+					},
+					expectedSetActionCount:   1,
+					expectedResetActionCount: 0,
+					expectedError:            nil,
+				},
+			},
+		},
+		{
+			description: "doesn't set if action errors",
+			steps: []step{
+				{
+					config: Config{
+						SetIf:   true,
+						OnSet:   SetFnWithError,
+						ResetIf: false,
+						OnReset: ResetFn,
+					},
+					expectedSetActionCount:   1,
+					expectedResetActionCount: 0,
+					expectedError:            someError,
+				},
+				{
+					config: Config{
+						SetIf:   true,
+						OnSet:   SetFn,
+						ResetIf: false,
+						OnReset: ResetFn,
+					},
+					expectedSetActionCount:   2,
+					expectedResetActionCount: 0,
+					expectedError:            nil,
+				},
+			},
+		},
+		{
+			description: "doesn't reset if action errors",
+			steps: []step{
+				{
+					config: Config{
+						SetIf:   true,
+						OnSet:   SetFn,
+						ResetIf: false,
+						OnReset: ResetFn,
+					},
+					expectedSetActionCount:   1,
+					expectedResetActionCount: 0,
+					expectedError:            nil,
+				},
+				{
+					config: Config{
+						SetIf:   false,
+						OnSet:   SetFn,
+						ResetIf: true,
+						OnReset: ResetFnWithError,
+					},
+					expectedSetActionCount:   1,
+					expectedResetActionCount: 1,
+					expectedError:            someError,
+				},
+				{
+					config: Config{
+						SetIf:   true, // should not be able to set again
+						OnSet:   SetFn,
+						ResetIf: false,
+						OnReset: ResetFn,
+					},
+					expectedSetActionCount:   1,
+					expectedResetActionCount: 1,
+					expectedError:            nil,
+				},
+			},
+		},
+	} {
+		t.Run(tc.description, func(t *testing.T) {
+			for _, step := range tc.steps {
+				err := uut.SetReset("testing", step.config)
+				require.Equal(t, step.expectedError, err, "returned error")
+				require.Equal(t, step.expectedSetActionCount, setActionCount, "set action count")
+				require.Equal(t, step.expectedResetActionCount, resetActionCount, "reset action count")
+			}
+			setActionCount = 0
+			resetActionCount = 0
+			clear(uut.storage)
 		})
-
-	// THEN we expect the set action to NOT have happened
-	require.Nil(t, err)
-	require.False(t, fired)
-
+	}
 }
 
-func TestItDoesntSetIfActionFails(t *testing.T) {
-	// GIVEN some storage and a flag to store that an action happened
-	var storage map[string]bool
-	storage = make(map[string]bool)
-	var firedOnce bool
-	var firedTwice bool
+func TestEventsDontInterfere(t *testing.T) {
+	// GIVEN a single oneshot instance
+	uut := NewOneShot()
 
-	// WHEN the condition to set the oneshot is true but the action fails
-	err := SetOrReset("someEvent", storage,
-		Config{
-			SetIf: true,
-			OnSet: func() error {
-				firedOnce = true
-				return fmt.Errorf("some error")
-			},
-			ResetIf: false,
-			OnReset: nil,
-		})
+	var setActionCount int
+	var resetActionCount int
 
-	// AND WHEN we attempt to set the oneshot again
-	err = SetOrReset("someEvent", storage,
-		Config{
-			SetIf: true,
-			OnSet: func() error {
-				firedTwice = true
-				return nil
-			},
-			ResetIf: false,
-			OnReset: nil,
-		})
+	SetFn := func() error {
+		setActionCount++
+		return nil
+	}
 
-	// THEN we expect the set action to have happened again
+	ResetFn := func() error {
+		resetActionCount++
+		return nil
+	}
+
+	// WHEN we set event1
+	err := uut.SetReset("event1", Config{
+		SetIf:   true,
+		OnSet:   SetFn,
+		ResetIf: false,
+		OnReset: ResetFn,
+	},
+	)
+
+	// THEN we should see the normal behaviour
 	require.Nil(t, err)
-	require.True(t, firedOnce)
-	require.True(t, firedTwice)
+	require.Equal(t, 1, setActionCount)
+	require.Equal(t, 0, resetActionCount)
 
+	// AND WHEN we set event2
+	err = uut.SetReset("event2", Config{
+		SetIf:   true,
+		OnSet:   SetFn,
+		ResetIf: false,
+		OnReset: ResetFn,
+	},
+	)
+
+	// THEN we should see that it was independent - it also fired
+	require.Nil(t, err)
+	require.Equal(t, 2, setActionCount)
+	require.Equal(t, 0, resetActionCount)
 }
-
-func TestItDoesntFireSetActionTwice(t *testing.T) {
-	// GIVEN some storage and two flags to store that actions happened
-	var firedOnce bool
-	var firedTwice bool
-	var storage map[string]bool
-	storage = make(map[string]bool)
-
-	// WHEN the condition to set the oneshot is true
-	err := SetOrReset("someEvent", storage,
-		Config{
-			SetIf: true,
-			OnSet: func() error {
-				firedOnce = true
-				return nil
-			},
-			ResetIf: false,
-			OnReset: nil,
-		})
-	require.Nil(t, err)
-	require.True(t, firedOnce)
-
-	// AND we attempt to set the oneshot a second time
-	err = SetOrReset("someEvent", storage,
-		Config{
-			SetIf: true,
-			OnSet: func() error {
-				firedTwice = true
-				return nil
-			},
-			ResetIf: false,
-			OnReset: nil,
-		})
-
-	// THEN the set action fired once but not the second time
-	require.Nil(t, err)
-	require.True(t, firedOnce)
-	require.False(t, firedTwice)
-
-}
-
-func TestReset(t *testing.T) {
-	// GIVEN some storage and a flag to store that an action happened
-	var storage map[string]bool
-	storage = make(map[string]bool)
-	var resetFired bool
-
-	// AND the oneshot is set
-	err := SetOrReset("someEvent", storage,
-		Config{
-			SetIf:   true,
-			OnSet:   nil,
-			ResetIf: false,
-			OnReset: nil,
-		})
-
-	// WHEN we reset the oneshot
-	err = SetOrReset("someEvent", storage,
-		Config{
-			SetIf:   false,
-			OnSet:   nil,
-			ResetIf: true,
-			OnReset: func() error {
-				resetFired = true
-				return nil
-			},
-		})
-
-	// THEN we expect the reset action to have happened
-	require.Nil(t, err)
-	require.True(t, resetFired)
-
-}
-
-func TestItDoesntFireResetActionTwice(t *testing.T) {
-	// GIVEN some storage and flags to store that actions happened
-	var storage map[string]bool
-	storage = make(map[string]bool)
-	var resetFiredOnce bool
-	var resetFiredTwice bool
-
-	// AND the oneshot is set
-	err := SetOrReset("someEvent", storage,
-		Config{
-			SetIf:   true,
-			OnSet:   nil,
-			ResetIf: false,
-			OnReset: nil,
-		})
-
-	// WHEN we reset the oneshot
-	err = SetOrReset("someEvent", storage,
-		Config{
-			SetIf:   false,
-			OnSet:   nil,
-			ResetIf: true,
-			OnReset: func() error {
-				resetFiredOnce = true
-				return nil
-			},
-		})
-
-	// WHEN we reset the oneshot
-	err = SetOrReset("someEvent", storage,
-		Config{
-			SetIf:   false,
-			OnSet:   nil,
-			ResetIf: true,
-			OnReset: func() error {
-				resetFiredTwice = true
-				return nil
-			},
-		})
-
-	// THEN we expect the reset action to have happened the first time but not the second
-	require.Nil(t, err)
-	require.True(t, resetFiredOnce)
-	require.False(t, resetFiredTwice)
-}
-
-func TestItCanBeSetAndReset(t *testing.T) {
-	// GIVEN some storage and flags to store that actions happened
-	var storage map[string]bool
-	storage = make(map[string]bool)
-	var setFiredSecondTime bool
-
-	// AND the oneshot is set
-	err := SetOrReset("someEvent", storage,
-		Config{
-			SetIf:   true,
-			OnSet:   nil,
-			ResetIf: false,
-			OnReset: nil,
-		})
-
-	// AND we reset the oneshot
-	err = SetOrReset("someEvent", storage,
-		Config{
-			SetIf:   false,
-			OnSet:   nil,
-			ResetIf: true,
-			OnReset: nil,
-		})
-
-	// WHEN we set the oneshot again
-	err = SetOrReset("someEvent", storage,
-		Config{
-			SetIf: true,
-			OnSet: func() error {
-				setFiredSecondTime = true
-				return nil
-			},
-			ResetIf: false,
-			OnReset: nil,
-		})
-
-	// THEN we expect the second set action to have happened
-	require.Nil(t, err)
-	require.True(t, setFiredSecondTime)
-}
-
-// TODO: Test that events are tracked separately (how?), ie. the map is a map. Necessary?
