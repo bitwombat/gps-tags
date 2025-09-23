@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	oshotpkg "github.com/bitwombat/gps-tags/oneshot"
+	zonespkg "github.com/bitwombat/gps-tags/zones"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -114,7 +116,29 @@ func TestPostDataHandler(t *testing.T) {
 
 	storer := &FakeStorer{}
 	notifier := &FakeNotifier{}
-	handler := newDataPostHandler(storer, notifier, "xxxx", now)
+	oneShot := oshotpkg.NewOneShot()
+
+	namedZones, err := zonespkg.ReadKMLDir("named_zones") // TODO: No need to Chdir now.
+	if err != nil {
+		errorLogger.Printf("Error reading KML files: %v", err)
+		// not a critical error, keep going
+	}
+
+	txLogger := txLogger{namedZones}
+
+	batteryNotifier := batteryNotifier{
+		namedZones: namedZones,
+		oneShot:    oneShot,
+		notifier:   notifier,
+	}
+
+	zoneNotifier := zoneNotifier{
+		namedZones: namedZones,
+		oneShot:    oneShot,
+		notifier:   notifier,
+	}
+
+	handler := newDataPostHandler(storer, notifier, txLogger, batteryNotifier, zoneNotifier, "xxxx", now)
 
 	body := strings.NewReader(basicCompleteSample)
 
@@ -215,7 +239,29 @@ func TestPostDataHandlerBatteryLevels(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			storer := &FakeStorer{}
 			notifier := &FakeNotifier{}
-			handler := newDataPostHandler(storer, notifier, "xxxx", now)
+			oneShot := oshotpkg.NewOneShot()
+
+			namedZones, err := zonespkg.ReadKMLDir("named_zones")
+			if err != nil {
+				errorLogger.Printf("Error reading KML files: %v", err)
+				// not a critical error, keep going
+			}
+
+			txLogger := txLogger{namedZones}
+
+			batteryNotifier := batteryNotifier{
+				namedZones: namedZones,
+				oneShot:    oneShot,
+				notifier:   notifier,
+			}
+
+			zoneNotifier := zoneNotifier{
+				namedZones: namedZones,
+				oneShot:    oneShot,
+				notifier:   notifier,
+			}
+
+			handler := newDataPostHandler(storer, notifier, txLogger, batteryNotifier, zoneNotifier, "xxxx", now)
 
 			batteryTestSample := fmt.Sprintf(`{
   "SerNo": 810095,
@@ -282,7 +328,29 @@ func TestPostDataHandlerBatteryRecovery(t *testing.T) {
 
 	storer := &FakeStorer{}
 	notifier := &FakeNotifier{}
-	handler := newDataPostHandler(storer, notifier, "xxxx", now)
+	oneShot := oshotpkg.NewOneShot()
+
+	namedZones, err := zonespkg.ReadKMLDir("named_zones")
+	if err != nil {
+		errorLogger.Printf("Error reading KML files: %v", err)
+		// not a critical error, keep going
+	}
+
+	txLogger := txLogger{namedZones}
+
+	batteryNotifier := batteryNotifier{
+		namedZones: namedZones,
+		oneShot:    oneShot,
+		notifier:   notifier,
+	}
+
+	zoneNotifier := zoneNotifier{
+		namedZones: namedZones,
+		oneShot:    oneShot,
+		notifier:   notifier,
+	}
+
+	handler := newDataPostHandler(storer, notifier, txLogger, batteryNotifier, zoneNotifier, "xxxx", now)
 
 	// First: Send low battery data to trigger the "set" state
 	lowBatterySample := `{
@@ -388,7 +456,29 @@ func TestPostDataHandlerAuth(t *testing.T) {
 	}
 
 	notifier := &FakeNotifier{}
-	handler := newDataPostHandler(storer, notifier, "xxxx", now)
+	oneShot := oshotpkg.NewOneShot()
+
+	namedZones, err := zonespkg.ReadKMLDir("named_zones") // TODO: DRY this up
+	if err != nil {
+		errorLogger.Printf("Error reading KML files: %v", err)
+		// not a critical error, keep going
+	}
+
+	txLogger := txLogger{namedZones}
+
+	batteryNotifier := batteryNotifier{
+		namedZones: namedZones,
+		oneShot:    oneShot,
+		notifier:   notifier,
+	}
+
+	zoneNotifier := zoneNotifier{
+		namedZones: namedZones,
+		oneShot:    oneShot,
+		notifier:   notifier,
+	}
+
+	handler := newDataPostHandler(storer, notifier, txLogger, batteryNotifier, zoneNotifier, "xxxx", now)
 	req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", http.NoBody)
 
 	t.Run("no auth header", func(t *testing.T) {

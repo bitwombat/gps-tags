@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -10,10 +9,6 @@ import (
 	"github.com/bitwombat/gps-tags/device"
 	"github.com/bitwombat/gps-tags/model"
 	"github.com/bitwombat/gps-tags/notify"
-	oshotpkg "github.com/bitwombat/gps-tags/oneshot"
-	"github.com/bitwombat/gps-tags/poly"
-	"github.com/bitwombat/gps-tags/zones"
-	zonespkg "github.com/bitwombat/gps-tags/zones"
 )
 
 // TxWriter handles writing transmission data.
@@ -31,15 +26,7 @@ func makeNotifier(ctx context.Context, notifier notify.Notifier, title notify.Ti
 	}
 }
 
-func newDataPostHandler(storer TxWriter, notifier notify.Notifier, tagAuthKey string, now func() time.Time) func(http.ResponseWriter, *http.Request) {
-	oneShot := oshotpkg.NewOneShot()
-
-	namedZones, err := zonespkg.ReadKMLDir("named_zones")
-	if err != nil {
-		errorLogger.Printf("Error reading KML files: %v", err)
-		// not a critical error, keep going
-	}
-
+func newDataPostHandler(storer TxWriter, notifier notify.Notifier, txLogger txLogger, batteryNotifier batteryNotifier, zoneNotifier zoneNotifier, tagAuthKey string, now func() time.Time) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 		defer cancel()
@@ -107,9 +94,9 @@ func newDataPostHandler(storer TxWriter, notifier notify.Notifier, tagAuthKey st
 		}
 
 		cleanGPSReadings(tagData)
-		logTx(namedZones, now, tagData)
-		processRecordsForBatteryNotifications(ctx, now, oneShot, notifier, tagData)
-		processRecordsForZoneNotifications(ctx, namedZones, now, oneShot, notifier, tagData)
+		txLogger.Log(now, tagData)
+		batteryNotifier.Notify(ctx, now, tagData)
+		zoneNotifier.Notify(ctx, now, tagData)
 
 		w.WriteHeader(http.StatusOK)
 	}
@@ -123,188 +110,5 @@ func cleanGPSReadings(tagData model.TagTx) { // TODO: Maybe move this to the mod
 				tagData.Records[i].GPSReading = nil
 			}
 		}
-	}
-}
-
-func logTx(namedZones []zones.Zone, now func() time.Time, tagData model.TagTx) {
-	dogName := model.UpperSerNoToName(tagData.SerNo)
-
-	for _, r := range tagData.Records {
-		var thisZoneText string
-
-		// Figure out the most recent records for notifications later
-		if r.GPSReading != nil {
-			thisZoneText = zonespkg.NameThatZone(namedZones, zonespkg.Point{Latitude: r.GPSReading.Lat, Longitude: r.GPSReading.Long})
-
-			infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC.T, now), r.Reason, r.GPSReading.GpsUTC, timeAgoAsText(r.GPSReading.GpsUTC.T, now), r.GPSReading.Lat, r.GPSReading.Long, thisZoneText)
-		} else {
-			infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC.T, now), r.Reason)
-		}
-	}
-
-	return
-}
-
-func processRecordsForZoneNotifications(ctx context.Context, namedZones []zones.Zone, now func() time.Time, oneShot oshotpkg.OneShot, notifier notify.Notifier, tagData model.TagTx) {
-	var latestGPS struct {
-		gr    *model.GPSReading
-		seqNo int
-	}
-
-	// Process the records
-	for _, r := range tagData.Records {
-		// Figure out the most recent records for notifications later
-		if r.GPSReading != nil {
-			if r.SeqNo > latestGPS.seqNo {
-				latestGPS.seqNo = r.SeqNo
-				latestGPS.gr = r.GPSReading
-			}
-		}
-	}
-
-	dogName := model.UpperSerNoToName(tagData.SerNo)
-	notifyAboutZones(ctx, latestGPS.gr, namedZones, dogName, oneShot, notifier)
-
-	return
-}
-
-func processRecordsForBatteryNotifications(ctx context.Context, now func() time.Time, oneShot oshotpkg.OneShot, notifier notify.Notifier, tagData model.TagTx) {
-	var latestAnalogue struct {
-		ar    *model.AnalogueReading
-		seqNo int
-	}
-	// Process the records
-	for _, r := range tagData.Records {
-		if r.AnalogueReading != nil {
-			if r.SeqNo > latestAnalogue.seqNo {
-				latestAnalogue.seqNo = r.SeqNo
-				latestAnalogue.ar = r.AnalogueReading
-			}
-		}
-	}
-
-	dogName := model.UpperSerNoToName(tagData.SerNo)
-	notifyAboutBattery(ctx, now, latestAnalogue.ar, dogName, oneShot, notifier)
-
-	return
-}
-
-func notifyAboutBattery(ctx context.Context, now func() time.Time, latestAnalogue *model.AnalogueReading, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
-	if latestAnalogue == nil {
-		debugLogger.Println("No Analogue reading in transmission")
-
-		return
-	}
-
-	batteryVoltage := float64(latestAnalogue.InternalBatteryVoltage) / 1000
-
-	// We don't want to hear about low battery in the middle of the night.
-	nowIsWakingHours := now().Hour() >= 8 && now().Hour() <= 22
-
-	err := oneShot.SetReset(dogName+"lowBattery",
-		oshotpkg.Config{
-			SetIf: (batteryVoltage < BatteryLowThreshold) && nowIsWakingHours,
-			OnSet: makeNotifier(
-				ctx,
-				notifier,
-				notify.Title(fmt.Sprintf("%s's battery low", dogName)),
-				notify.Message(fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
-			),
-			ResetIf: batteryVoltage > BatteryLowThreshold+BatteryHysteresis,
-			OnReset: makeNotifier(
-				ctx,
-				notifier,
-				notify.Title(fmt.Sprintf("New battery for %s detected", dogName)),
-				notify.Message(fmt.Sprintf("Battery voltage: %.3f V", batteryVoltage)),
-			),
-		})
-	if err != nil {
-		debugLogger.Println("error when setting: ", err) // notifications are not important enough to return an error.
-
-		return
-	}
-
-	err = oneShot.SetReset(dogName+"criticalBattery",
-		oshotpkg.Config{
-			SetIf: (batteryVoltage < BatteryCriticalThreshold) && nowIsWakingHours,
-			OnSet: makeNotifier(
-				ctx,
-				notifier,
-				notify.Title(fmt.Sprintf("%s's battery critical", dogName)),
-				notify.Message(fmt.Sprintf("Battery voltage: %.3f V",
-					batteryVoltage)),
-			),
-			ResetIf: batteryVoltage > BatteryLowThreshold,
-		})
-	if err != nil {
-		debugLogger.Println("error when setting: ", err) // notifications are not important enough to return an error.
-
-		return
-	}
-}
-
-func notifyAboutZones(ctx context.Context, latestGPS *model.GPSReading, namedZones []zonespkg.Zone, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
-	if latestGPS == nil {
-		debugLogger.Println("No GPS reading in transmission")
-
-		return
-	}
-
-	var thisZoneText string
-
-	if namedZones != nil {
-		thisZoneText = "Last seen " + zonespkg.NameThatZone(namedZones, zonespkg.Point{Latitude: latestGPS.Lat, Longitude: latestGPS.Long})
-	} else {
-		thisZoneText = "<No zones loaded>"
-	}
-
-	currentLocation := poly.Point{X: latestGPS.Lat, Y: latestGPS.Long}
-	isOutsidePropertyBoundary := !poly.IsInside(propertyBoundary, currentLocation)
-	isOutsideSafeZoneBoundary := !poly.IsInside(safeZoneBoundary, currentLocation)
-
-	err := oneShot.SetReset(dogName+"offProperty",
-		oshotpkg.Config{
-			SetIf: isOutsidePropertyBoundary,
-			OnSet: makeNotifier(
-				ctx,
-				notifier,
-				notify.Title(fmt.Sprintf("%s is off the property", dogName)),
-				notify.Message(thisZoneText),
-			),
-			ResetIf: !isOutsidePropertyBoundary,
-			OnReset: makeNotifier(
-				ctx,
-				notifier,
-				notify.Title(fmt.Sprintf("%s is back on the property", dogName)),
-				notify.Message(thisZoneText),
-			),
-		})
-	if err != nil {
-		debugLogger.Println("error when setting: ", err) // notifications are not important enough to return an error.
-
-		return
-	}
-
-	err = oneShot.SetReset(dogName+"outsideSafeZone",
-		oshotpkg.Config{
-			SetIf: isOutsideSafeZoneBoundary,
-			OnSet: makeNotifier(
-				ctx,
-				notifier,
-				notify.Title(fmt.Sprintf("%s is getting far from the house", dogName)),
-				notify.Message(thisZoneText),
-			),
-			ResetIf: !isOutsideSafeZoneBoundary,
-			OnReset: makeNotifier(
-				ctx,
-				notifier,
-				notify.Title(fmt.Sprintf("%s is back close to the house", dogName)),
-				notify.Message(thisZoneText),
-			),
-		})
-	if err != nil {
-		debugLogger.Println("error when setting: ", err) // notifications are not important enough to return an error.
-
-		return
 	}
 }

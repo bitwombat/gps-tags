@@ -9,7 +9,9 @@ import (
 	"time"
 
 	"github.com/bitwombat/gps-tags/notify"
+	oshotpkg "github.com/bitwombat/gps-tags/oneshot"
 	"github.com/bitwombat/gps-tags/storage"
+	zonespkg "github.com/bitwombat/gps-tags/zones"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -76,15 +78,6 @@ func run() int {
 	// Set up endpoints
 	httpsMux := http.NewServeMux()
 
-	var notifier notify.Notifier
-	if os.Getenv("NONOTIFY") != "" {
-		warningLogger.Print("WARNING: NONOTIFY env var set. Null notifier being used. No notifications will be sent.")
-		notifier = notify.NewNullNotifier()
-	} else {
-		notifier = notify.NewNtfyNotifier(ntfySubscriptionID)
-	}
-	loggingNotifier := notify.NewLoggingNotifier(notifier, debugLogger)
-
 	tagAuthKey := os.Getenv("TAG_AUTH_KEY")
 	if tagAuthKey == "" {
 		return fatalLog(1, "TAG_AUTH_KEY not set")
@@ -96,8 +89,39 @@ func run() int {
 	// Paths travelled page
 	httpsMux.HandleFunc("/paths", newPathsMapPageHandler(storer))
 
+	var notifier notify.Notifier
+	if os.Getenv("NONOTIFY") != "" {
+		warningLogger.Print("WARNING: NONOTIFY env var set. Null notifier being used. No notifications will be sent.")
+		notifier = notify.NewNullNotifier()
+	} else {
+		notifier = notify.NewNtfyNotifier(ntfySubscriptionID)
+	}
+	loggingNotifier := notify.NewLoggingNotifier(notifier, debugLogger)
+
+	oneShot := oshotpkg.NewOneShot()
+
+	namedZones, err := zonespkg.ReadKMLDir("named_zones")
+	if err != nil {
+		errorLogger.Printf("Error reading KML files: %v", err)
+		// not a critical error, keep going
+	}
+
+	txLogger := txLogger{namedZones}
+
+	batteryNotifier := batteryNotifier{
+		namedZones: namedZones,
+		oneShot:    oneShot,
+		notifier:   loggingNotifier,
+	}
+
+	zoneNotifier := zoneNotifier{
+		namedZones: namedZones,
+		oneShot:    oneShot,
+		notifier:   loggingNotifier,
+	}
+
 	// Data upload endpoint
-	dataPostHandler := newDataPostHandler(storer, loggingNotifier, tagAuthKey, time.Now)
+	dataPostHandler := newDataPostHandler(storer, loggingNotifier, txLogger, batteryNotifier, zoneNotifier, tagAuthKey, time.Now)
 	httpsMux.HandleFunc("/upload", dataPostHandler)
 
 	// Notification testing endpoint and aliases
