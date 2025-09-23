@@ -14,7 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestLiveWebApplicationGolden(t *testing.T) {
+func TestLiveCurrentPage(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping test in short mode.")
 	}
