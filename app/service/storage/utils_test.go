@@ -20,9 +20,9 @@ func TestTimeAgoAsText(t *testing.T) {
 		future   string
 		expected string
 	}{
-		{"2023-11-18 23:21:42", "1 days, 0 hours, 0 minutes"},
-		{"2023-11-19 22:21:42", "1 hours, 0 minutes"},
 		{"2023-11-19 23:20:42", "1 minutes"},
+		{"2023-11-19 22:21:42", "1 hours, 0 minutes"},
+		{"2023-11-18 23:21:42", "1 days, 0 hours, 0 minutes"},
 		{"2023-11-17 03:02:02", "2 days, 20 hours, 19 minutes"},
 	}
 
