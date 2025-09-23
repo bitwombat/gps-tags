@@ -97,8 +97,8 @@ func newCurrentMapPageHandler(storer StatusReader, now func() time.Time) func(ht
 			subs[name+"Lat"] = fmt.Sprintf("%.7f", status.Latitude)
 			subs[name+"Lng"] = fmt.Sprintf("%.7f", status.Longitude)
 			subs[name+"AccuracyRadius"] = fmt.Sprintf("%v", status.PosAcc)
-			subs[name+"Note"] = "Last GPS: " + storage.TimeAgoAsText(status.GpsUTC, now) + " ago<br>Last Checkin: " + storage.TimeAgoAsText(status.DateUTC, now) + " ago<br>Reason: " + status.Reason.String() + "<br>Battery: " + fmt.Sprintf("%.2f", float64(status.Battery)/1000.) + "V"
-			subs[name+"Colour"] = storage.TimeAgoInColour(status.GpsUTC, now)
+			subs[name+"Note"] = "Last GPS: " + timeAgoAsText(status.GpsUTC, now) + " ago<br>Last Checkin: " + timeAgoAsText(status.DateUTC, now) + " ago<br>Reason: " + status.Reason.String() + "<br>Battery: " + fmt.Sprintf("%.2f", float64(status.Battery)/1000.) + "V"
+			subs[name+"Colour"] = timeAgoInColour(status.GpsUTC, now)
 		}
 
 		mapPage, err := substitute.ContentsOf("public_html/current-map.html", subs)

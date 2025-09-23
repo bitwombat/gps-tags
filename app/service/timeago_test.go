@@ -1,4 +1,4 @@
-package storage
+package main
 
 import (
 	"testing"
@@ -28,7 +28,7 @@ func TestTimeAgoAsText(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.future, func(t *testing.T) {
-			age := StrTimeAgoAsText(tt.future, now)
+			age := strTimeAgoAsText(tt.future, now)
 			require.Equal(t, tt.expected, age)
 		})
 	}

@@ -13,7 +13,6 @@ import (
 	"github.com/bitwombat/gps-tags/notify"
 	oshotpkg "github.com/bitwombat/gps-tags/oneshot"
 	"github.com/bitwombat/gps-tags/poly"
-	"github.com/bitwombat/gps-tags/storage"
 	"github.com/bitwombat/gps-tags/zones"
 	zonespkg "github.com/bitwombat/gps-tags/zones"
 )
@@ -137,9 +136,9 @@ func processBody(ctx context.Context, storer TxWriter, namedZones []zones.Zone, 
 			}
 			thisZoneText = zonespkg.NameThatZone(namedZones, zonespkg.Point{Latitude: r.GPSReading.Lat, Longitude: r.GPSReading.Long})
 
-			infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, storage.TimeAgoAsText(r.DateUTC.T, now), r.Reason, r.GPSReading.GpsUTC, storage.TimeAgoAsText(r.GPSReading.GpsUTC.T, now), r.GPSReading.Lat, r.GPSReading.Long, thisZoneText)
+			infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC.T, now), r.Reason, r.GPSReading.GpsUTC, timeAgoAsText(r.GPSReading.GpsUTC.T, now), r.GPSReading.Lat, r.GPSReading.Long, thisZoneText)
 		} else {
-			infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"\n", tagData.SerNo, dogName, r.DateUTC, storage.TimeAgoAsText(r.DateUTC.T, now), r.Reason)
+			infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC.T, now), r.Reason)
 		}
 
 		if r.AnalogueReading != nil {
