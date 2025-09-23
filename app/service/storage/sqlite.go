@@ -44,7 +44,7 @@ func NewSQLiteStorer(dataSourceName string) (SqliteStorer, error) {
 	if dataSourceName == ":memory:" {
 		dsn = dataSourceName
 	} else {
-		dsn = "file://" + dataSourceName + "?_pragma=foreign_keys(1)"
+		dsn = "file:" + dataSourceName + "?_pragma=foreign_keys(1)"
 	}
 
 	db, err := sql.Open("sqlite", dsn)
