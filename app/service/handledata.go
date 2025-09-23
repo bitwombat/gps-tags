@@ -26,7 +26,14 @@ func makeNotifier(ctx context.Context, notifier notify.Notifier, title notify.Ti
 	}
 }
 
-func newDataPostHandler(storer TxWriter, notifier notify.Notifier, txLogger txLogger, batteryNotifier batteryNotifier, zoneNotifier zoneNotifier, tagAuthKey string, now func() time.Time) func(http.ResponseWriter, *http.Request) {
+func newDataPostHandler(
+	storer TxWriter,
+	txLogger txLogger,
+	batteryNotifier batteryNotifier,
+	zoneNotifier zoneNotifier,
+	tagAuthKey string,
+	now func() time.Time,
+) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 		defer cancel()

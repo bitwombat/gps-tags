@@ -121,7 +121,7 @@ func run() int {
 	}
 
 	// Data upload endpoint
-	dataPostHandler := newDataPostHandler(storer, loggingNotifier, txLogger, batteryNotifier, zoneNotifier, tagAuthKey, time.Now)
+	dataPostHandler := newDataPostHandler(storer, txLogger, batteryNotifier, zoneNotifier, tagAuthKey, time.Now)
 	httpsMux.HandleFunc("/upload", dataPostHandler)
 
 	// Notification testing endpoint and aliases

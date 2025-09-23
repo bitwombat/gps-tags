@@ -138,7 +138,7 @@ func TestPostDataHandler(t *testing.T) {
 		notifier:   notifier,
 	}
 
-	handler := newDataPostHandler(storer, notifier, txLogger, batteryNotifier, zoneNotifier, "xxxx", now)
+	handler := newDataPostHandler(storer, txLogger, batteryNotifier, zoneNotifier, "xxxx", now)
 
 	body := strings.NewReader(basicCompleteSample)
 
@@ -261,7 +261,7 @@ func TestPostDataHandlerBatteryLevels(t *testing.T) {
 				notifier:   notifier,
 			}
 
-			handler := newDataPostHandler(storer, notifier, txLogger, batteryNotifier, zoneNotifier, "xxxx", now)
+			handler := newDataPostHandler(storer, txLogger, batteryNotifier, zoneNotifier, "xxxx", now)
 
 			batteryTestSample := fmt.Sprintf(`{
   "SerNo": 810095,
@@ -350,7 +350,7 @@ func TestPostDataHandlerBatteryRecovery(t *testing.T) {
 		notifier:   notifier,
 	}
 
-	handler := newDataPostHandler(storer, notifier, txLogger, batteryNotifier, zoneNotifier, "xxxx", now)
+	handler := newDataPostHandler(storer, txLogger, batteryNotifier, zoneNotifier, "xxxx", now)
 
 	// First: Send low battery data to trigger the "set" state
 	lowBatterySample := `{
@@ -478,7 +478,7 @@ func TestPostDataHandlerAuth(t *testing.T) {
 		notifier:   notifier,
 	}
 
-	handler := newDataPostHandler(storer, notifier, txLogger, batteryNotifier, zoneNotifier, "xxxx", now)
+	handler := newDataPostHandler(storer, txLogger, batteryNotifier, zoneNotifier, "xxxx", now)
 	req := httptest.NewRequest(http.MethodPost, "http://example.com/foo", http.NoBody)
 
 	t.Run("no auth header", func(t *testing.T) {
