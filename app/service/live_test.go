@@ -20,7 +20,7 @@ func TestLiveWebApplicationGolden(t *testing.T) {
 	}
 	// Download the live web page
 	url := "https://tags.bitwombat.com.au/current"
-	resp, err := http.Get(url)
+	resp, err := http.Get(url) //nolint:noctx // test code [shrug]
 	require.NoError(t, err, "downloading web page")
 	defer resp.Body.Close()
 
@@ -40,7 +40,7 @@ func TestLiveWebApplicationGolden(t *testing.T) {
 }
 
 // assertGoldenWithDynamicData compares HTML content against a golden file,
-// but normalizes dynamic data like coordinates before comparison
+// but normalizes dynamic data like coordinates before comparison.
 func assertGoldenWithDynamicData(tb testing.TB, fileBasename, got string) {
 	tb.Helper()
 
@@ -65,7 +65,7 @@ func assertGoldenWithDynamicData(tb testing.TB, fileBasename, got string) {
 }
 
 // normalizeDynamicData replaces dynamic values with placeholders
-// so that coordinate changes don't break the test
+// so that coordinate changes don't break the test.
 func normalizeDynamicData(html string) string {
 	// Normalize latitude/longitude values (floating point numbers in various contexts)
 	// This handles coordinates in JavaScript, HTML attributes, etc.

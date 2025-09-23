@@ -3,14 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/bitwombat/gps-tags/model"
 	"github.com/bitwombat/gps-tags/notify"
 	oshotpkg "github.com/bitwombat/gps-tags/oneshot"
 	"github.com/bitwombat/gps-tags/poly"
 	"github.com/bitwombat/gps-tags/zones"
-	zonespkg "github.com/bitwombat/gps-tags/zones"
 )
 
 type zoneNotifier struct {
@@ -19,7 +17,7 @@ type zoneNotifier struct {
 	notifier   notify.Notifier
 }
 
-func (zn zoneNotifier) Notify(ctx context.Context, now func() time.Time, tagData model.TagTx) {
+func (zn zoneNotifier) Notify(ctx context.Context, tagData model.TagTx) {
 	var latestGPS struct {
 		gr    *model.GPSReading
 		seqNo int
@@ -36,11 +34,9 @@ func (zn zoneNotifier) Notify(ctx context.Context, now func() time.Time, tagData
 
 	dogName := model.UpperSerNoToName(tagData.SerNo)
 	notifyAboutZones(ctx, latestGPS.gr, zn.namedZones, dogName, zn.oneShot, zn.notifier)
-
-	return
 }
 
-func notifyAboutZones(ctx context.Context, latestGPS *model.GPSReading, namedZones []zonespkg.Zone, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
+func notifyAboutZones(ctx context.Context, latestGPS *model.GPSReading, namedZones []zones.Zone, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
 	if latestGPS == nil {
 		debugLogger.Println("No GPS reading in transmission")
 
@@ -50,7 +46,7 @@ func notifyAboutZones(ctx context.Context, latestGPS *model.GPSReading, namedZon
 	var thisZoneText string
 
 	if namedZones != nil {
-		thisZoneText = "Last seen " + zonespkg.NameThatZone(namedZones, zonespkg.Point{Latitude: latestGPS.Lat, Longitude: latestGPS.Long})
+		thisZoneText = "Last seen " + zones.NameThatZone(namedZones, zones.Point{Latitude: latestGPS.Lat, Longitude: latestGPS.Long})
 	} else {
 		thisZoneText = "<No zones loaded>"
 	}

@@ -34,8 +34,6 @@ func (bn batteryNotifier) Notify(ctx context.Context, now func() time.Time, tagD
 
 	dogName := model.UpperSerNoToName(tagData.SerNo)
 	notifyAboutBattery(ctx, now, latestAnalogue.ar, dogName, bn.oneShot, bn.notifier)
-
-	return
 }
 
 func notifyAboutBattery(ctx context.Context, now func() time.Time, latestAnalogue *model.AnalogueReading, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {

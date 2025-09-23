@@ -103,7 +103,7 @@ func newDataPostHandler(
 		cleanGPSReadings(tagData)
 		txLogger.Log(now, tagData)
 		batteryNotifier.Notify(ctx, now, tagData)
-		zoneNotifier.Notify(ctx, now, tagData)
+		zoneNotifier.Notify(ctx, tagData)
 
 		w.WriteHeader(http.StatusOK)
 	}
