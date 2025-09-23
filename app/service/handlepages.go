@@ -23,7 +23,7 @@ type StatusReader interface {
 
 func newPathsMapPageHandler(storer CoordReader) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		debugLogger.Println("Got a current map page request.")
+		debugLogger.Println("Got a paths map page request.")
 		lastWasHealthCheck = false
 
 		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
