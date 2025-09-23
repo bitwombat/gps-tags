@@ -107,21 +107,23 @@ func newDataPostHandler(storer TxWriter, notifier notify.Notifier, tagAuthKey st
 			return
 		}
 
+		cleanGPSReadings(tagData)
 		logTx(namedZones, now, tagData)
-		if err != nil {
-			errorLogger.Printf("Error logging transmission: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
-		err = processBody(ctx, namedZones, now, oneShot, notifier, tagData)
-		if err != nil {
-			errorLogger.Printf("Error processing body: %v", err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+		processRecordsForBatteryNotifications(ctx, now, oneShot, notifier, tagData)
+		processRecordsForZoneNotifications(ctx, namedZones, now, oneShot, notifier, tagData)
 
 		w.WriteHeader(http.StatusOK)
+	}
+}
+
+func cleanGPSReadings(tagData model.TagTx) {
+	for i, r := range tagData.Records {
+		if r.GPSReading != nil {
+			if r.GPSReading.Lat == 0 || r.GPSReading.Long == 0 { // Oddball, bogus GPS result.
+				errorLogger.Print("Got 0 for lat or long... not committing record")
+				tagData.Records[i].GPSReading = nil
+			}
+		}
 	}
 }
 
@@ -134,11 +136,6 @@ func logTx(namedZones []zones.Zone, now func() time.Time, tagData model.TagTx) {
 
 		// Figure out the most recent records for notifications later
 		if r.GPSReading != nil {
-			if r.GPSReading.Lat == 0 || r.GPSReading.Long == 0 { // Oddball, bogus GPS result.
-				errorLogger.Print("Got 0 for lat or long... not committing record")
-				continue
-			}
-
 			thisZoneText = zonespkg.NameThatZone(namedZones, zonespkg.Point{Latitude: r.GPSReading.Lat, Longitude: r.GPSReading.Long})
 
 			infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC.T, now), r.Reason, r.GPSReading.GpsUTC, timeAgoAsText(r.GPSReading.GpsUTC.T, now), r.GPSReading.Lat, r.GPSReading.Long, thisZoneText)
@@ -150,63 +147,50 @@ func logTx(namedZones []zones.Zone, now func() time.Time, tagData model.TagTx) {
 	return
 }
 
-func processBody(ctx context.Context, namedZones []zones.Zone, now func() time.Time, oneShot oshotpkg.OneShot, notifier notify.Notifier, tagData model.TagTx) error {
-	dogName, ok := model.SerNoToName[tagData.SerNo]
-	if !ok {
-		return fmt.Errorf("Unknown tag number: %v", tagData.SerNo)
-	}
-	dogName = strings.ToUpper(dogName) // Just looks better and stands out in notifications
-
-	type AnalogueRecord struct {
-		ar    *model.AnalogueReading
-		seqNo int
-	}
-
-	type GPSRecord struct {
+func processRecordsForZoneNotifications(ctx context.Context, namedZones []zones.Zone, now func() time.Time, oneShot oshotpkg.OneShot, notifier notify.Notifier, tagData model.TagTx) {
+	var latestGPS struct {
 		gr    *model.GPSReading
 		seqNo int
 	}
 
-	var latestAnalogue AnalogueRecord
-	var latestGPS GPSRecord
-
 	// Process the records
 	for _, r := range tagData.Records {
-		var thisZoneText string
-
 		// Figure out the most recent records for notifications later
 		if r.GPSReading != nil {
-			if r.GPSReading.Lat == 0 || r.GPSReading.Long == 0 { // Oddball, bogus GPS result.
-				errorLogger.Print("Got 0 for lat or long... not committing record")
-				continue
-			}
-
 			if r.SeqNo > latestGPS.seqNo {
 				latestGPS.seqNo = r.SeqNo
 				latestGPS.gr = r.GPSReading
 			}
-
-			thisZoneText = zonespkg.NameThatZone(namedZones, zonespkg.Point{Latitude: r.GPSReading.Lat, Longitude: r.GPSReading.Long})
-
-			infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC.T, now), r.Reason, r.GPSReading.GpsUTC, timeAgoAsText(r.GPSReading.GpsUTC.T, now), r.GPSReading.Lat, r.GPSReading.Long, thisZoneText)
-		} else {
-			infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC.T, now), r.Reason)
 		}
+	}
 
+	dogName, _ := model.SerNoToName[tagData.SerNo]
+	dogName = strings.ToUpper(dogName) // Just looks better and stands out in notifications
+	notifyAboutZones(ctx, latestGPS.gr, namedZones, dogName, oneShot, notifier)
+
+	return
+}
+
+func processRecordsForBatteryNotifications(ctx context.Context, now func() time.Time, oneShot oshotpkg.OneShot, notifier notify.Notifier, tagData model.TagTx) {
+	var latestAnalogue struct {
+		ar    *model.AnalogueReading
+		seqNo int
+	}
+	// Process the records
+	for _, r := range tagData.Records {
 		if r.AnalogueReading != nil {
 			if r.SeqNo > latestAnalogue.seqNo {
 				latestAnalogue.seqNo = r.SeqNo
 				latestAnalogue.ar = r.AnalogueReading
 			}
 		}
-
 	}
 
-	// Send notifications
+	dogName, _ := model.SerNoToName[tagData.SerNo]
+	dogName = strings.ToUpper(dogName) // Just looks better and stands out in notifications
 	notifyAboutBattery(ctx, now, latestAnalogue.ar, dogName, oneShot, notifier)
-	notifyAboutZones(ctx, latestGPS.gr, namedZones, dogName, oneShot, notifier)
 
-	return nil
+	return
 }
 
 func notifyAboutBattery(ctx context.Context, now func() time.Time, latestAnalogue *model.AnalogueReading, dogName string, oneShot oshotpkg.OneShot, notifier notify.Notifier) {
