@@ -21,7 +21,9 @@ var lastWasHealthCheck bool // Used to clean up the log output.
 func makeNotifier(ctx context.Context, notifier notify.Notifier, title notify.Title, message notify.Message) func() error {
 	return func() error {
 		err := notifier.Notify(ctx, title, message)
-		logIfErr(err)
+		if err != nil {
+			errorLogger.Printf("error sending notification: %v", err)
+		}
 		return err
 	}
 }

@@ -35,13 +35,6 @@ func timeAgoAsText(t time.Time, now func() time.Time) string {
 	return fmt.Sprintf("%d days, %d hours, %d minutes", days, hours, minutes)
 }
 
-func timeAgoInMinutes(t time.Time, now func() time.Time) int {
-	// Calculate the difference
-	diff := now().Sub(t)
-
-	return int(diff.Minutes())
-}
-
 const (
 	aliveColour = "red"
 	staleColour = "#a23535"
