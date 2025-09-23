@@ -84,7 +84,23 @@ func newDataPostHandler(storer TxWriter, notifier notify.Notifier, tagAuthKey st
 			return
 		}
 
-		err = processBody(ctx, storer, namedZones, now, oneShot, notifier, body)
+		tagData, err := device.Unmarshal(body)
+		if err != nil {
+			errorLogger.Printf("Error unmarshalling transmission body: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		id, err := storer.WriteTx(ctx, tagData)
+		if err != nil {
+			errorLogger.Printf("Error inserting transmission: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		debugLogger.Print("Successfully inserted transmission, id: ", id)
+
+		err = processBody(ctx, namedZones, now, oneShot, notifier, tagData)
 		if err != nil {
 			errorLogger.Printf("Error processing body: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
@@ -94,12 +110,7 @@ func newDataPostHandler(storer TxWriter, notifier notify.Notifier, tagAuthKey st
 	}
 }
 
-func processBody(ctx context.Context, storer TxWriter, namedZones []zones.Zone, now func() time.Time, oneShot oshotpkg.OneShot, notifier notify.Notifier, body []byte) error {
-	tagData, err := device.Unmarshal(body)
-	if err != nil {
-		return err
-	}
-
+func processBody(ctx context.Context, namedZones []zones.Zone, now func() time.Time, oneShot oshotpkg.OneShot, notifier notify.Notifier, tagData model.TagTx) error {
 	dogName, ok := model.SerNoToName[tagData.SerNo]
 	if !ok {
 		return fmt.Errorf("Unknown tag number: %v", tagData.SerNo)
@@ -134,6 +145,7 @@ func processBody(ctx context.Context, storer TxWriter, namedZones []zones.Zone, 
 				latestGPS.seqNo = r.SeqNo
 				latestGPS.gr = r.GPSReading
 			}
+
 			thisZoneText = zonespkg.NameThatZone(namedZones, zonespkg.Point{Latitude: r.GPSReading.Lat, Longitude: r.GPSReading.Long})
 
 			infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC.T, now), r.Reason, r.GPSReading.GpsUTC, timeAgoAsText(r.GPSReading.GpsUTC.T, now), r.GPSReading.Lat, r.GPSReading.Long, thisZoneText)
@@ -153,15 +165,6 @@ func processBody(ctx context.Context, storer TxWriter, namedZones []zones.Zone, 
 	// Send notifications
 	notifyAboutBattery(ctx, now, latestAnalogue.ar, dogName, oneShot, notifier)
 	notifyAboutZones(ctx, latestGPS.gr, namedZones, dogName, oneShot, notifier)
-
-	// Insert the document into storage
-	id, err := storer.WriteTx(ctx, tagData)
-	if err != nil {
-		return fmt.Errorf("Error inserting transmission: %v", err)
-	}
-
-	// All happy
-	debugLogger.Print("Successfully inserted transmission, id: ", id)
 
 	return nil
 }
