@@ -68,9 +68,9 @@
                 const circle = new Circle({
                     map: map,
                     radius: accuracyRadius,
-                    fillColor: "red",
+                    fillColor: COLOUR_AGO_PLACEHOLDER,
                     fillOpacity: 0.30,
-                    strokeColor: "red",
+                    strokeColor: COLOUR_AGO_PLACEHOLDER,
                     strokeOpacity: 0.60,
                     strokeWeight: 2.00,
                     center: {
@@ -89,8 +89,8 @@
                 mapTypeId: 'satellite'
             });
 
-            makeMarker(map, "Rueger", "red", COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, "Last GPS: TIME_AGO_PLACEHOLDER<br>Last Checkin: TIME_AGO_PLACEHOLDER<br>Reason: Heartbeat<br>Battery: 4.20V")
-            makeMarker(map, "Charlie", "#a23535", COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, "Last GPS: TIME_AGO_PLACEHOLDER<br>Last Checkin: TIME_AGO_PLACEHOLDER<br>Reason: Heartbeat<br>Battery: 4.21V")
+            makeMarker(map, "Rueger", COLOUR_AGO_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, "Last GPS: TIME_AGO_PLACEHOLDER<br>Last Checkin: TIME_AGO_PLACEHOLDER<br>Reason: Heartbeat<br>Battery: 4.16V")
+            makeMarker(map, "Charlie", COLOUR_AGO_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, "Last GPS: TIME_AGO_PLACEHOLDER<br>Last Checkin: TIME_AGO_PLACEHOLDER<br>Reason: Heartbeat<br>Battery: 4.16V")
 
             map.fitBounds(bounds);
 

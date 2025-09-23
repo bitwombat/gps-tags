@@ -1,5 +1,6 @@
-// ABOUTME: Tests the publicly available web application by downloading the live page
-// ABOUTME: and comparing it to a golden copy, ignoring dynamic data like coordinates
+// Tests the the live page by comparing it to a golden copy, ignoring dynamic
+// data like coordinates.
+// Weird test to run every time, so the -test.short flag is default in Makefile
 package main
 
 import (
@@ -14,6 +15,9 @@ import (
 )
 
 func TestLiveWebApplicationGolden(t *testing.T) {
+	if testing.Short() {
+		t.Skip("skipping test in short mode.")
+	}
 	// Download the live web page
 	url := "https://tags.bitwombat.com.au/current"
 	resp, err := http.Get(url)
@@ -32,7 +36,7 @@ func TestLiveWebApplicationGolden(t *testing.T) {
 	require.Contains(t, htmlContent, "google.maps", "page should contain Google Maps library")
 
 	// Use our custom assertion that handles dynamic data
-	assertGoldenWithDynamicData(t, "live_web_page", htmlContent)
+	assertGoldenWithDynamicData(t, "current_page_live", htmlContent)
 }
 
 // assertGoldenWithDynamicData compares HTML content against a golden file,
@@ -40,18 +44,9 @@ func TestLiveWebApplicationGolden(t *testing.T) {
 func assertGoldenWithDynamicData(tb testing.TB, fileBasename, got string) {
 	tb.Helper()
 
-	// Normalize dynamic data in the received content
 	normalizedGot := normalizeDynamicData(got)
 
-	// We always want a current file, so write it out first, before we have a
-	// possibility of bailing if the golden file isn't found.
-	currentFilename := "service/test-output/" + fileBasename + ".html"
-	err := os.WriteFile(currentFilename, []byte(normalizedGot), 0o644) //nolint:gosec  // Test code, don't care
-	if err != nil {
-		tb.Fatalf("Couldn't write html file %s: %v", currentFilename, err)
-	}
-
-	goldenFilename := "service/test-output/" + fileBasename + ".golden.html"
+	goldenFilename := "test-output/" + fileBasename + ".golden.html"
 	golden, err := os.ReadFile(goldenFilename)
 	if errors.Is(err, os.ErrNotExist) {
 		// Create the golden file automatically on first run
@@ -66,10 +61,7 @@ func assertGoldenWithDynamicData(tb testing.TB, fileBasename, got string) {
 		tb.Fatalf("error reading %s: %v", goldenFilename, err)
 	}
 
-	// Normalize the golden content as well (in case it contains real coordinates)
-	normalizedGolden := normalizeDynamicData(string(golden))
-
-	require.Equal(tb, normalizedGolden, normalizedGot)
+	require.Equal(tb, string(golden), normalizedGot)
 }
 
 // normalizeDynamicData replaces dynamic values with placeholders
@@ -84,9 +76,9 @@ func normalizeDynamicData(html string) string {
 	// - HTML data attributes: data-lat="value"
 	// - Common coordinate patterns
 
-	patterns := []struct {
-		regex       *regexp.Regexp
-		replacement string
+	replacements := []struct {
+		regex *regexp.Regexp
+		value string
 	}{
 		// JavaScript coordinate arrays like [lat, lng]
 		{
@@ -127,8 +119,21 @@ func normalizeDynamicData(html string) string {
 		},
 		// Dynamic time-ago messages (e.g., "2 minutes ago", "1 hour ago")
 		{
-			regexp.MustCompile(`\d+\s+(minutes?|hours?|seconds?|days?)\s+ago`),
+			regexp.MustCompile(`\d+\s+days,\s+\d+\s+hours,\s+\d+\s+minutes\s+ago`),
 			"TIME_AGO_PLACEHOLDER",
+		},
+		{
+			regexp.MustCompile(`\d+\s+hours,\s+\d+\s+minutes\s+ago`),
+			"TIME_AGO_PLACEHOLDER",
+		},
+		{
+			regexp.MustCompile(`\d+\s+minutes\s+ago`),
+			"TIME_AGO_PLACEHOLDER",
+		},
+		// Dynamic time-ago marker colour
+		{
+			regexp.MustCompile(`"(red|#a23535|#8d8d8d)"`),
+			"COLOUR_AGO_PLACEHOLDER",
 		},
 		// Any standalone floating point numbers that might be coordinates
 		// (be more specific to avoid false positives)
@@ -138,10 +143,10 @@ func normalizeDynamicData(html string) string {
 		},
 	}
 
-	result := html
-	for _, pattern := range patterns {
-		result = pattern.regex.ReplaceAllString(result, pattern.replacement)
+	normalizedHTML := html
+	for _, replacement := range replacements {
+		normalizedHTML = replacement.regex.ReplaceAllString(normalizedHTML, replacement.value)
 	}
 
-	return result
+	return normalizedHTML
 }
