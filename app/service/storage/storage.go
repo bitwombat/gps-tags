@@ -74,6 +74,12 @@ func TimeAgoInMinutes(t time.Time, now func() time.Time) int {
 	return int(diff.Minutes())
 }
 
+const (
+	aliveColour = "red"
+	staleColour = "#a23535"
+	deadColour  = "#8d8d8d"
+)
+
 func TimeAgoInColour(t time.Time, now func() time.Time) string {
 	const heartBeatTime = 10 * time.Minute
 
@@ -81,10 +87,9 @@ func TimeAgoInColour(t time.Time, now func() time.Time) string {
 	diff := now().Sub(t)
 
 	if diff < heartBeatTime+1*time.Minute { // if it's reported in properly, recently
-		return "red"
+		return aliveColour
 	} else if diff < time.Hour { // somewhat recently, probably working
-		return "#a23535"
+		return staleColour
 	}
-	// not good
-	return "#8d8d8d"
+	return deadColour // not good
 }
