@@ -100,14 +100,54 @@ func newDataPostHandler(storer TxWriter, notifier notify.Notifier, tagAuthKey st
 
 		debugLogger.Print("Successfully inserted transmission, id: ", id)
 
+		_, ok = model.SerNoToName[tagData.SerNo]
+		if !ok {
+			errorLogger.Printf("Unknown tag number: %v", tagData.SerNo)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		logTx(namedZones, now, tagData)
+		if err != nil {
+			errorLogger.Printf("Error logging transmission: %v", err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 		err = processBody(ctx, namedZones, now, oneShot, notifier, tagData)
 		if err != nil {
 			errorLogger.Printf("Error processing body: %v", err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+
 		w.WriteHeader(http.StatusOK)
 	}
+}
+
+func logTx(namedZones []zones.Zone, now func() time.Time, tagData model.TagTx) {
+	dogName, _ := model.SerNoToName[tagData.SerNo]
+	dogName = strings.ToUpper(dogName) // Just looks better and stands out in notifications
+
+	for _, r := range tagData.Records {
+		var thisZoneText string
+
+		// Figure out the most recent records for notifications later
+		if r.GPSReading != nil {
+			if r.GPSReading.Lat == 0 || r.GPSReading.Long == 0 { // Oddball, bogus GPS result.
+				errorLogger.Print("Got 0 for lat or long... not committing record")
+				continue
+			}
+
+			thisZoneText = zonespkg.NameThatZone(namedZones, zonespkg.Point{Latitude: r.GPSReading.Lat, Longitude: r.GPSReading.Long})
+
+			infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"  %s (%s ago) %0.7f,%0.7f \"%s\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC.T, now), r.Reason, r.GPSReading.GpsUTC, timeAgoAsText(r.GPSReading.GpsUTC.T, now), r.GPSReading.Lat, r.GPSReading.Long, thisZoneText)
+		} else {
+			infoLogger.Printf("%v/%s  %s (%s ago) \"%v\"\n", tagData.SerNo, dogName, r.DateUTC, timeAgoAsText(r.DateUTC.T, now), r.Reason)
+		}
+	}
+
+	return
 }
 
 func processBody(ctx context.Context, namedZones []zones.Zone, now func() time.Time, oneShot oshotpkg.OneShot, notifier notify.Notifier, tagData model.TagTx) error {
