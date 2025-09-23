@@ -101,7 +101,7 @@ Results are in `./dump`
 See https://www.mongodb.com/docs/mongodb-shell/crud/read/
 https://www.mongodb.com/docs/manual/reference/method/
 
-## Exporting to MySQL
+## Exporting Mongo
 
 Follow instructions to install mongodb-database-tools from above, then:
 
@@ -109,6 +109,8 @@ Follow instructions to install mongodb-database-tools from above, then:
 
 
 ## TODOs
+- Make types that I unmarshal the Tx into match the types in the Yabby spec.
+https://go.dev/ref/spec#Numeric_types
 
 1. Make own location configurable (get it out of current-map.html).
 2. Read boundaries from boundary_zones dir (get them out of main.go).
