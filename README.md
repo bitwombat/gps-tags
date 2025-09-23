@@ -108,6 +108,15 @@ Follow instructions to install mongodb-database-tools from above, then:
     mongoexport --collection=dogs --db=tags  --type=json --jsonArray --out=dogs.json
 
 
+## Out of memory
+Known problem with SQLite:
+
+    Error getting last statuses from storage: error querying database for last statuses: SQL logic error: out of memory (1)
+
+It's not out of memory. It will issue this if the URI is wrong.
+https://gitlab.com/cznic/sqlite/-/issues/223#note_2756726999
+
+
 ## TODOs
 - Make types that I unmarshal the Tx into match the types in the Yabby spec.
 https://go.dev/ref/spec#Numeric_types
