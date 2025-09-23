@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/bitwombat/gps-tags/device"
@@ -116,7 +115,7 @@ func newDataPostHandler(storer TxWriter, notifier notify.Notifier, tagAuthKey st
 	}
 }
 
-func cleanGPSReadings(tagData model.TagTx) {
+func cleanGPSReadings(tagData model.TagTx) { // TODO: Maybe move this to the model or device
 	for i, r := range tagData.Records {
 		if r.GPSReading != nil {
 			if r.GPSReading.Lat == 0 || r.GPSReading.Long == 0 { // Oddball, bogus GPS result.
@@ -128,8 +127,7 @@ func cleanGPSReadings(tagData model.TagTx) {
 }
 
 func logTx(namedZones []zones.Zone, now func() time.Time, tagData model.TagTx) {
-	dogName, _ := model.SerNoToName[tagData.SerNo]
-	dogName = strings.ToUpper(dogName) // Just looks better and stands out in notifications
+	dogName := model.UpperSerNoToName(tagData.SerNo)
 
 	for _, r := range tagData.Records {
 		var thisZoneText string
@@ -164,8 +162,7 @@ func processRecordsForZoneNotifications(ctx context.Context, namedZones []zones.
 		}
 	}
 
-	dogName, _ := model.SerNoToName[tagData.SerNo]
-	dogName = strings.ToUpper(dogName) // Just looks better and stands out in notifications
+	dogName := model.UpperSerNoToName(tagData.SerNo)
 	notifyAboutZones(ctx, latestGPS.gr, namedZones, dogName, oneShot, notifier)
 
 	return
@@ -186,8 +183,7 @@ func processRecordsForBatteryNotifications(ctx context.Context, now func() time.
 		}
 	}
 
-	dogName, _ := model.SerNoToName[tagData.SerNo]
-	dogName = strings.ToUpper(dogName) // Just looks better and stands out in notifications
+	dogName := model.UpperSerNoToName(tagData.SerNo)
 	notifyAboutBattery(ctx, now, latestAnalogue.ar, dogName, oneShot, notifier)
 
 	return

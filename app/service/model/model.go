@@ -1,5 +1,7 @@
 package model
 
+import "strings"
+
 // This is a copy of ../device/yabby3.go, because the device's structure is an
 // OK starting point for our model (and db schema). A model that is nearly a
 // copy is a good idea for better separation (the yabby can change with minimal
@@ -67,4 +69,8 @@ type TripTypeReading struct {
 var SerNoToName = map[int]string{
 	810095: "rueger",
 	810243: "charlie",
+}
+
+func UpperSerNoToName(serNo int) string {
+	return strings.ToUpper(SerNoToName[serNo])
 }
