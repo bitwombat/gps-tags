@@ -29,25 +29,25 @@ func TestLiveCurrentPage(t *testing.T) {
 	body, err := io.ReadAll(resp.Body)
 	require.NoError(t, err, "reading response body")
 
-	htmlContent := string(body)
+	liveHTML := string(body)
 
 	// Ensure we got some expected content
-	require.Contains(t, htmlContent, "Rueger", "page should contain dog name")
-	require.Contains(t, htmlContent, "google.maps", "page should contain Google Maps library")
+	require.Contains(t, liveHTML, "Rueger", "page should contain dog name")
+	require.Contains(t, liveHTML, "google.maps", "page should contain Google Maps library")
 
 	// Use our custom assertion that handles dynamic data
-	assertGoldenWithDynamicData(t, "current_page_live", htmlContent)
+	assertGoldenWithDynamicData(t, "current_page_live", liveHTML)
 }
 
 // assertGoldenWithDynamicData compares HTML content against a golden file,
 // but normalizes dynamic data like coordinates before comparison.
-func assertGoldenWithDynamicData(tb testing.TB, fileBasename, got string) {
+func assertGoldenWithDynamicData(tb testing.TB, wantFilenameBase, got string) {
 	tb.Helper()
 
 	normalizedGot := normalizeDynamicData(got)
 
-	goldenFilename := "test-output/" + fileBasename + ".golden.html"
-	golden, err := os.ReadFile(goldenFilename)
+	goldenFilename := "test-output/" + wantFilenameBase + ".golden.html"
+	want, err := os.ReadFile(goldenFilename)
 	if errors.Is(err, os.ErrNotExist) {
 		// Create the golden file automatically on first run
 		err := os.WriteFile(goldenFilename, []byte(normalizedGot), 0o644) //nolint:gosec  // Test code, don't care
@@ -61,7 +61,7 @@ func assertGoldenWithDynamicData(tb testing.TB, fileBasename, got string) {
 		tb.Fatalf("error reading %s: %v", goldenFilename, err)
 	}
 
-	require.Equal(tb, string(golden), normalizedGot)
+	require.Equal(tb, string(want), normalizedGot)
 }
 
 // normalizeDynamicData replaces dynamic values with placeholders
