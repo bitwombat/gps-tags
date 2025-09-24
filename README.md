@@ -118,6 +118,35 @@ https://gitlab.com/cznic/sqlite/-/issues/223#note_2756726999
 
 
 ## TODOs
+- Test that latest GPS and Analogue readings are really being selected.
+- More notifications:
+    - When haven't heard from a tag in 24 hours
+- More pages
+    - lots of tag data: average time between GPS fixes. Average battery life.
+      Temperature over time.
+    - Biggest trip (furthest from home)
+
+- TxIDs used to look like this:
+
+Now look like this:
+
+68d3039cea1b9c18dc741120
+68d302d8ea1b9c18dc74111f
+68d2ffdbea1b9c18dc74111e
+68d2ff18ea1b9c18dc74111d
+68d2fc1aea1b9c18dc74111c
+
+Now look like this:
+
+68c24a73-f301-4e19-bef0-682db77a71b8
+3d2c1014-69bf-4558-bd1d-4f161e1ff642
+68c24a73-f301-4e19-bef0-682db77a71b8
+3d2c1014-69bf-4558-bd1d-4f161e1ff642
+
+
+Migration error?
+
+
 - Make types that I unmarshal the Tx into match the types in the Yabby spec.
 https://go.dev/ref/spec#Numeric_types
 
