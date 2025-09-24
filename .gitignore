@@ -21,3 +21,4 @@ app/service/dogtags.db
 app/service/test-output/current_page.html
 app/service/samples_go
 app/service/cmd/migrate/migration_20250924.zip
+app/service/test-output/paths_page.html
