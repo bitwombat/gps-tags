@@ -143,13 +143,25 @@ func normalizeDynamicData(html string) string {
 		// Any standalone floating point numbers that might be coordinates
 		// Make this one nearly last because it's very general and will catch out voltages and others if run earlier.
 		{
-			regexp.MustCompile(`-?\d{1,3}\.\d{4,}`), // latitude/longitude typically have many decimal places
+			regexp.MustCompile(`-?\d{1,3}\.\d{4,}`),
 			"COORDINATE_PLACEHOLDER",
 		},
-		// Accuracy radius. No decimal in digits, so more general than coordinates.
+<<<<<<< ours
+		// Accuracy radius and PosAcc - no defining features. Replace with generic value.
 		{
 			regexp.MustCompile(`\d{1,3},`),
-			"ACCURACY_RADIUS_PLACEHOLDER",
+			"INTEGER_PLACEHOLDER",
+=======
+		// Battery
+		{
+			regexp.MustCompile(`Battery: \d{1,3}`),
+			"POSACC_PLACEHOLDER",
+		},
+		// Positional Accuracy (byte)
+		{
+			regexp.MustCompile(`\d{1,3},`),
+			"POSACC_PLACEHOLDER",
+>>>>>>> theirs
 		},
 	}
 
