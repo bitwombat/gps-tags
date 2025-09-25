@@ -296,6 +296,7 @@ SELECT tx.SerNo,
     FROM tx
     JOIN record ON record.TxID = tx.ID
     JOIN gpsReading ON gpsReading.RecordID = record.ID
+    WHERE gpsReading.GpsStat & 4 = 0
 )
 WHERE rn = 1 AND time_rank <= ?;
 ;
