@@ -1,8 +1,13 @@
 SHELL=/bin/bash
+PROJECT_FILES=$(shell find . ../public_html -name '*.go' -o -wholename '*public_html/*')
 
 .PHONY: test
 test:
-	gotestsum ./... -test.short
+	gotestsum --max-fails 1 -- ./... -test.short -failfast
+
+.PHONY: native-test
+native-test:
+	\go test ./... -v -test.short -failfast
 
 .PHONY: lint
 lint:
@@ -14,11 +19,11 @@ generate:
 
 .PHONY: test-watch
 test-watch:
-		find . -name '*.go' -o -name '*.html' | entr sh -c 'gotestsum --max-fails 1 ./... -test.short'
+		echo "${PROJECT_FILES}" | xargs -n 1 | entr -c sh -c 'make --no-print-directory test'
 
 .PHONY: test-watch-tmux
 test-watch-tmux:
-		find . -name '*.go' -o -name '*.html' | entr sh -c 'tmux display-popup -EE gotestsum --max-fails 1 ./... -failfast -test.short'
+		echo "${PROJECT_FILES}" | xargs -n 1 | entr sh -c 'tmux display-popup -EE make --no-print-directory test'
 
 .PHONY: live-test
 live-test:
