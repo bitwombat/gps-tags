@@ -1,17 +1,10 @@
 package storage
 
 import (
-	"context"
 	"time"
 
 	"github.com/bitwombat/gps-tags/model"
 )
-
-type Storage interface {
-	WriteTx(context.Context, model.TagTx) (string, error)
-	GetLastStatuses(context.Context) (Statuses, error)
-	GetLastNCoords(context.Context, int) (Coords, error)
-}
 
 type Status struct {
 	SeqNo     int32
