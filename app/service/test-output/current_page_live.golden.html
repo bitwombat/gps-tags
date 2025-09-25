@@ -69,24 +69,10 @@
                     map: map,
                     radius: accuracyRadius,
                     fillColor: COLOUR_AGO_PLACEHOLDER,
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-                    fillOpacity: 0.ACCURACY_RADIUS_PLACEHOLDER
+                    fillOpacity: 0.INTEGER_PLACEHOLDER
                     strokeColor: COLOUR_AGO_PLACEHOLDER,
-                    strokeOpacity: 0.ACCURACY_RADIUS_PLACEHOLDER
-                    strokeWeight: 2.ACCURACY_RADIUS_PLACEHOLDER
-=======
-                    fillOpacity: 0.POSACC_PLACEHOLDER
-                    strokeColor: COLOUR_AGO_PLACEHOLDER,
-                    strokeOpacity: 0.POSACC_PLACEHOLDER
-                    strokeWeight: 2.POSACC_PLACEHOLDER
->>>>>>> Stashed changes
-=======
-                    fillOpacity: 0.POSACC_PLACEHOLDER
-                    strokeColor: COLOUR_AGO_PLACEHOLDER,
-                    strokeOpacity: 0.POSACC_PLACEHOLDER
-                    strokeWeight: 2.POSACC_PLACEHOLDER
->>>>>>> Stashed changes
+                    strokeOpacity: 0.INTEGER_PLACEHOLDER
+                    strokeWeight: 2.INTEGER_PLACEHOLDER
                     center: {
                         lat: lat,
                         lng: lng
@@ -98,31 +84,13 @@
             // Put together the map and markers
             map = new Map(document.getElementById("map"), {
                 center: home,
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-                zoom: ACCURACY_RADIUS_PLACEHOLDER
-=======
-                zoom: POSACC_PLACEHOLDER
->>>>>>> Stashed changes
-=======
-                zoom: POSACC_PLACEHOLDER
->>>>>>> Stashed changes
+                zoom: INTEGER_PLACEHOLDER
                 mapId: "HOME_MAP",
                 mapTypeId: 'satellite'
             });
 
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
-            makeMarker(map, "Rueger", COLOUR_AGO_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, ACCURACY_RADIUS_PLACEHOLDER "Last GPS: TIME_AGO_PLACEHOLDER<br>Last Checkin: TIME_AGO_PLACEHOLDER<br>Reason: HeartbeatStatus<br>Battery: BATTERY_VOLTAGE_PLACEHOLDER")
-            makeMarker(map, "Charlie", COLOUR_AGO_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, ACCURACY_RADIUS_PLACEHOLDER "Last GPS: TIME_AGO_PLACEHOLDER<br>Last Checkin: TIME_AGO_PLACEHOLDER<br>Reason: HeartbeatStatus<br>Battery: BATTERY_VOLTAGE_PLACEHOLDER")
-=======
-            makeMarker(map, "Rueger", COLOUR_AGO_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, POSACC_PLACEHOLDER "Last GPS: TIME_AGO_PLACEHOLDER<br>Last Checkin: TIME_AGO_PLACEHOLDER<br>Reason: HeartbeatStatus<br>POSACC_PLACEHOLDER.11V")
-            makeMarker(map, "Charlie", COLOUR_AGO_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, POSACC_PLACEHOLDER "Last GPS: TIME_AGO_PLACEHOLDER<br>Last Checkin: TIME_AGO_PLACEHOLDER<br>Reason: HeartbeatStatus<br>POSACC_PLACEHOLDER.11V")
->>>>>>> Stashed changes
-=======
-            makeMarker(map, "Rueger", COLOUR_AGO_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, POSACC_PLACEHOLDER "Last GPS: TIME_AGO_PLACEHOLDER<br>Last Checkin: TIME_AGO_PLACEHOLDER<br>Reason: HeartbeatStatus<br>POSACC_PLACEHOLDER.11V")
-            makeMarker(map, "Charlie", COLOUR_AGO_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, POSACC_PLACEHOLDER "Last GPS: TIME_AGO_PLACEHOLDER<br>Last Checkin: TIME_AGO_PLACEHOLDER<br>Reason: HeartbeatStatus<br>POSACC_PLACEHOLDER.11V")
->>>>>>> Stashed changes
+            makeMarker(map, "Rueger", COLOUR_AGO_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, INTEGER_PLACEHOLDER "Last GPS: TIME_AGO_PLACEHOLDER<br>Last Checkin: TIME_AGO_PLACEHOLDER<br>Reason: HeartbeatStatus<br>Battery: BATTERY_VOLTAGE_PLACEHOLDER")
+            makeMarker(map, "Charlie", COLOUR_AGO_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, INTEGER_PLACEHOLDER "Last GPS: TIME_AGO_PLACEHOLDER<br>Last Checkin: TIME_AGO_PLACEHOLDER<br>Reason: HeartbeatStatus<br>Battery: BATTERY_VOLTAGE_PLACEHOLDER")
 
             map.fitBounds(bounds);
 

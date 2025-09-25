@@ -146,22 +146,10 @@ func normalizeDynamicData(html string) string {
 			regexp.MustCompile(`-?\d{1,3}\.\d{4,}`),
 			"COORDINATE_PLACEHOLDER",
 		},
-<<<<<<< ours
 		// Accuracy radius and PosAcc - no defining features. Replace with generic value.
 		{
 			regexp.MustCompile(`\d{1,3},`),
 			"INTEGER_PLACEHOLDER",
-=======
-		// Battery
-		{
-			regexp.MustCompile(`Battery: \d{1,3}`),
-			"POSACC_PLACEHOLDER",
-		},
-		// Positional Accuracy (byte)
-		{
-			regexp.MustCompile(`\d{1,3},`),
-			"POSACC_PLACEHOLDER",
->>>>>>> theirs
 		},
 	}
 
