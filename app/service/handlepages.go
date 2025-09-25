@@ -29,7 +29,7 @@ func newPathsMapPageHandler(storer CoordReader) func(http.ResponseWriter, *http.
 		ctx, cancel := context.WithTimeout(r.Context(), 20*time.Second)
 		defer cancel()
 
-		pathpoints, err := storer.GetLastNCoords(ctx, 30)
+		pathpoints, err := storer.GetLastNCoords(ctx, 5)
 		if err != nil {
 			errorLogger.Printf("Error getting last N coordinates from storage: %v\n", err)
 			w.WriteHeader(http.StatusInternalServerError)
