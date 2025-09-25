@@ -79,6 +79,10 @@ func newDataPostHandler(
 			return
 		}
 
+		// TODO: This is temporary while I watch GPS readings come in and try to figure out why it
+		// repeats Lat/Lng when it claims to have gotten a good fix (GpsStat = 3).
+		debugLogger.Println(string(body))
+
 		tagData, err := device.Unmarshal(body)
 		if err != nil {
 			errorLogger.Printf("Error unmarshalling transmission body: %v", err)
