@@ -285,32 +285,19 @@ func (s SqliteStorer) GetLastNCoords(ctx context.Context, n int) (Coords, error)
 	}
 
 	query := `
-WITH NumberedRecords AS (
-    SELECT
-		tx.SerNo,
-		record.SeqNo,
-		gpsReading.Lat,
-		gpsReading.Lng,
-        record.DeviceUTC,
-        ROW_NUMBER() OVER (PARTITION BY tx.SerNo ORDER BY record.SeqNo DESC) AS rn
-    FROM
-        tx
-    JOIN
-        record ON record.TxID = tx.ID
-	JOIN
-        gpsReading ON gpsReading.RecordID = record.ID
+SELECT SerNo, SeqNo, Lat, Lng
+FROM (
+SELECT tx.SerNo,
+           record.SeqNo,
+           gpsReading.Lat,
+           gpsReading.Lng,
+           ROW_NUMBER() OVER (PARTITION BY tx.SerNo, gpsUTC ORDER BY record.SeqNo DESC) as rn,
+           DENSE_RANK() OVER (PARTITION BY tx.SerNo ORDER BY gpsUTC DESC) as time_rank
+    FROM tx
+    JOIN record ON record.TxID = tx.ID
+    JOIN gpsReading ON gpsReading.RecordID = record.ID
 )
-SELECT
-    SerNo,
-	SeqNo,
-    Lat,
-	Lng
-FROM
-    NumberedRecords
-WHERE
-    rn <= ?
-ORDER BY
-    SerNo, DeviceUTC DESC
+WHERE rn = 1 AND time_rank <= ?;
 ;
 `
 

@@ -170,6 +170,14 @@ var sampleTx2 model.TagTx = model.TagTx{
 	},
 }
 
+func timeFrom(s string) time.Time {
+	t, err := time.Parse(time.DateTime, s)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
 var nSamples = []model.TagTx{
 	{
 		SerNo: 810095,
@@ -177,36 +185,41 @@ var nSamples = []model.TagTx{
 			{
 				SeqNo: 1,
 				GPSReading: &model.GPSReading{
-					Lat:  100,
-					Long: 101,
+					GpsUTC: model.Time{timeFrom("2025-09-01 12:00:00")},
+					Lat:    100,
+					Long:   101,
 				},
 			},
 			{
 				SeqNo: 2,
 				GPSReading: &model.GPSReading{
-					Lat:  102,
-					Long: 103,
+					GpsUTC: model.Time{timeFrom("2025-09-01 12:00:01")},
+					Lat:    102,
+					Long:   103,
 				},
 			},
 			{
 				SeqNo: 3,
 				GPSReading: &model.GPSReading{
-					Lat:  104,
-					Long: 105,
+					GpsUTC: model.Time{timeFrom("2025-09-01 12:00:02")},
+					Lat:    104,
+					Long:   105,
 				},
 			},
 			{
 				SeqNo: 4,
 				GPSReading: &model.GPSReading{
-					Lat:  106,
-					Long: 107,
+					GpsUTC: model.Time{timeFrom("2025-09-01 12:00:03")},
+					Lat:    106,
+					Long:   107,
 				},
 			},
 			{
 				SeqNo: 5,
 				GPSReading: &model.GPSReading{
-					Lat:  108,
-					Long: 109,
+					GpsUTC: model.Time{timeFrom("2025-09-01 12:00:04")},
+					Lat:    108,
+					Long:   109,
 				},
 			},
 		},
@@ -217,36 +230,41 @@ var nSamples = []model.TagTx{
 			{
 				SeqNo: 2,
 				GPSReading: &model.GPSReading{
-					Lat:  110,
-					Long: 111,
+					GpsUTC: model.Time{timeFrom("2025-09-01 12:00:05")},
+					Lat:    110,
+					Long:   111,
 				},
 			},
 			{
 				SeqNo: 4,
 				GPSReading: &model.GPSReading{
-					Lat:  112,
-					Long: 113,
+					GpsUTC: model.Time{timeFrom("2025-09-01 12:00:06")},
+					Lat:    112,
+					Long:   113,
 				},
 			},
 			{
 				SeqNo: 6,
 				GPSReading: &model.GPSReading{
-					Lat:  114,
-					Long: 115,
+					GpsUTC: model.Time{timeFrom("2025-09-01 12:00:07")},
+					Lat:    114,
+					Long:   115,
 				},
 			},
 			{
 				SeqNo: 8,
 				GPSReading: &model.GPSReading{
-					Lat:  116,
-					Long: 117,
+					GpsUTC: model.Time{timeFrom("2025-09-01 12:00:08")},
+					Lat:    116,
+					Long:   117,
 				},
 			},
 			{
 				SeqNo: 10,
 				GPSReading: &model.GPSReading{
-					Lat:  118,
-					Long: 119,
+					GpsUTC: model.Time{timeFrom("2025-09-01 12:00:09")},
+					Lat:    118,
+					Long:   119,
 				},
 			},
 		},
@@ -326,17 +344,17 @@ func TestGetLastNCoords(t *testing.T) {
 	slices.Sort(keys)
 	require.Equal(t, keys, []int32{810095, 810243}, "tag values")
 
-	require.Equal(t, 108.0, result[810095][0].Latitude)
-	require.Equal(t, 109.0, result[810095][0].Longitude)
+	require.Equal(t, 104.0, result[810095][0].Latitude)
+	require.Equal(t, 105.0, result[810095][0].Longitude)
 	require.Equal(t, 106.0, result[810095][1].Latitude)
 	require.Equal(t, 107.0, result[810095][1].Longitude)
-	require.Equal(t, 104.0, result[810095][2].Latitude)
-	require.Equal(t, 105.0, result[810095][2].Longitude)
+	require.Equal(t, 108.0, result[810095][2].Latitude)
+	require.Equal(t, 109.0, result[810095][2].Longitude)
 
-	require.Equal(t, 118.0, result[810243][0].Latitude)
-	require.Equal(t, 119.0, result[810243][0].Longitude)
+	require.Equal(t, 114.0, result[810243][0].Latitude)
+	require.Equal(t, 115.0, result[810243][0].Longitude)
 	require.Equal(t, 116.0, result[810243][1].Latitude)
 	require.Equal(t, 117.0, result[810243][1].Longitude)
-	require.Equal(t, 114.0, result[810243][2].Latitude)
-	require.Equal(t, 115.0, result[810243][2].Longitude)
+	require.Equal(t, 118.0, result[810243][2].Latitude)
+	require.Equal(t, 119.0, result[810243][2].Longitude)
 }
