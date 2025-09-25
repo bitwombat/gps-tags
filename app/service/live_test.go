@@ -135,11 +135,21 @@ func normalizeDynamicData(html string) string {
 			regexp.MustCompile(`"(red|#a23535|#8d8d8d)"`),
 			"COLOUR_AGO_PLACEHOLDER",
 		},
+		// Battery voltage
+		{
+			regexp.MustCompile(`\d{1,2}\.\d{2}V`),
+			"BATTERY_VOLTAGE_PLACEHOLDER",
+		},
 		// Any standalone floating point numbers that might be coordinates
-		// (be more specific to avoid false positives)
+		// Make this one nearly last because it's very general and will catch out voltages and others if run earlier.
 		{
 			regexp.MustCompile(`-?\d{1,3}\.\d{4,}`), // latitude/longitude typically have many decimal places
 			"COORDINATE_PLACEHOLDER",
+		},
+		// Accuracy radius. No decimal in digits, so more general than coordinates.
+		{
+			regexp.MustCompile(`\d{1,3},`),
+			"ACCURACY_RADIUS_PLACEHOLDER",
 		},
 	}
 

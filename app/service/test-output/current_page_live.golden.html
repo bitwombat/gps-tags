@@ -39,7 +39,7 @@
                     glyph: ele
                 })
 
-                // Make a Marker to go on the map at a particular position.
+                // Make a Marker to go on the map at a particular coordinate.
                 const marker = new AdvancedMarkerElement({
                     map: map,
                     position: {
@@ -69,10 +69,10 @@
                     map: map,
                     radius: accuracyRadius,
                     fillColor: COLOUR_AGO_PLACEHOLDER,
-                    fillOpacity: 0.30,
+                    fillOpacity: 0.ACCURACY_RADIUS_PLACEHOLDER
                     strokeColor: COLOUR_AGO_PLACEHOLDER,
-                    strokeOpacity: 0.60,
-                    strokeWeight: 2.00,
+                    strokeOpacity: 0.ACCURACY_RADIUS_PLACEHOLDER
+                    strokeWeight: 2.ACCURACY_RADIUS_PLACEHOLDER
                     center: {
                         lat: lat,
                         lng: lng
@@ -84,13 +84,13 @@
             // Put together the map and markers
             map = new Map(document.getElementById("map"), {
                 center: home,
-                zoom: 18,
+                zoom: ACCURACY_RADIUS_PLACEHOLDER
                 mapId: "HOME_MAP",
                 mapTypeId: 'satellite'
             });
 
-            makeMarker(map, "Rueger", COLOUR_AGO_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, "Last GPS: TIME_AGO_PLACEHOLDER<br>Last Checkin: TIME_AGO_PLACEHOLDER<br>Reason: Heartbeat<br>Battery: 4.16V")
-            makeMarker(map, "Charlie", COLOUR_AGO_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, "Last GPS: TIME_AGO_PLACEHOLDER<br>Last Checkin: TIME_AGO_PLACEHOLDER<br>Reason: Heartbeat<br>Battery: 4.16V")
+            makeMarker(map, "Rueger", COLOUR_AGO_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, ACCURACY_RADIUS_PLACEHOLDER "Last GPS: TIME_AGO_PLACEHOLDER<br>Last Checkin: TIME_AGO_PLACEHOLDER<br>Reason: HeartbeatStatus<br>Battery: BATTERY_VOLTAGE_PLACEHOLDER")
+            makeMarker(map, "Charlie", COLOUR_AGO_PLACEHOLDER, COORDINATE_PLACEHOLDER, COORDINATE_PLACEHOLDER, ACCURACY_RADIUS_PLACEHOLDER "Last GPS: TIME_AGO_PLACEHOLDER<br>Last Checkin: TIME_AGO_PLACEHOLDER<br>Reason: HeartbeatStatus<br>Battery: BATTERY_VOLTAGE_PLACEHOLDER")
 
             map.fitBounds(bounds);
 
