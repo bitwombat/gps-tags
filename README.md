@@ -118,6 +118,7 @@ https://gitlab.com/cznic/sqlite/-/issues/223#note_2756726999
 
 
 ## TODOs
+- Paths are reversed in time.
 - Test that latest GPS and Analogue readings are really being selected.
 - More notifications:
     - When haven't heard from a tag in 24 hours
@@ -146,6 +147,7 @@ Now look like this:
 
 Migration error?
 
+- current_page_live.golden.html has wrong substitutions
 
 - Make types that I unmarshal the Tx into match the types in the Yabby spec.
 https://go.dev/ref/spec#Numeric_types

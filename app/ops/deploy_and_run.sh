@@ -2,19 +2,20 @@
 
 set -e
 
-[ -d service ] || ( echo "I want to be run right above the service dir." ; exit 1 )
+[ -d service ] || (
+    echo "I want to be run right above the service dir."
+    exit 1
+)
 
 # Vars
 SERVICE_FILE="dog-tracking.service"
-
 
 # Commands
 export RSYNC_RSH="ssh -q"
 export RSYNC_OPTS="-r --times --no-owner --exclude=public_html/log.html --delete --compress --itemize-changes "
 
-
 # Read and check .env file
-pushd devops &> /dev/null
+pushd ops &>/dev/null
 if [[ ! -e .env ]]; then
     echo "ERROR: .env file not found. Please copy .env.example to .env and then edit it with your details."
     exit 1
@@ -26,22 +27,20 @@ if [[ -z "$VPS_FQDN" ]]; then
     echo "ERROR: VPS_FQDN not set in .env file."
     exit 1
 fi
-popd &> /dev/null
-
+popd &>/dev/null
 
 # Build app
 echo "Building app"
-pushd service &> /dev/null
+pushd service &>/dev/null
 go build -ldflags="-s -w" .
-popd &> /dev/null
-
+popd &>/dev/null
 
 # Copy everything over to VPS and restart service
 echo "Transferring assets"
 rsync $RSYNC_OPTS ./{named_zones,public_html} "$VPS_FQDN":
 
 echo "Transferring service definition"
-rsync $RSYNC_OPTS devops/"$SERVICE_FILE" "$VPS_FQDN":/etc/systemd/system/"$SERVICE_FILE"
+rsync $RSYNC_OPTS ops/"$SERVICE_FILE" "$VPS_FQDN":/etc/systemd/system/"$SERVICE_FILE"
 
 echo "Reloading systemctl daemon"
 ssh -q "$VPS_FQDN" systemctl daemon-reload
